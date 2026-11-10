@@ -1,0 +1,6 @@
+node_modules/
+shots/
+out/_video*.mp4
+out/NYC_Dynasty_Cinematic_Universe_source.zip
+out/pantheon_audio.wav
+__pycache__/
