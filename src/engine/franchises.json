@@ -1,0 +1,15 @@
+{
+  "_note": "Keyed by Sleeper roster_id (stable for the life of the league). owner_id is checked at build time; team names are read live from Sleeper unless 'brand' is set.",
+  "1":  {"slug":"soham",   "manager":"Soham",   "owner_id":"723616769180237824", "theme":"bunker",       "tagline":"EVERY BACK GETS A ROOF. EVERY STORM PASSES."},
+  "2":  {"slug":"advaith", "manager":"Advaith", "owner_id":"94862074874052608",  "theme":"dawn",         "tagline":"FIRST TO RISE. FIRST TO ARRIVE."},
+  "3":  {"slug":"nihar",   "manager":"Nihar",   "owner_id":"459203311979982848", "theme":"city",         "tagline":"A BRAND NEW DAY OVER THE CITY."},
+  "4":  {"slug":"dev",     "manager":"Dev",     "owner_id":"870709036885143552", "theme":"circuit",      "tagline":"SHIP IT. EVERY SUNDAY.", "fallback_name":"Team Develeper"},
+  "5":  {"slug":"alan",    "manager":"Alan",    "owner_id":"723737032312025088", "theme":"range",        "tagline":"ONE SHOT. DEAD CENTER."},
+  "6":  {"slug":"nishant", "manager":"Nishant", "owner_id":"723759051976011776", "theme":"casino",       "tagline":"NOTHING DOWN. EVERYTHING TO WIN."},
+  "7":  {"slug":"achal",   "manager":"Achal",   "owner_id":"870742322156048384", "theme":"beach",        "tagline":"ENJOY THE WEEK OFF. IT WON'T LAST."},
+  "8":  {"slug":"manas",   "manager":"Manas",   "owner_id":"467172742458765312", "theme":"blueprint",    "tagline":"FIRST THE CONCEPT. THEN THE DYNASTY."},
+  "9":  {"slug":"shiamak", "manager":"Shiamak", "owner_id":"870852837591150592", "theme":"arcade",       "tagline":"INSERT COIN. PRESS START."},
+  "10": {"slug":"vaibhav", "manager":"Vaibhav", "owner_id":"871044882217775104", "theme":"temple",       "tagline":"THE HEAVENS ARE DUE A NEW ORDER.", "brand":"The Pantheon"},
+  "11": {"slug":"taylor",  "manager":"Taylor",  "owner_id":"723589982287110144", "theme":"inferno",      "tagline":"STOKE IT. LET IT SPREAD."},
+  "12": {"slug":"dhiraj",  "manager":"Dhiraj",  "owner_id":"871490319278084096", "theme":"neighborhood", "tagline":"GOOD FENCES. BETTER RECEIVERS."}
+}

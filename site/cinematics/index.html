@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Franchise Cinematics — NYC Dynasty League</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:#0b0c10;color:#e9e4d6;font-family:Georgia,'Times New Roman',serif;padding:5vh 5vw 8vh}
+header{max-width:1280px;margin:0 auto 28px}
+a.back{font:600 12px system-ui,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#b89b5e;text-decoration:none}
+h1{font-size:clamp(32px,6vw,60px);font-weight:400;margin:14px 0 8px;line-height:1.05}
+p.s{color:#9a968a;margin:0;font-size:17px;max-width:62ch}
+#stage{max-width:1280px;margin:0 auto 28px;display:none}
+#stage video{width:100%;aspect-ratio:16/9;background:#000;display:block}
+#stage h2{font-weight:400;font-size:24px;margin:14px 0 2px}#stage p{margin:0;color:#9a968a;font:14px system-ui,sans-serif}
+#grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+button.card{all:unset;cursor:pointer;display:block;background:#12131a;border:1px solid #2a2b31}
+button.card:hover,button.card:focus-visible{border-color:#b89b5e}
+button.card img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+button.card div{padding:12px 14px 14px}
+button.card b{display:block;font-weight:400;font-size:19px}
+button.card span{font:13px system-ui,sans-serif;color:#9a968a}
+footer{max-width:1280px;margin:32px auto 0;font:13px system-ui,sans-serif;color:#6c6a63}
+</style></head><body>
+<header><a class="back" href="../">← Cinematic Universe</a><h1>Franchise Cinematics</h1>
+<p class="s">Twelve franchises, twelve films. Each features the six highest-scoring players on that roster this season, straight from Sleeper.</p></header>
+<section id="stage"><video id="v" controls playsinline preload="none"></video><h2 id="vt"></h2><p id="vs"></p></section>
+<main id="grid"></main>
+<footer id="foot"></footer>
+<script>
+fetch('manifest.json').then(r=>r.json()).then(m=>{
+  const g=document.getElementById('grid'),st=document.getElementById('stage'),v=document.getElementById('v');
+  const order=[...m.franchises].sort((a,b)=>a.points_rank-b.points_rank);
+  for(const f of order){const b=document.createElement('button');b.className='card';
+    const img=document.createElement('img');img.src=f.slug+'.jpg';img.alt=f.team_display+' cinematic';img.loading='lazy';
+    const d=document.createElement('div'),t=document.createElement('b'),s=document.createElement('span');t.textContent=f.team_display;s.textContent=f.manager+' · '+f.record;d.append(t,s);b.append(img,d);
+    b.onclick=()=>{st.style.display='block';v.poster=f.slug+'.jpg';v.src=f.slug+'.mp4';document.getElementById('vt').textContent=f.team_display;
+      document.getElementById('vs').textContent=f.manager+' · '+f.players.map(p=>p.f[0]+'. '+p.l).reverse().join(', ');v.play().catch(()=>{});st.scrollIntoView({behavior:'smooth'})};
+    g.append(b)}
+  document.getElementById('foot').textContent='Records and points through Week '+m.through_week+' of '+m.season+'. Imagery and music are original; no player photographs are used.';
+});
+</script></body></html>
