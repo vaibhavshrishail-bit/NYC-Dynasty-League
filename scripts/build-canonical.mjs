@@ -117,5 +117,7 @@ if (problems.length) { console.error('IDENTITY RECONCILIATION FAILED:\n - ' + pr
 const out = { generated_at: new Date().toISOString(), source: 'Sleeper public API', league_id: league.league_id, league_name: league.name, season: Number(season), through_week: through, current_week: idx.nfl_state.week,
   playoff_teams: playoffTeams, playoff_rule: 'Seeds 1–5 go to the best records, with points for as the tiebreaker. Seed 6 goes to the highest-scoring team among the other seven.', playoff_week_start: league.settings.playoff_week_start, roster_positions: league.roster_positions.filter((p) => p !== 'BN'), scoring: { rec: league.scoring_settings.rec, pass_td: league.scoring_settings.pass_td, idp: true },
   standings: seedOrder.map((r) => r.roster_id), franchises, history: history.map(({ teams, ...h }) => h), trades: trades.sort((a, b) => a.week - b.week) };
+// keep the previous timestamp when nothing but the clock changed, so scheduled runs do not create empty commits
+try { const prev = JSON.parse(await readFile('site/data/canonical.json', 'utf8')); const strip = (o) => JSON.stringify({ ...o, generated_at: 0 }); if (strip(prev) === strip(out)) out.generated_at = prev.generated_at; } catch {}
 await writeFile('site/data/canonical.json', JSON.stringify(out));
 console.log(`canonical.json: ${franchises.length} franchises reconciled, season ${season} through week ${through}`);

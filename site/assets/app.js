@@ -16,4 +16,4 @@ function emblem(th) { // the same crest the cinematic draws: ring, laurel, theme
 <circle cx="100" cy="100" r="92" fill="none" stroke="${th.hi}" stroke-width="3"/><circle cx="100" cy="100" r="83" fill="none" stroke="${th.hi}" stroke-width="1" opacity=".7"/>${leaves}${g}</svg>`;
 }
 const fontOf = (th) => `font-family:'${th.font}',serif;font-weight:${th.weight};${th.font === 'Orbitron' ? 'letter-spacing:.02em;font-size:.82em;' : th.font === 'Bebas Neue' ? 'letter-spacing:.04em;font-size:1.18em;' : 'letter-spacing:.03em;'}`;
-const stamp = (c) => `Sleeper data through Week ${c.through_week} of ${c.season}. Last refreshed ${new Date(c.generated_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}.`;
+const stamp = (c) => `Sleeper data through Week ${c.through_week} of ${c.season}. Data last changed ${new Date(c.generated_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}.`;
