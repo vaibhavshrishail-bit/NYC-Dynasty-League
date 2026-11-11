@@ -17,3 +17,4 @@ function emblem(th) { // the same crest the cinematic draws: ring, laurel, theme
 }
 const fontOf = (th) => `font-family:'${th.font}',serif;font-weight:${th.weight};${th.font === 'Orbitron' ? 'letter-spacing:.02em;font-size:.82em;' : th.font === 'Bebas Neue' ? 'letter-spacing:.04em;font-size:1.18em;' : 'letter-spacing:.03em;'}`;
 const stamp = (c) => `Sleeper data through Week ${c.through_week} of ${c.season}. Data last changed ${new Date(c.generated_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}.`;
+const stars = (f) => f.titles.length ? ` <span class="stars" title="Champion ${f.titles.join(', ')}" aria-label="${f.titles.length} championship${f.titles.length > 1 ? 's' : ''}">${'★'.repeat(f.titles.length)}</span>` : '';

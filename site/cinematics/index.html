@@ -20,14 +20,14 @@ button.card span{font:13px system-ui,sans-serif;color:#9a968a}
 footer{max-width:1280px;margin:32px auto 0;font:13px system-ui,sans-serif;color:#6c6a63}
 </style></head><body>
 <header><a class="back" href="../">← Franchise Hub</a><h1>Franchise Cinematics</h1>
-<p class="s">Twelve franchises, twelve films. Each features the six highest-scoring players on that roster this season, straight from Sleeper.</p></header>
+<p class="s">Twelve franchises, twelve films. Each features the players who have scored the most while starting for that franchise this season, shown in their NFL team colours.</p></header>
 <section id="stage"><video id="v" controls playsinline preload="none"></video><h2 id="vt"></h2><p id="vs"></p></section>
 <main id="grid"></main>
 <footer id="foot"></footer>
 <script>
 fetch('manifest.json').then(r=>r.json()).then(m=>{
   const g=document.getElementById('grid'),st=document.getElementById('stage'),v=document.getElementById('v');
-  const order=[...m.franchises].sort((a,b)=>a.points_rank-b.points_rank);
+  const order=[...m.franchises].sort((a,b)=>a.seed-b.seed);
   for(const f of order){const b=document.createElement('button');b.className='card';
     const img=document.createElement('img');img.src=f.slug+'.jpg';img.alt=f.team_display+' cinematic';img.loading='lazy';
     const d=document.createElement('div'),t=document.createElement('b'),s=document.createElement('span');t.textContent=f.team_display;s.textContent=f.manager+' · '+f.record;d.append(t,s);b.append(img,d);
@@ -35,6 +35,6 @@ fetch('manifest.json').then(r=>r.json()).then(m=>{
     b.onclick=()=>{document.getElementById('vs').after(more);st.style.display='block';v.poster=f.slug+'.jpg';v.src=f.slug+'.mp4';document.getElementById('vt').textContent=f.team_display;
       document.getElementById('vs').textContent=f.manager+' · '+f.players.map(p=>p.f[0]+'. '+p.l).reverse().join(', ');v.play().catch(()=>{});st.scrollIntoView({behavior:'smooth'})};
     g.append(b)}
-  document.getElementById('foot').textContent='Records and points through Week '+m.through_week+' of '+m.season+'. Imagery and music are original; no player photographs are used.';
+  document.getElementById('foot').textContent='Records and points through Week '+m.through_week+' of '+m.season+'. Imagery and music are original. Jerseys are generic designs in team colours, not official uniforms.';
 });
 </script></body></html>

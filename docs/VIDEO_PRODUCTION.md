@@ -1,33 +1,44 @@
 # Video production
 
 ## Requirements
-Python 3 with `playwright`, `numpy`, `scipy`; Google Chrome at `/usr/bin/google-chrome`; `ffmpeg`; Node (for reading themes).
-Rendering is done in a Claude session or locally, not in GitHub Actions. The MP4s are committed to `site/cinematics/`.
+Python 3 with `playwright`, `numpy`, `scipy`; Google Chrome at `/usr/bin/google-chrome`; `ffmpeg`; Node.
+Rendering is done in a Claude session or locally, not in GitHub Actions. The MP4s are committed to `site/cinematics/` and `site/documentary/`.
 
-## Commands
-    git pull                                              # get the latest Sleeper JSON
-    python3 scripts/build_cinematics.py config            # rebuild manifest.json and preview HTML (seconds)
-    python3 scripts/build_cinematics.py stills [slug...]  # five test frames per film into build/stills
-    python3 scripts/build_cinematics.py render [slug...]  # full render into site/cinematics (about 3 minutes per film)
+## Franchise cinematics (45 seconds each)
+    git pull                                              # get the latest canonical.json
+    python3 scripts/build_cinematics.py config            # rebuild manifest.json and preview HTML, print a summary (seconds)
+    python3 scripts/build_cinematics.py stills [slug...]  # ten test frames per film into build/stills
+    python3 scripts/build_cinematics.py render [slug...]  # full render into site/cinematics
 
 Slugs: soham advaith nihar dev alan nishant achal manas shiamak vaibhav taylor dhiraj.
+A film takes about 10 minutes alone, or about 15 minutes each with two running side by side on a 2-core machine. Run two processes with different slugs; more than two gains nothing.
 `build/` is scratch space and is git-ignored. `build/cine/<slug>.html` is a playable, scrubbable version of each film.
 
-## How a film is made
-1. `configs()` reads `site/data/sleeper/` and builds one config per roster: live team name, record, points rank, titles, and the six highest-scoring players on the current roster.
-2. `audio.py` synthesizes a 25s score in the theme's key.
-3. Headless Chrome draws each of the 750 frames on a canvas (`window.__frame(t)`); frames are piped to ffmpeg (H.264, CRF 23) and muxed with AAC audio.
+### Timeline
+| Time | Act | Source |
+|---|---|---|
+| 0–6s | World, league title, team name, manager | theme + canonical |
+| 6–12s | Three lines: the record, the season, the creed | generated from canonical; the creed is the tagline in `franchises.json` |
+| 12–36s | Player showcase, 24s shared equally by up to 10 players, counting up to the leading scorer | `featured` in canonical |
+| 36–41.2s | Roll call: every featured jersey with points per start | same list |
+| 41.2–45s | Crest, team name, manager | theme + canonical |
 
-## Where the numbers come from
-- Player points: sum of `players_points` across every completed week of the current season in this league's matchups, so they use league scoring. A player's weeks spent unrostered are not counted.
-- Titles: winner of the `p == 1` game in each past season's winners bracket.
-- Points rank: `fpts` in current rosters.
+### Players and numbers
+The film uses exactly the `featured` list in `site/data/canonical.json`, which is also the "Who has carried this team" list on the franchise page. To change who appears, change the selection rule in `scripts/build-canonical.mjs`, never the film config.
+- Points per start: points scored in weeks the player was in this franchise's starting lineup this season, divided by those starts. League scoring, IDP included.
+- "Small sample" is shown when a player has started fewer than half the weeks.
+- Nicknames in quotes: owner-assigned in Sleeper first, then the small set of established real-world nicknames in `src/config/nicknames.json`. Where there is none, only the verified role label is shown (leading scorer, top defender, hot streak).
+- Jerseys: a generic jersey shape drawn in code, coloured from the `NFL` table in `core.js` (primary, trim, number colour per team). No logos, wordmarks or real uniform artwork. Update the table if a team rebrands.
+
+## Season documentary (about 90 seconds)
+    python3 scripts/build_documentary.py facts            # print every fact each chapter will show; read this first
+    python3 scripts/build_documentary.py stills [seconds...]
+    python3 scripts/build_documentary.py render           # site/documentary/season-2026.mp4, .jpg, .json (about 25 minutes)
+
+The film is a list of chapters in `chapters()` in that script. Each chapter has a theme (backdrop), a title and a list of beats: `line`, `stat`, `emblem`, `bars`, `cols`, `dots`, `jerseys`, `grid`, `dim`. Beats are drawn by `src/engine/doc.js`. Every value is computed in `facts()` from canonical.json, so re-running after new weeks updates the numbers; re-read the `facts` output, because the story may have changed (for example the unbeaten team may have lost) and chapter wording may need editing. To extend it into a full-season recap, add chapters; durations add up automatically.
 
 ## When to re-render
-Rosters and standings move every week, so the films date. Re-render after trades, at milestones, or before sharing. Always run `config` first and read the printed summary before rendering.
+Rosters and standings move weekly, so films date. Re-render after trades, at milestones, or before sharing. Always run `config` or `facts` first and read the output.
 
 ## Changing a look
-Edit the theme in `src/engine/themes.js`, run `stills` for that slug, look at the frames, then `render`.
-
-## Website crests
-After editing a theme run `sh scripts/export-themes.sh` to refresh `site/data/themes.json`.
+Edit the theme in `src/engine/themes.js`, run `stills` for that slug, look at the frames, then `render`. Then run `sh scripts/export-themes.sh` so the website crests match.

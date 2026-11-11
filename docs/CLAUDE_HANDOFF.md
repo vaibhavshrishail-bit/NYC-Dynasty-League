@@ -45,7 +45,12 @@ Owner-assigned nicknames come live from Sleeper roster metadata (`p_nick_<player
 - Nothing is sent to the league without his approval.
 - Routine artistic choices do not need sign-off.
 
+## League rules that are not in Sleeper
+- Playoff seeding: seeds 1–5 are the best records with points for as the tiebreaker; seed 6 is the highest points for among the other seven. Implemented in `scripts/build-canonical.mjs`.
+- Toilet Bowl: the loser is the `w` of the placement-1 game in Sleeper's losers bracket (verified against the Commissioner's Playbook for 2022–2025).
+
 ## Status
-- Done: canonical data, Hub, 12 franchise pages, 12 first-generation cinematics (25s, six players, total points).
-- Next: second-generation cinematics (about 45s, up to 10 players from `featured`, points per start, nicknames), season documentary, then Rivalry Engine and Playoff War Room.
+- Done: canonical data, Hub, 12 franchise pages with history markers (champion, runner-up, Toilet Bowl), 12 second-generation cinematics (45s), season documentary.
+- Not started: Rivalry Engine and Playoff War Room. Both should read canonical.json (`h2h`, `standings`, `playoff_rule`).
 - The site is plain HTML, CSS and JS with no build step. A React + Vite + TypeScript shell was the stated preference and has not been done.
+- Rendering is the only step that needs a capable session; everything else updates itself.

@@ -2,21 +2,22 @@
 <title>NYC Dynasty League — Franchise Hub</title><meta name="description" content="The twelve franchises of the NYC Dynasty League: live records, storylines and cinematics.">
 <link rel="stylesheet" href="assets/app.css"></head><body>
 <div class="wrap"><header class="top"><div><div class="k" id="sub">NYC Dynasty League</div><h1>Choose your franchise</h1></div>
-<nav><a class="btn" href="cinematics/">All cinematics</a></nav></header>
+<nav><a class="btn" href="documentary/">Season documentary</a><a class="btn" href="cinematics/">All cinematics</a></nav></header>
 <main class="grid" id="grid" aria-label="Franchises"></main>
-<section class="stand"><div class="k">Standings and the playoff line</div><ol id="stand"></ol></section>
+<section class="stand"><div class="k" id="st">Standings and the playoff line</div><ol id="stand"></ol></section>
 <footer id="foot"></footer></div>
 <script src="assets/app.js"></script><script>
 loadLeague().then((c)=>{
   document.getElementById('sub').textContent=`${c.league_name} · ${c.season} · Year Five · Through Week ${c.through_week}`;
   const order=c.standings.map((id)=>c.byRoster[id]);
   document.getElementById('grid').innerHTML=order.map((f,i)=>{const th=c.themes[f.theme],s=f.streak;
-    return `<a class="card" href="franchise.html?f=${esc(f.slug)}" style="--c:${th.hi};--g:${th.flash};animation-delay:${i*45}ms" aria-label="${esc(f.team_name)}, ${esc(f.manager)}, ${esc(f.record)}">
+    return `<a class="card" href="franchise.html?f=${esc(f.slug)}" style="--c:${th.hi};--g:${th.flash};animation-delay:${i*45}ms" aria-label="${esc(f.team_name)}, ${esc(f.manager)}, ${c.season} record ${esc(f.record)}, ${f.pf.toFixed(1)} points for${f.titles.length?`, ${f.titles.length} titles`:''}">
 <span class="seed">${ord(f.seed).toUpperCase()}</span>${f.in_playoff_position?'<span class="po">PLAYOFF SPOT</span>':''}${emblem(th)}
-<h2 style="${fontOf(th)}"><span style="width:100%">${esc(f.team_name)}</span></h2><div class="mgr">${esc(f.manager)}</div><div class="rec">${esc(f.record)}</div>
+<h2 style="${fontOf(th)}"><span style="width:100%">${esc(f.team_name)}</span></h2><div class="mgr">${esc(f.manager)}${stars(f)}</div><div class="nums"><div><b>${esc(f.record)}</b><span>${c.season} record</span></div><div><b>${f.pf.toFixed(1)}</b><span>Points for · ${ord(f.points_rank)}</span></div></div>
 <div class="dots">${f.results.map((r)=>`<i class="${r.result||''}" title="Week ${r.week}: ${r.result} ${r.pf}–${r.pa}"></i>`).join('')}</div>
 ${s?`<span class="pill ${s.type==='W'?'':'cold'}">${s.type==='W'?'Won':'Lost'} ${s.length} straight</span>`:''}</a>`}).join('');
-  document.getElementById('stand').innerHTML=order.map((f)=>`<li class="${f.seed===c.playoff_teams?'cut':''}"><span>${f.seed}</span><a href="franchise.html?f=${esc(f.slug)}">${esc(f.team_name)} <span>· ${esc(f.manager)}</span></a><span>${esc(f.record)}</span><span>${f.pf.toFixed(1)}</span></li>`).join('');
+  document.getElementById('st').textContent=`${c.season} standings and the playoff line`;
+  document.getElementById('stand').innerHTML=order.map((f)=>`<li class="${f.seed===c.playoff_teams?'cut':''}"><span>${f.seed}</span><a href="franchise.html?f=${esc(f.slug)}">${esc(f.team_name)} <span>· ${esc(f.manager)}</span>${stars(f)}</a><span>${esc(f.record)}</span><span>${f.pf.toFixed(1)} PF</span></li>`).join('');
   document.getElementById('foot').textContent=`${c.playoff_rule} Playoffs start in Week ${c.playoff_week_start}. ${stamp(c)} Crests are original artwork made for this site.`;
 }).catch(()=>{document.getElementById('grid').textContent='League data could not be loaded. Try again shortly.'});
 </script></body></html>
