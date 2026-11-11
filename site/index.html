@@ -1,23 +1,54 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NYC Dynasty League — Franchise Hub</title><meta name="description" content="The twelve franchises of the NYC Dynasty League: live records, storylines and cinematics.">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>NYC Dynasty League — League Pulse</title><meta name="description" content="The NYC Dynasty League this week: the matchup that matters, the playoff race, power rankings and all twelve franchises.">
 <link rel="stylesheet" href="assets/app.css"></head><body>
-<div class="wrap"><header class="top"><div><div class="k" id="sub">NYC Dynasty League</div><h1>Choose your franchise</h1></div>
+<div id="nav"></div>
+<div class="wrap">
+<header class="top" style="padding-bottom:6px"><div><div class="k" id="sub">NYC Dynasty League</div><h1 id="wk">League Pulse</h1></div>
+<nav><a class="btn" id="recap" href="week.html">Last week's recap</a><a class="btn" id="preview" href="week.html">This week's preview</a></nav></header>
+<section class="pulse" id="pulse" aria-label="League Pulse"></section>
+<section class="two3" id="row2"></section>
+<header class="top" id="franchises" style="padding-top:44px"><div><div class="k">Franchise HQ · cinematics, storylines, history</div><h1 style="font-size:clamp(28px,4.6vw,56px)">Choose your franchise</h1></div>
 <nav><a class="btn" href="documentary/">Season documentary</a><a class="btn" href="cinematics/">All cinematics</a></nav></header>
 <main class="grid" id="grid" aria-label="Franchises"></main>
 <section class="stand"><div class="k" id="st">Standings and the playoff line</div><ol id="stand"></ol></section>
 <footer id="foot"></footer></div>
-<script src="assets/app.js"></script><script>
-loadLeague().then((c)=>{
-  document.getElementById('sub').textContent=`${c.league_name} · ${c.season} · Year Five · Through Week ${c.through_week}`;
+<script src="assets/app.js"></script><script src="assets/sim.js"></script><script>
+document.getElementById('nav').innerHTML=nav('League Pulse');
+loadAll().then(([c,L])=>{
+  const T=(id)=>c.byRoster[id],th=(id)=>c.themes[T(id).theme],fl=(id)=>`franchise.html?f=${esc(T(id).slug)}`,nm=(id)=>esc(T(id).team_name);
+  document.getElementById('sub').textContent=`${c.league_name} · ${c.season} · Year Five`;
+  document.getElementById('wk').textContent=L.current_week<=L.regular_season_end?`Week ${L.current_week}`:`Week ${L.current_week} · Playoffs`;
+  document.getElementById('recap').href=`week.html?w=${L.through_week}`;document.getElementById('recap').textContent=`Week ${L.through_week} recap`;
+  document.getElementById('preview').href=`week.html?w=${L.current_week}`;document.getElementById('preview').textContent=`Week ${L.current_week} preview`;
+  const sim=simulate(c,L),m=L.pulse.matchups[0],up=L.pulse.upset,tp=L.pulse.top_player,ti=L.pulse.top_idp;
+  const side=(id)=>`<a href="${fl(id)}">${emblem(th(id))}<div class="n" style="color:${th(id).hi}">${nm(id)}</div><div class="r">${esc(T(id).record)} · ${L.teams[id].ppg} a week · ${pct(sim[id].playoff)} to make it</div></a>`;
+  const motw=m?`<div class="panel"><span class="k">Matchup of the week · Week ${m.week}</span><div class="vs">${side(m.a)}<div class="mid">VS</div>${side(m.b)}</div>
+   <p>${m.why.length?'Why this one: '+esc(m.why.join('; '))+'.':'The most evenly matched game on the slate.'} All-time: ${nm(m.a)} ${m.h2h.w}–${m.h2h.l} in ${m.h2h.games} meetings.</p>
+   <p class="small"><a href="rivalry.html?a=${esc(T(m.a).slug)}&b=${esc(T(m.b).slug)}">Open the rivalry file →</a> &nbsp; <a href="week.html?w=${m.week}">All ${L.pulse.matchups.length} games →</a></p></div>`
+   :`<div class="panel"><span class="k">Regular season complete</span><h3>The playoffs are here</h3><p><a href="playoffs.html">Open the Stakes Center →</a></p></div>`;
+  const heads=`<div class="panel"><span class="k">Headlines · through Week ${L.through_week}</span><ul class="heads">${L.pulse.headlines.map((h)=>`<li><b>${esc(h.title)}</b><span>${esc(h.detail)}</span></li>`).join('')||'<li><span>No headlines yet.</span></li>'}</ul></div>`;
+  document.getElementById('pulse').innerHTML=motw+heads;
+  const seeds=c.standings.map((id)=>T(id));
+  const picture=`<div class="panel"><span class="k">The playoff picture</span>${seeds.map((f,i)=>`${i===c.playoff_teams?'<div class="cutline"><span>PLAYOFF LINE</span></div>':''}<div class="odds" style="--c:${c.themes[f.theme].hi}"><a href="${fl(f.roster_id)}">${f.seed}. ${esc(f.team_name)}</a><span class="p">${pct(sim[f.roster_id].playoff)}</span><span class="bar"><i style="width:${(sim[f.roster_id].playoff*100).toFixed(1)}%"></i></span></div>`).join('')}
+   <p class="small">Chance to make the playoffs, from simulation. Seed 6 goes to the top scorer outside the top five. <a href="playoffs.html">Scenarios and draft stakes →</a></p></div>`;
+  const power=`<div class="panel"><span class="k">Power rankings · editorial, not the standings</span><ol class="pr">${L.pulse.power.map((id)=>{const p=L.teams[id].power,d=p.prev-p.rank;
+   return `<li><span>${p.rank}</span><span class="mv ${d>0?'up':d<0?'dn':''}">${d>0?'▲'+d:d<0?'▼'+(-d):'–'}</span><a href="${fl(id)}">${nm(id)}</a><span class="lab ${L.teams[id].momentum.label}">${L.teams[id].momentum.label}</span></li>`}).join('')}</ol>
+   <p class="small">40% record against every team every week, 35% scoring average, 25% last three weeks. Labels compare the last three weeks with the season average.</p></div>`;
+  const perf=`<div class="panel"><span class="k">Week ${L.through_week} standouts</span>
+   ${tp?`<h3>${esc(tp.name)} · ${tp.points.toFixed(1)}</h3><p class="small">Player of the week. ${esc(tp.position)}, ${esc(tp.nfl_team)}, for <a href="${fl(tp.roster_id)}">${nm(tp.roster_id)}</a>.</p>`:''}
+   ${ti?`<h3 style="margin-top:16px">${esc(ti.name)} · ${ti.points.toFixed(1)}</h3><p class="small">Defender of the week. ${esc(ti.position)}, ${esc(ti.nfl_team)}, for <a href="${fl(ti.roster_id)}">${nm(ti.roster_id)}</a>.</p>`:''}
+   <h3 style="margin-top:16px">${up?`Biggest upset: ${nm(up.winner)}`:'No upsets'}</h3>
+   <p class="small">${up?`Beat ${nm(up.loser)} ${up.winner_pts.toFixed(2)}–${up.loser_pts.toFixed(2)} despite averaging ${up.winner_ppg_before} a week coming in, against ${up.loser_ppg_before}.`:'Every winner was the higher-scoring team coming in.'} An upset is a win by the team with the lower scoring average entering the week.</p></div>`;
+  document.getElementById('row2').innerHTML=picture+power+perf;
   const order=c.standings.map((id)=>c.byRoster[id]);
-  document.getElementById('grid').innerHTML=order.map((f,i)=>{const th=c.themes[f.theme],s=f.streak;
-    return `<a class="card" href="franchise.html?f=${esc(f.slug)}" style="--c:${th.hi};--g:${th.flash};animation-delay:${i*45}ms" aria-label="${esc(f.team_name)}, ${esc(f.manager)}, ${c.season} record ${esc(f.record)}, ${f.pf.toFixed(1)} points for${f.titles.length?`, ${f.titles.length} titles`:''}">
-<span class="seed">${ord(f.seed).toUpperCase()}</span>${f.in_playoff_position?'<span class="po">PLAYOFF SPOT</span>':''}${emblem(th)}
-<h2 style="${fontOf(th)}"><span style="width:100%">${esc(f.team_name)}</span></h2><div class="mgr">${esc(f.manager)}${stars(f)}</div><div class="nums"><div><b>${esc(f.record)}</b><span>${c.season} record</span></div><div><b>${f.pf.toFixed(1)}</b><span>Points for · ${ord(f.points_rank)}</span></div></div>
+  document.getElementById('grid').innerHTML=order.map((f,i)=>{const t=c.themes[f.theme],s=f.streak;
+    return `<a class="card" href="franchise.html?f=${esc(f.slug)}" style="--c:${t.hi};--g:${t.flash};animation-delay:${i*45}ms" aria-label="${esc(f.team_name)}, ${esc(f.manager)}, ${c.season} record ${esc(f.record)}, ${f.pf.toFixed(1)} points for${f.titles.length?`, ${f.titles.length} titles`:''}">
+<span class="seed">${ord(f.seed).toUpperCase()}</span>${f.in_playoff_position?'<span class="po">PLAYOFF SPOT</span>':''}${emblem(t)}
+<h2 style="${fontOf(t)}"><span style="width:100%">${esc(f.team_name)}</span></h2><div class="mgr">${esc(f.manager)}${stars(f)}</div><div class="nums"><div><b>${esc(f.record)}</b><span>${c.season} record</span></div><div><b>${f.pf.toFixed(1)}</b><span>Points for · ${ord(f.points_rank)}</span></div></div>
 <div class="dots">${f.results.map((r)=>`<i class="${r.result||''}" title="Week ${r.week}: ${r.result} ${r.pf}–${r.pa}"></i>`).join('')}</div>
 ${s?`<span class="pill ${s.type==='W'?'':'cold'}">${s.type==='W'?'Won':'Lost'} ${s.length} straight</span>`:''}</a>`}).join('');
   document.getElementById('st').textContent=`${c.season} standings and the playoff line`;
   document.getElementById('stand').innerHTML=order.map((f)=>`<li class="${f.seed===c.playoff_teams?'cut':''}"><span>${f.seed}</span><a href="franchise.html?f=${esc(f.slug)}">${esc(f.team_name)} <span>· ${esc(f.manager)}</span>${stars(f)}</a><span>${esc(f.record)}</span><span>${f.pf.toFixed(1)} PF</span></li>`).join('');
   document.getElementById('foot').textContent=`${c.playoff_rule} Playoffs start in Week ${c.playoff_week_start}. ${stamp(c)} Crests are original artwork made for this site.`;
-}).catch(()=>{document.getElementById('grid').textContent='League data could not be loaded. Try again shortly.'});
+}).catch((e)=>{console.error(e);document.getElementById('pulse').innerHTML='<div class="panel">League data could not be loaded. Try again shortly.</div>'});
 </script></body></html>

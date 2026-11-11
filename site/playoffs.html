@@ -1,0 +1,42 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>Playoff & Draft Stakes — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body>
+<div id="nav"></div><div class="wrap" style="padding-top:26px;padding-bottom:50px"><div class="k" id="sub">Stakes Center</div><h1 class="h-page">Playoff &amp; draft stakes</h1>
+<p class="lede">Where every franchise stands, what this week changes, and where the rookie picks are heading. This page describes the situation; it does not suggest roster moves.</p><div id="page"></div><footer id="foot"></footer></div>
+<script src="assets/app.js"></script><script src="assets/sim.js"></script><script>
+document.getElementById('nav').innerHTML=nav('Playoffs & Draft');
+loadAll().then(([c,L])=>{
+  const T=(id)=>c.byRoster[id],fl=(id)=>`<a href="franchise.html?f=${esc(T(id).slug)}">${esc(T(id).team_name)}</a>`,wk=String(L.current_week),games=L.schedule[wk]||[],forced={};
+  const tw=thisWeek(c,L),pg=document.getElementById('page');
+  const cond=(id)=>topFiveNote(tw,id);
+  function draw(){
+    const sim=simulate(c,L,forced),base=simulate(c,L),nF=Object.keys(forced).length,order=c.standings.map(T);
+    const ex=exact(c,L);
+    const rows=order.map((f)=>{const id=f.roster_id,s=sim[id],b=base[id],d=s.playoff-b.playoff,bs=s.seed.indexOf(Math.max(...s.seed))+1;
+      return `<tr><td>${f.seed}</td><td>${fl(id)}</td><td class="num">${esc(f.record)}</td><td class="num">${f.pf.toFixed(1)}</td><td class="num">${s.wins.toFixed(1)}</td><td class="num"><b>${pct(s.playoff)}</b>${nF&&Math.abs(d)>=.01?` <span style="color:${d>0?'#6fe39b':'#ff8b7a'}">${d>0?'+':''}${Math.round(d*100)}</span>`:''}</td><td class="num">${pct(s.top5)}</td><td class="num">${pct(s.sixth)}</td><td class="num">${pct(s.bye)}</td><td class="num">${pct(s.champ)}</td><td class="num">${ord(bs)}</td></tr>`}).join('');
+    const picks=games.map(([a,b])=>{const k=`${wk}:${a}-${b}`;return `<div class="pick"><button aria-pressed="${forced[k]===a}" data-k="${k}" data-w="${a}">${esc(T(a).team_name)}</button><button aria-pressed="${forced[k]===b}" data-k="${k}" data-w="${b}">${esc(T(b).team_name)}</button></div>`}).join('');
+    const sosRows=[...order].sort((x,y)=>(L.teams[y.roster_id].sos||0)-(L.teams[x.roster_id].sos||0)).map((f)=>{const t=L.teams[f.roster_id];return `<tr><td>${fl(f.roster_id)}</td><td class="num">${t.sos??'—'}</td><td>${t.remaining.map((o)=>`W${o.week} ${esc(T(o.opp).team_name)}${t.byes&&t.byes[o.week]&&t.byes[o.week].length?` <span class="note">(${t.byes[o.week].length} on bye)</span>`:''}`).join(' · ')||'—'}</td></tr>`}).join('');
+    const nonp=[...order].sort((x,y)=>sim[y.roster_id].miss-sim[x.roster_id].miss||y.seed-x.seed);
+    const yr=Math.min(...c.franchises.flatMap((f)=>f.future_picks.map((p)=>p.season)));
+    const owner={};for(const f of c.franchises)for(const p of f.future_picks)if(p.season===yr&&p.round===1)owner[p.original_roster]=f.roster_id;
+    const draftRows=nonp.map((f)=>{const s=sim[f.roster_id],lo=s.slot.findIndex((x)=>x>=.03),hi=5-[...s.slot].reverse().findIndex((x)=>x>=.03),top=s.slot.indexOf(Math.max(...s.slot));
+      const now=f.seed>c.playoff_teams?12-f.seed+1:null,o=owner[f.roster_id];
+      return `<tr><td>${fl(f.roster_id)}</td><td class="num">${now?'1.'+String(now).padStart(2,'0'):'7–12'}</td><td class="num">${pct(s.miss)}</td><td class="num">${s.miss<.03?'7–12':lo<0?'—':`1.${String(lo+1).padStart(2,'0')}${hi>lo?' – 1.'+String(hi+1).padStart(2,'0'):''}`}</td><td class="num">${s.miss<.03?'—':'1.'+String(top+1).padStart(2,'0')+' ('+pct(s.slot[top])+')'}</td><td>${o===f.roster_id?'Own pick':o?'Owned by '+esc(T(o).team_name):'—'}</td></tr>`}).join('');
+    pg.innerHTML=`
+<section class="blk"><h3>Playoff picture${nF?' · with your picks applied':''}</h3><div class="tw"><table><tr><th>Seed</th><th>Franchise</th><th class="num">Record</th><th class="num">PF</th><th class="num">Proj. wins</th><th class="num">Make playoffs</th><th class="num">Top five</th><th class="num">Sixth seed</th><th class="num">Bye</th><th class="num">Title</th><th class="num">Likeliest seed</th></tr>${rows.replace(new RegExp(`(<tr><td>${c.playoff_teams+1}</td>)`),'<tr><td colspan="11" style="padding:0"><div class="cutline"><span>PLAYOFF LINE</span></div></td></tr>$1')}</table></div>
+ <p class="note">${esc(L.rules.seeding)} ${esc(L.rules.bracket)} Seeds 1 and 2 have a bye in Week ${c.playoff_week_start}.</p>
+ <p class="note"><b>Simulated:</b> every percentage and projected win total. ${esc(L.rules.model)} Title odds use the same model for single playoff games.</p>
+ <div class="flag">${esc(L.rules.bracket_flag)}</div></section>
+<div class="two"><section class="blk"><h3>What if? Week ${wk}</h3><p class="note" style="margin:0 0 8px">Pick winners to see how the odds move. Unpicked games stay random. ${nF?'<a href="#" id="reset">Reset</a>':''}</p>${picks||'<p class="note">No regular-season games left.</p>'}
+ <p class="note">Picking a winner fixes who wins, not the score; points still vary, which is why the sixth seed stays a probability.</p></section>
+<section class="blk"><h3>Certain this week (top-five seeds only)</h3><div class="tw"><table>${order.map((f)=>{const t=cond(f.roster_id);return t?`<tr><td>${fl(f.roster_id)}</td><td>${t}</td></tr>`:''}).join('')||'<tr><td>Nothing can be clinched or lost this week.</td></tr>'}</table></div>
+ <p class="note"><b>Exact, not simulated:</b> checked against every combination of this week's ${games.length} results and the wins still available to each team. The sixth seed is awarded on points, so no team is mathematically eliminated from it before Week ${L.regular_season_end} ends.</p></section></div>
+<section class="blk"><h3>Remaining schedule</h3><div class="tw"><table><tr><th>Franchise</th><th class="num">Opp. avg</th><th>Opponents</th></tr>${sosRows}</table></div>
+ <p class="note">Opp. avg is the average weekly score of remaining opponents, hardest first. ${L.nfl_byes?'"On bye" counts last week\'s starters whose NFL team is off that week.':'NFL bye-week data is not available yet, so bye exposure is not shown.'}</p></section>
+<section class="blk"><h3>${yr} rookie draft position</h3><div class="tw"><table><tr><th>Franchise's own first-round pick</th><th class="num">If the season ended today</th><th class="num">Chance of a top-six pick</th><th class="num">Likely range</th><th class="num">Most likely</th><th>Who holds it</th></tr>${draftRows}</table></div>
+ <p class="note">${esc(L.rules.draft)} A team's results decide where its original pick lands, whoever owns it now.</p><div class="flag">${esc(L.rules.draft_flag)}</div></section>`;
+    pg.querySelectorAll('.pick button').forEach((b)=>b.onclick=()=>{const k=b.dataset.k,w=+b.dataset.w;forced[k]===w?delete forced[k]:forced[k]=w;draw()});
+    const rs=document.getElementById('reset');if(rs)rs.onclick=(e)=>{e.preventDefault();for(const k in forced)delete forced[k];draw()};
+  }
+  draw();document.getElementById('sub').textContent=`Stakes Center · Week ${L.current_week}`;document.getElementById('foot').textContent=stamp(c);
+}).catch((e)=>{console.error(e);document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});
+</script></body></html>

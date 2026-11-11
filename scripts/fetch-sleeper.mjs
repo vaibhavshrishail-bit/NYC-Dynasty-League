@@ -34,10 +34,11 @@ while (id && id !== '0') {
   const lastWeek = current && String(state.season) === String(s) && state.season_type === 'regular'
     ? Math.max(1, state.week) : 18;
   const matchups = {}, transactions = {};
-  for (let w = 1; w <= lastWeek; w++) {
+  // current season: fetch every week through 17 so the remaining schedule (pairings with 0 points) is available to the site
+  for (let w = 1; w <= (current ? 17 : lastWeek); w++) {
     const m = await get(`/league/${id}/matchups/${w}`);
     if (m && m.length) matchups[w] = m;
-    if (current) { const t = await get(`/league/${id}/transactions/${w}`); if (t && t.length) transactions[w] = t; }
+    if (current && w <= lastWeek) { const t = await get(`/league/${id}/transactions/${w}`); if (t && t.length) transactions[w] = t; }
   }
   const picks = {};
   for (const d of drafts || []) picks[d.draft_id] = await get(`/draft/${d.draft_id}/picks`);
@@ -51,6 +52,11 @@ while (id && id !== '0') {
   for (const dp of Object.values(picks)) for (const p of dp || []) rostered.add(p.player_id);
   seasons.push({ season: s, league_id: id, name: league.name, status: league.status });
   id = league.previous_league_id; current = false;
+}
+// NFL schedule (for bye weeks). Unofficial endpoint: optional, never fails the run; the last good copy stays in the repo.
+for (const host of ['https://api.sleeper.app', 'https://api.sleeper.com']) {
+  try { const r = await fetch(`${host}/schedule/nfl/regular/${state.season}`); if (!r.ok) continue; const g = await r.json();
+    if (Array.isArray(g) && g.length > 100) { await save('nfl_schedule', g.map((x) => ({ week: x.week, home: x.home, away: x.away, date: x.date, status: x.status }))); console.log('NFL schedule saved', g.length); break; } } catch {}
 }
 // Full player file is large; keep only players this league has touched, and only display fields.
 const all = await get('/players/nfl');

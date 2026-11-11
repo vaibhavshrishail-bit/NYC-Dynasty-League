@@ -1,0 +1,62 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>Rivalry Central — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body>
+<div id="nav"></div><div class="wrap" style="padding-top:26px;padding-bottom:50px"><div class="k">Rivalry Central</div><h1 class="h-page">Head to head</h1>
+<p class="lede">Every meeting between any two franchises since the league began in 2022, from Sleeper results.</p>
+<p style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0"><select class="sel" id="a" aria-label="First franchise"></select><span class="k">vs</span><select class="sel" id="b" aria-label="Second franchise"></select></p>
+<div id="page"></div><footer id="foot"></footer></div>
+<script src="assets/app.js"></script><script>
+document.getElementById('nav').innerHTML=nav('Rivalries');
+loadAll().then(([c,L])=>{
+  const T=(id)=>c.byRoster[id],sa=document.getElementById('a'),sb=document.getElementById('b'),q=new URLSearchParams(location.search);
+  const opts=c.standings.map((id)=>`<option value="${esc(T(id).slug)}">${esc(T(id).team_name)} · ${esc(T(id).manager)}</option>`).join('');sa.innerHTML=opts;sb.innerHTML=opts;
+  const m0=L.pulse.matchups[0],def=m0?[T(m0.a).slug,T(m0.b).slug]:[T(c.standings[0]).slug,T(c.standings[1]).slug];
+  sa.value=c.franchises.some((f)=>f.slug===q.get('a'))?q.get('a'):def[0];sb.value=c.franchises.some((f)=>f.slug===q.get('b'))?q.get('b'):def[1];
+  function draw(){
+    const A=c.franchises.find((f)=>f.slug===sa.value),B=c.franchises.find((f)=>f.slug===sb.value),pg=document.getElementById('page');
+    if(A===B){pg.innerHTML='<p class="note">Pick two different franchises.</p>';return}
+    history.replaceState(null,'',`rivalry.html?a=${A.slug}&b=${B.slug}`);document.title=`${A.team_name} vs ${B.team_name} — Rivalry Central`;
+    const a=A.roster_id,b=B.roster_id,ta=c.themes[A.theme],tb=c.themes[B.theme];
+    const g=L.meetings.filter((m)=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a)).map((m)=>m.a===a?{...m,x:m.pa,y:m.pb}:{...m,x:m.pb,y:m.pa});
+    const rec=(f)=>{const s=g.filter(f);return [s.filter((m)=>m.x>m.y).length,s.filter((m)=>m.x<m.y).length]},all=rec(()=>true),reg=rec((m)=>m.type==='regular'),post=rec((m)=>['playoff','championship','placement'].includes(m.type)),other=rec((m)=>['toilet','consolation'].includes(m.type));
+    const where=(m)=>`${m.s} Week ${m.w}`,by=(f)=>g.length?g.reduce((p,m)=>f(m)>f(p)?m:p):null;
+    const bigA=by((m)=>m.x-m.y),bigB=by((m)=>m.y-m.x),close=by((m)=>-Math.abs(m.x-m.y)),last=g[g.length-1];
+    let st=0,sw=null;for(let i=g.length-1;i>=0;i--){const w=g[i].x>g[i].y?a:b;if(sw===null)sw=w;if(w!==sw)break;st++}
+    let best={n:0};{let n=0,w=null;for(const m of g){const x=m.x>m.y?a:b;if(x===w)n++;else{w=x;n=1}if(n>best.n)best={n,w}}}
+    const next=Object.entries(L.schedule).find(([w,prs])=>prs.some((p)=>p.includes(a)&&p.includes(b))),finals=g.filter((m)=>m.type==='championship');
+    const prev=[A,B].filter((f)=>f.former_managers.length&&g.some((m)=>m.s<c.season));
+    const lead=all[0]===all[1]?'The series is level':`${esc((all[0]>all[1]?A:B).team_name)} lead the series`;
+    const facts=[];
+    if(g.length){facts.push(`${lead}, ${Math.max(...all)}–${Math.min(...all)}.`);
+      if(st>=2)facts.push(`${esc(T(sw).team_name)} have won the last ${st}.`);
+      if(close)facts.push(`Closest: ${Math.abs(close.x-close.y).toFixed(2)} points, ${where(close)}.`);
+      if(finals.length)facts.push(`They have met in ${finals.length} championship game${finals.length>1?'s':''}: ${finals.map((m)=>`${m.s} (${esc(T(m.x>m.y?a:b).team_name)})`).join(', ')}.`);
+      if(next)facts.push(`Next meeting: Week ${next[0]}.`)}
+    pg.innerHTML=`<div class="panel"><div class="vs"><a href="franchise.html?f=${A.slug}">${emblem(ta)}<div class="n" style="color:${ta.hi}">${esc(A.team_name)}</div><div class="r">${esc(A.manager)} · ${esc(A.record)} in ${c.season}</div></a>
+      <div class="mid">${all[0]}–${all[1]}</div><a href="franchise.html?f=${B.slug}">${emblem(tb)}<div class="n" style="color:${tb.hi}">${esc(B.team_name)}</div><div class="r">${esc(B.manager)} · ${esc(B.record)} in ${c.season}</div></a></div>
+      <p style="text-align:center">${g.length?facts.join(' '):'These two have not played each other yet.'}</p></div>
+    ${g.length?`<div class="big3"><div><b>${reg[0]}–${reg[1]}</b><span>Regular season</span></div><div><b>${post[0]}–${post[1]}</b><span>Playoffs</span></div><div><b>${other[0]}–${other[1]}</b><span>Toilet Bowl &amp; consolation</span></div>
+      <div><b>${(g.reduce((s,m)=>s+m.x,0)/g.length).toFixed(1)}–${(g.reduce((s,m)=>s+m.y,0)/g.length).toFixed(1)}</b><span>Average score</span></div><div><b>${best.n}</b><span>Longest streak · ${esc(T(best.w).team_name)}</span></div></div>
+    <div class="two"><section class="blk"><h3>Landmarks</h3><div class="tw"><table>
+      ${bigA&&bigA.x>bigA.y?`<tr><td>Biggest ${esc(A.team_name)} win</td><td>${bigA.x.toFixed(2)}–${bigA.y.toFixed(2)}, ${where(bigA)}</td></tr>`:''}${bigB&&bigB.y>bigB.x?`<tr><td>Biggest ${esc(B.team_name)} win</td><td>${bigB.y.toFixed(2)}–${bigB.x.toFixed(2)}, ${where(bigB)}</td></tr>`:''}
+      <tr><td>Closest game</td><td>${close.x.toFixed(2)}–${close.y.toFixed(2)}, ${where(close)}</td></tr><tr><td>Last meeting</td><td>${esc(T(last.x>last.y?a:b).team_name)} ${Math.max(last.x,last.y).toFixed(2)}–${Math.min(last.x,last.y).toFixed(2)}, ${where(last)}</td></tr>
+      <tr><td>Next meeting</td><td>${next?'Week '+next[0]+' of '+c.season:'None left on the '+c.season+' regular-season schedule'}</td></tr></table></div>
+      ${prev.length?`<p class="note">Results follow the roster spot. ${prev.map((f)=>`${esc(f.team_name)}'s games before ${c.season} were played under ${esc(f.former_managers.join(', '))}.`).join(' ')}</p>`:''}
+      <h3 style="margin-top:26px">Share card</h3><canvas class="share" id="card" width="1200" height="630" aria-label="Shareable rivalry card"></canvas><p style="margin-top:10px"><button class="btn" id="dl">Download card (PNG)</button></p></section>
+    <section class="blk"><h3>Every meeting</h3>${[...g].reverse().map((m)=>`<div class="meet"><span class="t">${m.s} · W${m.w}</span><span>${m.x>m.y?`<b>${esc(A.team_name)}</b>`:esc(A.team_name)} ${m.x.toFixed(2)} – ${m.y.toFixed(2)} ${m.y>m.x?`<b>${esc(B.team_name)}</b>`:esc(B.team_name)}</span><span class="t">${m.type==='regular'?'':typeLabel[m.type]}</span></div>`).join('')}</section></div>`:''}`;
+    if(!g.length)return;
+    const cv=document.getElementById('card'),x=cv.getContext('2d');
+    const crest=(th,cx,cy,r)=>{x.save();x.translate(cx-r,cy-r);x.scale(r/100,r/100);x.strokeStyle=th.hi;x.lineWidth=3;x.beginPath();x.arc(100,100,92,0,7);x.stroke();
+      const gr=x.createLinearGradient(0,40,0,160);[0,.28,.5,.62,1].forEach((o,i)=>gr.addColorStop(o,th.metal[i]));for(const p of th.glyph){x.fillStyle=p.f==='ink'?th.ink:p.f==='hot'?th.hot:gr;x.fill(new Path2D(p.d),p.eo?'evenodd':'nonzero')}x.restore()};
+    const paint=()=>{x.fillStyle='#07080b';x.fillRect(0,0,1200,630);for(const[th,cx]of[[ta,0],[tb,1200]]){const gr=x.createRadialGradient(cx,315,0,cx,315,700);gr.addColorStop(0,`rgba(${th.flash},.38)`);gr.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gr;x.fillRect(0,0,1200,630)}
+      x.textAlign='center';x.fillStyle='#8d909b';x.font="600 24px 'Barlow Condensed'";x.letterSpacing='8px';x.fillText('NYC DYNASTY LEAGUE  ·  ALL-TIME SERIES',600,64);x.letterSpacing='0px';
+      crest(ta,240,250,120);crest(tb,960,250,120);x.fillStyle='#fff';x.font="900 150px 'Cinzel'";x.fillText(`${all[0]}–${all[1]}`,600,300);
+      const fitT=(s,cx,y,col)=>{let z=44;x.font=`600 ${z}px 'Barlow Condensed'`;while(x.measureText(s).width>430&&z>20){z-=2;x.font=`600 ${z}px 'Barlow Condensed'`}x.fillStyle=col;x.fillText(s,cx,y)};
+      fitT(A.team_name.toUpperCase(),240,430,ta.hi);fitT(B.team_name.toUpperCase(),960,430,tb.hi);x.fillStyle='#8d909b';x.font="600 24px 'Barlow Condensed'";x.fillText(A.manager.toUpperCase(),240,466);x.fillText(B.manager.toUpperCase(),960,466);
+      x.fillStyle='#e8e6e1';x.font="600 30px 'Barlow Condensed'";const lines=[st>=2?`${T(sw).team_name} have won the last ${st}`:`Last meeting: ${T(last.x>last.y?a:b).team_name}, ${last.s} Week ${last.w}`,`Closest game: ${Math.abs(close.x-close.y).toFixed(2)} points (${close.s} Week ${close.w})`,next?`Next: Week ${next[0]}`:`Regular season ${reg[0]}–${reg[1]}  ·  Playoffs ${post[0]}–${post[1]}`];
+      lines.forEach((s,i)=>x.fillText(s,600,520+i*38))};
+    document.fonts.ready.then(()=>Promise.all(["900 150px Cinzel","600 30px 'Barlow Condensed'"].map((f)=>document.fonts.load(f)))).then(paint);
+    document.getElementById('dl').onclick=()=>{const l=document.createElement('a');l.download=`${A.slug}-vs-${B.slug}.png`;l.href=cv.toDataURL('image/png');l.click()};
+  }
+  sa.onchange=sb.onchange=draw;draw();document.getElementById('foot').textContent=stamp(c);
+}).catch((e)=>{console.error(e);document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});
+</script></body></html>

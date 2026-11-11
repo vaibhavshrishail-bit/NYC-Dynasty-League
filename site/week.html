@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>Weekly — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body>
+<div id="nav"></div><div class="wrap" style="padding-top:26px;padding-bottom:50px"><div class="k" id="kind">Weekly</div><h1 class="h-page" id="h">Week</h1>
+<p style="margin:12px 0"><select class="sel" id="w" aria-label="Week"></select></p><div id="page"></div><footer id="foot"></footer></div>
+<script src="assets/app.js"></script><script src="assets/sim.js"></script><script>
+document.getElementById('nav').innerHTML=nav('Weekly');
+loadAll().then(([c,L])=>{
+  const T=(id)=>c.byRoster[id],fl=(id)=>`<a href="franchise.html?f=${esc(T(id).slug)}">${esc(T(id).team_name)}</a>`,sel=document.getElementById('w'),q=+new URLSearchParams(location.search).get('w');
+  const ws=[...Object.keys(L.weeks).map(Number),...Object.keys(L.schedule).map(Number)].sort((a,b)=>a-b);
+  sel.innerHTML=ws.map((w)=>`<option value="${w}">Week ${w} · ${w<=L.through_week?'recap':'preview'}</option>`).join('');sel.value=ws.includes(q)?q:L.through_week;
+  const h2h=(a,b)=>{const g=L.meetings.filter((m)=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a));return [g.filter((m)=>(m.a===a?m.pa>m.pb:m.pb>m.pa)).length,g.filter((m)=>(m.a===a?m.pa<m.pb:m.pb<m.pa)).length]};
+  function draw(){const w=+sel.value,pg=document.getElementById('page');history.replaceState(null,'',`week.html?w=${w}`);document.getElementById('h').textContent=`Week ${w}`;
+    if(w<=L.through_week){const d=L.weeks[w];document.getElementById('kind').textContent=`${c.season} · Recap`;document.title=`Week ${w} recap — NYC Dynasty League`;
+      const cg=d.closest,cw=cg.pa>cg.pb?cg.a:cg.b,cl=cw===cg.a?cg.b:cg.a;
+      pg.innerHTML=`<div class="big3"><div><b>${d.high.pf.toFixed(2)}</b><span>High score · ${esc(T(d.high.roster_id).team_name)}</span></div><div><b>${Math.abs(cg.pa-cg.pb).toFixed(2)}</b><span>Closest · ${esc(T(cw).team_name)} over ${esc(T(cl).team_name)}</span></div>
+       <div><b>${d.top_player.points.toFixed(1)}</b><span>Player of the week · ${esc(d.top_player.name)}</span></div><div><b>${d.top_idp.points.toFixed(1)}</b><span>Defender of the week · ${esc(d.top_idp.name)}</span></div></div>
+       <section class="blk"><h3>Results</h3>${d.games.map((g)=>{const aw=g.pa>g.pb;return `<div class="meet"><span class="t">${Math.abs(g.pa-g.pb).toFixed(2)} margin</span><span>${aw?`<b>${fl(g.a)}</b>`:fl(g.a)} ${g.pa.toFixed(2)} – ${g.pb.toFixed(2)} ${aw?fl(g.b):`<b>${fl(g.b)}</b>`}</span><span class="t"><a href="rivalry.html?a=${T(g.a).slug}&b=${T(g.b).slug}">series</a></span></div>`}).join('')}</section>
+       <section class="blk"><h3>Biggest upset</h3><p class="story" style="font-size:20px">${d.upset?`${fl(d.upset.winner)} beat ${fl(d.upset.loser)} ${d.upset.winner_pts.toFixed(2)}–${d.upset.loser_pts.toFixed(2)} after averaging ${d.upset.winner_ppg_before} a week coming in, against ${d.upset.loser_ppg_before}.`:w===1?'No benchmark in Week 1: nobody had a scoring average yet.':'None. Every winner was the higher-scoring team coming in.'}</p>
+       <p class="note">An upset is a win by the team with the lower scoring average entering the week; the biggest is the widest gap.</p></section>`}
+    else{const gs=L.schedule[w]||[];document.getElementById('kind').textContent=`${c.season} · Preview`;document.title=`Week ${w} preview — NYC Dynasty League`;
+      const rank=Object.fromEntries(L.pulse.matchups.map((m,i)=>[`${m.a}-${m.b}`,i]));const ord2=w===L.current_week?[...gs].sort((x,y)=>rank[`${x[0]}-${x[1]}`]-rank[`${y[0]}-${y[1]}`]):gs;
+      pg.innerHTML=`<section class="blk"><h3>${w===L.current_week?'This week, most consequential first':'Scheduled games'}</h3>${ord2.map(([a,b],i)=>{const p=winChance(L,a,b),hh=h2h(a,b),ta=c.themes[T(a).theme],tb=c.themes[T(b).theme],m=L.pulse.matchups.find((x)=>x.a===a&&x.b===b&&x.week===w),by=(id)=>L.teams[id].byes&&L.teams[id].byes[w]&&L.teams[id].byes[w].length?` · ${L.teams[id].byes[w].length} of last week's starters on bye`:'';
+        return `<div class="panel" style="margin-bottom:12px">${w===L.current_week&&i===0?'<span class="k">Matchup of the week</span>':''}<div class="vs"><a href="franchise.html?f=${T(a).slug}">${emblem(ta)}<div class="n" style="color:${ta.hi}">${esc(T(a).team_name)}</div><div class="r">${esc(T(a).record)} · ${ord(T(a).seed)} · ${L.teams[a].ppg} a week${by(a)}</div></a>
+         <div class="mid">${Math.round(p*100)}–${100-Math.round(p*100)}</div><a href="franchise.html?f=${T(b).slug}">${emblem(tb)}<div class="n" style="color:${tb.hi}">${esc(T(b).team_name)}</div><div class="r">${esc(T(b).record)} · ${ord(T(b).seed)} · ${L.teams[b].ppg} a week${by(b)}</div></a></div>
+         <p class="small" style="text-align:center">All-time ${hh[0]}–${hh[1]}${m&&m.why.length?' · '+esc(m.why.join('; ')):''} · <a href="rivalry.html?a=${T(a).slug}&b=${T(b).slug}">rivalry file</a></p></div>`}).join('')||'<p class="note">The schedule for this week is not available yet.</p>'}
+       <p class="note">The centre number is a model estimate of each side's chance to win, from season and recent scoring. It is not a lineup recommendation. <a href="playoffs.html">See what each result does to the playoff race →</a></p></section>`}}
+  sel.onchange=draw;draw();document.getElementById('foot').textContent=stamp(c);
+}).catch((e)=>{console.error(e);document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});
+</script></body></html>

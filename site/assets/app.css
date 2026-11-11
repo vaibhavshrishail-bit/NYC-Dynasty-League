@@ -74,3 +74,36 @@ th{font-weight:600;font-size:12px;letter-spacing:.22em;text-transform:uppercase;
 .card .nums b{display:block;font-size:clamp(22px,2.3vw,30px);font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
 .card .nums span{display:block;font-weight:600;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:4px}
 .hero .stars{font-size:1.5em;margin-left:6px}
+/* ---- league hub additions ---- */
+.nav{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px clamp(16px,4vw,48px);border-bottom:1px solid var(--line);background:rgba(7,8,11,.92);position:sticky;top:0;z-index:20;backdrop-filter:blur(8px)}
+.nav .brand{font-family:'Cinzel',serif;font-weight:900;text-decoration:none;font-size:18px;letter-spacing:.06em;white-space:nowrap}
+.nav div{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}.nav div::-webkit-scrollbar{display:none}
+.nav div a{font-weight:600;font-size:13px;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--dim);padding:8px 10px;white-space:nowrap}
+.nav div a:hover,.nav div a[aria-current]{color:#fff}.nav div a[aria-current]{box-shadow:inset 0 -2px #fff}
+.h-page{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(30px,5.4vw,64px);line-height:1;margin:8px 0 6px;letter-spacing:.02em}
+.lede{color:var(--dim);max-width:60ch;margin:0 0 6px}
+.pulse{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;padding:18px 0 6px}@media(max-width:980px){.pulse{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);background:linear-gradient(180deg,#0f1117,#0a0b10);padding:18px 20px;position:relative;overflow:hidden;min-width:0}
+.panel>.k{display:block;margin-bottom:10px}.panel h3{margin:0 0 6px;font-size:clamp(22px,2.4vw,30px);font-weight:600;line-height:1.1}
+.panel p{margin:6px 0 0;color:#c4c6cd}.panel .small{font-size:15px;color:var(--dim)}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;text-align:center;margin:6px 0 10px}
+.vs svg{width:clamp(70px,11vw,120px);height:auto}.vs .n{font-size:clamp(17px,2vw,24px);line-height:1.05;margin-top:6px;overflow-wrap:anywhere}.vs .r{color:var(--dim);font-size:15px}
+.vs .mid{font-family:'Cinzel',serif;font-weight:900;font-size:26px;color:var(--dim)}
+.vs a{text-decoration:none}.vs a:hover .n{text-decoration:underline}
+.pr{list-style:none;margin:0;padding:0;counter-reset:pr}.pr li{display:grid;grid-template-columns:26px 22px 1fr auto;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:17px}
+.pr li a{text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pr li a:hover{text-decoration:underline}.pr .mv{font-size:13px;color:var(--dim)}.pr .up{color:#6fe39b}.pr .dn{color:#ff8b7a}
+.pr .lab{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}.lab.Dominant{color:#ffd76a}.lab.Rising{color:#6fe39b}.lab.Falling{color:#ff8b7a}
+.heads{list-style:none;margin:0;padding:0}.heads li{padding:9px 0;border-bottom:1px solid var(--line)}.heads b{display:block;font-weight:600;font-size:19px;line-height:1.15}.heads span{color:var(--dim);font-size:15px}
+.odds{display:grid;grid-template-columns:minmax(0,1fr) 54px minmax(60px,2fr);gap:8px;align-items:center;padding:5px 0;font-size:16px}.odds a{text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.odds .bar{height:10px;background:#1c1e26;position:relative}.odds .bar i{position:absolute;inset:0 auto 0 0;background:var(--c,#d9c38a)}.odds .p{text-align:right;font-variant-numeric:tabular-nums}
+.cutline{border-top:2px dashed #6a6f7c;margin:6px 0;position:relative}.cutline span{position:absolute;right:0;top:-10px;background:var(--bg);font-size:11px;letter-spacing:.2em;color:var(--dim);padding-left:8px}
+.two3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}@media(max-width:980px){.two3{grid-template-columns:1fr}}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}.pick button{all:unset;cursor:pointer;border:1px solid #33363f;padding:9px 10px;text-align:center;font-size:16px;line-height:1.1;overflow-wrap:anywhere}
+.pick button[aria-pressed=true]{background:#e8e6e1;color:#000;border-color:#e8e6e1}.pick button:focus-visible{outline:2px solid #fff}
+.flag{border-left:3px solid #c9a23a;padding:8px 12px;background:rgba(201,162,58,.07);color:#d9cfae;font-size:15px;margin:10px 0}
+.tw table td.num,.tw table th.num{text-align:right}.sel{font:inherit;font-size:17px;background:#101218;color:var(--txt);border:1px solid #3a3d48;padding:9px 10px;max-width:100%}
+.meet{display:grid;grid-template-columns:86px 1fr auto;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:16px;align-items:baseline}.meet .t{color:var(--dim);font-size:13px;letter-spacing:.08em}
+.big3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0}.big3 div{border:1px solid var(--line);padding:12px 14px}.big3 b{display:block;font-size:30px;font-weight:600;line-height:1}.big3 span{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+details.ro summary{cursor:pointer;font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:14px;color:var(--dim);padding:8px 0}
+.rost{columns:3 220px;font-size:16px}.rost div{break-inside:avoid;padding:2px 0}.rost em{font-style:normal;color:var(--dim);font-size:13px}
+canvas.share{width:100%;max-width:640px;border:1px solid var(--line);display:block;margin-top:10px}

@@ -22,6 +22,8 @@ jobs:
       - run: node scripts/fetch-sleeper.mjs
       - name: Reconcile identities and build the canonical league file
         run: node scripts/build-canonical.mjs
+      - name: Build pulse, schedule, rivalry and archive data
+        run: node scripts/build-league.mjs
       - name: Commit data if changed
         run: |
           git config user.name "sleeper-refresh[bot]"
