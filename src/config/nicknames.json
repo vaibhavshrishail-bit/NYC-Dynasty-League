@@ -1,0 +1,12 @@
+{
+ "_note": "Player nicknames keyed by Sleeper player_id. Owner-assigned nicknames are read live from Sleeper roster metadata (p_nick_<id>) and take priority. 'blocked' lists owner nicknames not shown on the public site, with the reason. 'creative' holds nicknames written for the cinematics (source: 'real' = established real-world nickname, 'creative' = invented here).",
+ "blocked": {
+  "12481": "mocks a head injury",
+  "6768": "mocks a head injury",
+  "11646": "alleges drug use by a real person",
+  "12517": "vulgar",
+  "6783": "vulgar",
+  "6119": "refers to a player's race"
+ },
+ "creative": {}
+}

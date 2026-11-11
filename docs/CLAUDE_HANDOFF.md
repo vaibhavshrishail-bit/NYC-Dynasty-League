@@ -8,24 +8,35 @@ Hosted on GitHub Pages from `site/`. No paid hosting, database or AI inference a
 
 ## How data flows
 1. `.github/workflows/refresh-and-deploy.yml` runs on every push to `main`, every 6 hours, and on manual dispatch.
-2. Job `refresh` runs `scripts/fetch-sleeper.mjs` (read-only Sleeper API) and commits JSON to `site/data/sleeper/`.
-3. Job `deploy` publishes `site/` to GitHub Pages.
+2. `scripts/fetch-sleeper.mjs` (read-only Sleeper API) writes raw JSON to `site/data/sleeper/`.
+3. `scripts/build-canonical.mjs` reconciles identities and writes `site/data/canonical.json`. If an owner ID does not match the config it exits non-zero, the commit is skipped and the site keeps serving the last good data.
+4. The job commits the data and publishes `site/` to GitHub Pages.
 
-A Claude session usually cannot reach `api.sleeper.app` directly. It does not need to: `git pull` and read `site/data/sleeper/`.
+A Claude session usually cannot reach `api.sleeper.app` directly. It does not need to: `git pull` and read `site/data/`.
 To force a refresh, push any commit (an empty one works).
 
+## One source of truth
+`site/data/canonical.json` is the only current-season source. The Hub (`site/index.html`), franchise pages (`site/franchise.html?f=<slug>`) and the video build all read it. Never hardcode a team name, owner, record or roster anywhere else.
+It holds, per franchise: IDs, live team name, manager, record, seed, streak, weekly results, generated storyline, featured players with points per start, owner nicknames, all-time head-to-head, season history and future picks. `generated_at` is the last-successful-update stamp shown on the site.
+`docs/RECONCILIATION.md` is a readable snapshot of it; regenerate it after identity changes.
+
 ## Franchise identity
-Franchises are keyed by Sleeper `roster_id`, with `owner_id` as a check — never by team name, which managers change often.
-The mapping (slug, manager first name, theme, tagline) is `src/engine/franchises.json`.
-- Roster 10 (owner `871044882217775104`) is the commissioner's franchise. Its brand is fixed as "The Pantheon" whatever the Sleeper name says.
-- Roster 6 changed hands: it is now Nishant's "Free Rollers" (previously Varun).
-- If a roster's owner changes, the build prints a warning; update `franchises.json`.
+- Franchises are keyed by Sleeper `roster_id`, verified against `owner_id`. Team names are mutable and are always read live.
+- `src/config/franchises.json` holds only what Sleeper cannot supply: URL slug, manager first name (override per user ID), cinematic theme, tagline, former names and managers.
+- Roster 10 (owner `871044882217775104`, the commissioner) is currently **Die Another Day**. "The Pantheon" is a former name only.
+- Roster 6 is **Nishant's Free Rollers** (owner `723759051976011776`) from 2026. Varun (`870740122004553728`) managed it 2022–2025 and is not in the 2026 league.
+- If an owner changes, the build fails with a clear message: update `franchises.json`, then re-render that franchise's video.
+- Slugs are permanent URL identifiers. Old links (`?f=pantheon`, `?f=varun`, `/hub/`) redirect.
+
+## Player nicknames
+Owner-assigned nicknames come live from Sleeper roster metadata (`p_nick_<player_id>`) and always win. `src/config/nicknames.json` holds `blocked` (owner nicknames kept off the public site, with the reason) and `creative` (nicknames written for the films, each marked `real` or `creative`). Emoji are stripped because the film fonts cannot draw them.
 
 ## Layout
-- `site/` — the published site. `site/cinematics/` holds the 12 MP4s, poster JPGs and `manifest.json`.
-- `src/engine/` — cinematic engine: `core.js` (timeline, acts), `themes.js` (12 looks), `audio.py` (score synth), `shell.html`, `fonts.css`.
-- `scripts/build_cinematics.py` — builds configs, stills and videos. See `docs/VIDEO_PRODUCTION.md`.
-- `src/build_*.py`, `src/hub*`, `src/poster.css`, `src/league.json` — the earlier prototype (hub and poster), built from a September snapshot and the Commissioner's Playbook.
+- `site/` — the published site: `index.html` (Hub), `franchise.html`, `cinematics/` (MP4s, posters, gallery), `assets/` (shared CSS, JS, fonts), `data/`.
+- `src/config/` — identity and nickname config.
+- `src/engine/` — cinematic engine: `core.js` (timeline, acts), `themes.js` (13 looks; `temple` is retired), `audio.py`, `shell.html`, `fonts.css`.
+- `scripts/` — `fetch-sleeper.mjs`, `build-canonical.mjs`, `build_cinematics.py`.
+- `src/build_*.py`, `src/hub*`, `src/poster.css`, `src/league.json` — the September prototype. Not used by the site; kept for reference to the Commissioner's Playbook content.
 
 ## Standing rules from the commissioner
 - Never change anything in Sleeper (rosters, lineups, settings). Read-only.
@@ -34,6 +45,7 @@ The mapping (slug, manager first name, theme, tagline) is `src/engine/franchises
 - Nothing is sent to the league without his approval.
 - Routine artistic choices do not need sign-off.
 
-## Not built yet
-Rivalry matchup generator, playoff war room bracket, season documentary trailer, and the move of the site shell to React + Vite + TypeScript.
-The hub still shows the September snapshot and should be rebuilt on the live JSON.
+## Status
+- Done: canonical data, Hub, 12 franchise pages, 12 first-generation cinematics (25s, six players, total points).
+- Next: second-generation cinematics (about 45s, up to 10 players from `featured`, points per start, nicknames), season documentary, then Rivalry Engine and Playoff War Room.
+- The site is plain HTML, CSS and JS with no build step. A React + Vite + TypeScript shell was the stated preference and has not been done.

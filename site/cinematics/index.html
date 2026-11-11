@@ -19,7 +19,7 @@ button.card b{display:block;font-weight:400;font-size:19px}
 button.card span{font:13px system-ui,sans-serif;color:#9a968a}
 footer{max-width:1280px;margin:32px auto 0;font:13px system-ui,sans-serif;color:#6c6a63}
 </style></head><body>
-<header><a class="back" href="../">← Cinematic Universe</a><h1>Franchise Cinematics</h1>
+<header><a class="back" href="../">← Franchise Hub</a><h1>Franchise Cinematics</h1>
 <p class="s">Twelve franchises, twelve films. Each features the six highest-scoring players on that roster this season, straight from Sleeper.</p></header>
 <section id="stage"><video id="v" controls playsinline preload="none"></video><h2 id="vt"></h2><p id="vs"></p></section>
 <main id="grid"></main>
@@ -31,7 +31,8 @@ fetch('manifest.json').then(r=>r.json()).then(m=>{
   for(const f of order){const b=document.createElement('button');b.className='card';
     const img=document.createElement('img');img.src=f.slug+'.jpg';img.alt=f.team_display+' cinematic';img.loading='lazy';
     const d=document.createElement('div'),t=document.createElement('b'),s=document.createElement('span');t.textContent=f.team_display;s.textContent=f.manager+' · '+f.record;d.append(t,s);b.append(img,d);
-    b.onclick=()=>{st.style.display='block';v.poster=f.slug+'.jpg';v.src=f.slug+'.mp4';document.getElementById('vt').textContent=f.team_display;
+    const more=document.createElement('a');more.href='../franchise.html?f='+f.slug;more.textContent='Open franchise page →';more.style.cssText='display:block;margin-top:8px;color:#b89b5e;font:14px system-ui,sans-serif';
+    b.onclick=()=>{document.getElementById('vs').after(more);st.style.display='block';v.poster=f.slug+'.jpg';v.src=f.slug+'.mp4';document.getElementById('vt').textContent=f.team_display;
       document.getElementById('vs').textContent=f.manager+' · '+f.players.map(p=>p.f[0]+'. '+p.l).reverse().join(', ');v.play().catch(()=>{});st.scrollIntoView({behavior:'smooth'})};
     g.append(b)}
   document.getElementById('foot').textContent='Records and points through Week '+m.through_week+' of '+m.season+'. Imagery and music are original; no player photographs are used.';

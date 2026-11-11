@@ -22,7 +22,7 @@ What makes each one bespoke is its theme: palette, display typeface, environment
 | 7 | Achal | beach | Sunset, sea shimmer, palms | Bebas Neue |
 | 8 | Manas | blueprint | Drafting grid, construction lines | Orbitron |
 | 9 | Shiamak | arcade | Neon grid and pixel sky | Orbitron |
-| 10 | Vaibhav | temple | Storm, temple, hall of columns | Cinzel |
+| 10 | Vaibhav | eclipse | Total eclipse, crimson corona, heartbeat trace | Cinzel |
 | 11 | Taylor | inferno | Rising fire and embers | Cinzel |
 | 12 | Dhiraj | neighborhood | Dusk street, lit windows, fireflies | Bebas Neue |
 
@@ -33,3 +33,8 @@ Themes were chosen from the team names in use in November 2026. They are attache
 - Players appear as jersey numerals, names, position, NFL team abbreviation and points. No likenesses.
 - Honorifics ("THE BULLSEYE", "THE MAINFRAME") belong to the slot, not the player: slot six is always the roster's top scorer. They are flavour, not claims about the player.
 - Taglines are flavour too. Line 1 is the only factual line and is generated from data.
+
+## Crests on the site
+The Hub and franchise pages draw each crest as SVG from the same glyph and palette the film uses (`site/data/themes.json`, exported from `themes.js`), so a franchise looks the same in all three places. Re-export after editing a theme (see the command in `docs/VIDEO_PRODUCTION.md`).
+
+The `temple` theme belonged to roster 10's former identity, The Pantheon, and is retired.

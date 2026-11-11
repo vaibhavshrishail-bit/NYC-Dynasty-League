@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Franchise — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body>
+<div id="page"></div>
+<script src="assets/app.js"></script><script>
+loadLeague().then((c)=>{
+  const q=new URLSearchParams(location.search).get('f')||'',legacy={pantheon:'vaibhav','the-pantheon':'vaibhav',varun:'nishant'};
+  const f=c.franchises.find((x)=>x.slug===(legacy[q]||q)||String(x.roster_id)===q);
+  if(!f){location.replace('./');return}
+  const th=c.themes[f.theme],name=(id)=>c.byRoster[id]?.team_name||'—',link=(id)=>`<a href="franchise.html?f=${esc(c.byRoster[id].slug)}">${esc(name(id))}</a>`;
+  document.title=`${f.team_name} — NYC Dynasty League`;
+  const i=c.standings.indexOf(f.roster_id),prev=c.byRoster[c.standings[(i+11)%12]],next=c.byRoster[c.standings[(i+1)%12]];
+  const max=Math.max(...f.results.flatMap((r)=>[r.pf,r.pa||0]),1);
+  const h2h=Object.entries(f.h2h).map(([id,v])=>({id:+id,...v})).sort((a,b)=>(b.w-b.l)-(a.w-a.l)||b.w-a.w);
+  const picks={};for(const p of f.future_picks)(picks[p.season]||=[]).push(p);
+  const prior=f.seasons.filter((s)=>!s.same_owner);
+  document.getElementById('page').innerHTML=`
+<header class="hero" id="hero"><div class="wrap">
+ <div class="bar"><a href="./">← Franchise Hub</a><span><a href="franchise.html?f=${esc(prev.slug)}">‹ ${esc(prev.team_name)}</a> &nbsp; <a href="franchise.html?f=${esc(next.slug)}">${esc(next.team_name)} ›</a></span></div>
+ <div class="id">${emblem(th)}<div><div class="k">${esc(f.manager)} · ${ord(f.seed)} seed${f.titles.length?` · Champion ${f.titles.join(', ')}`:''}</div>
+  <h1 style="${fontOf(th)}">${esc(f.team_name)}</h1>${f.former_names.length?`<div class="was">Formerly ${esc(f.former_names.join(', '))}</div>`:''}</div></div>
+ <div class="stats"><div><b>${esc(f.record)}</b><span>Record</span></div><div><b>${f.pf.toFixed(1)}</b><span>Points for · ${ord(f.points_rank)}</span></div><div><b>${f.pa.toFixed(1)}</b><span>Points against</span></div>
+  <div><b>${f.streak?f.streak.type+f.streak.length:'—'}</b><span>Streak</span></div></div>
+ <button class="btn play" id="play">▶ Play cinematic</button>
+ <div id="cine"><video id="v" controls playsinline preload="none" poster="cinematics/${esc(f.slug)}.jpg"></video></div>
+</div></header>
+<div class="wrap">
+ <section class="blk"><h3>The season so far</h3><p class="story">${esc(f.storyline.join(' '))}</p></section>
+ <section class="blk"><h3>Week by week</h3><div class="weeks">${f.results.map((r)=>`<div class="w ${r.result}"><em>${r.pf.toFixed(0)}</em><div class="b" style="height:${(r.pf/max*72).toFixed(1)}%"><u style="bottom:${Math.min(100,(r.pa||0)/r.pf*100).toFixed(1)}%"></u></div><small>${r.result} · W${r.week}</small></div>`).join('')}</div>
+  <p class="legend">Bar: points scored. White line: the opponent's score (shown at the top of the bar when the opponent scored more). Opponents: ${f.results.map((r)=>`W${r.week} ${esc(name(r.opp))}`).join(' · ')}</p></section>
+ <section class="blk"><h3>Who has carried this team</h3><div class="players">${f.featured.map((p)=>`<div class="pl"><div class="n">${esc(p.name)}</div><div class="ppg"><b>${p.ppg.toFixed(1)}</b><span>PTS / START</span></div>
+  <div class="m">${esc(p.position)} · ${esc(p.nfl_team)} · ${p.points.toFixed(1)} in ${p.starts} starts</div>${p.nickname?`<div class="nick">“${esc(p.nickname)}”</div>`:''}<div class="why">${esc(p.reason)}</div></div>`).join('')}</div>
+  <p class="note">Points per start counts only weeks the player was in this franchise's starting lineup in ${c.season}, in league scoring. Nicknames in quotes were set by the manager in Sleeper.</p></section>
+ <div class="two">
+ <section class="blk"><h3>All-time head to head</h3><div class="tw"><table><tr><th>Opponent</th><th>W–L</th><th>Avg score</th></tr>${h2h.map((x)=>`<tr><td>${link(x.id)}</td><td>${x.w}–${x.l}${x.t?'–'+x.t:''}</td><td>${(x.pf/(x.w+x.l+x.t)).toFixed(1)} – ${(x.pa/(x.w+x.l+x.t)).toFixed(1)}</td></tr>`).join('')}</table></div>
+  <p class="note">Every meeting since 2022, playoffs included, for this roster spot${prior.length?` (including seasons under ${esc(f.former_managers.join(', ')||'a previous manager')})`:''}.</p></section>
+ <section class="blk"><h3>History</h3><div class="tw"><table><tr><th>Season</th><th>Record</th><th>Points</th><th></th></tr>${f.seasons.map((s)=>`<tr><td>${s.season}</td><td>${s.wins}–${s.losses}</td><td>${s.pf.toFixed(1)}</td><td>${s.champion?'Champion':s.runner_up?'Runner-up':''}${s.same_owner?'':' (previous manager)'}</td></tr>`).join('')}</table></div>
+  <h3 style="margin-top:28px">Future draft picks</h3>${Object.entries(picks).map(([y,ps])=>`<p class="k" style="margin:10px 0 6px">${y}</p><div class="chips">${ps.map((p)=>`<span>Round ${p.round}${p.original_roster!==f.roster_id?` · via ${esc(name(p.original_roster))}`:''}</span>`).join('')}</div>`).join('')||'<p class="note">None.</p>'}</section>
+ </div>
+ <footer>${esc(stamp(c))}</footer>
+</div>`;
+  themeVars(document.getElementById('hero'),th);document.querySelectorAll('.pl,.weeks').forEach((e)=>themeVars(e,th));
+  document.getElementById('play').onclick=()=>{const box=document.getElementById('cine'),v=document.getElementById('v');box.style.display='block';if(!v.src)v.src=`cinematics/${f.slug}.mp4`;v.currentTime=0;v.play().catch(()=>{});box.scrollIntoView({behavior:'smooth',block:'center'})};
+}).catch(()=>{document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});
+</script></body></html>

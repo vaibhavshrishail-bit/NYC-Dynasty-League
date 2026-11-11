@@ -4,7 +4,7 @@ SR=48000;D=25.0;N=int(SR*D);t=np.arange(N)/SR
 P0=7.5;PD=1.8;L0=18.6
 # theme -> (semitone shift from D, major?, ambience)
 SPEC={'temple':(0,0,'storm'),'bunker':(-2,0,'hum'),'dawn':(3,1,'wind'),'city':(5,0,'wind'),'circuit':(-4,0,'hum'),'range':(2,0,'wind'),
-      'casino':(-5,1,'hum'),'beach':(4,1,'waves'),'blueprint':(1,0,'hum'),'arcade':(5,0,'chip'),'inferno':(-3,0,'fire'),'neighborhood':(-1,1,'night')}
+      'casino':(-5,1,'hum'),'beach':(4,1,'waves'),'blueprint':(1,0,'hum'),'arcade':(5,0,'chip'),'inferno':(-3,0,'fire'),'neighborhood':(-1,1,'night'),'eclipse':(0,0,'hum')}
 def score(path,theme):
     semi,major,amb=SPEC[theme];k=2**(semi/12);rs=np.random.RandomState(7+abs(hash(theme))%1000 if False else 7+sum(map(ord,theme)))
     L=np.zeros(N);R=np.zeros(N)

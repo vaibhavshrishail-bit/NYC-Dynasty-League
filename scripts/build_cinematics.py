@@ -11,7 +11,7 @@ def J(p):return json.load(open(p))
 def ordinal(n):return f"{n}{'TH' if 10<=n%100<=20 else {1:'ST',2:'ND',3:'RD'}.get(n%10,'TH')}"
 def configs():
     idx=J(DATA+'/index.json');season=str(idx['seasons'][0]['season']);S=f'{DATA}/seasons/{season}'
-    fr=J(E+'/franchises.json');players=J(DATA+'/players.json');users={u['user_id']:u for u in J(S+'/users.json')};rosters=J(S+'/rosters.json');mu=J(S+'/matchups.json')
+    fr=J(ROOT+'/src/config/franchises.json');players=J(DATA+'/players.json');users={u['user_id']:u for u in J(S+'/users.json')};rosters=J(S+'/rosters.json');mu=J(S+'/matchups.json')
     pts={};weeks=0
     for w,ms in mu.items():
         if not any((m.get('points') or 0)>0 for m in ms):continue

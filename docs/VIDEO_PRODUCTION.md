@@ -28,3 +28,6 @@ Rosters and standings move every week, so the films date. Re-render after trades
 
 ## Changing a look
 Edit the theme in `src/engine/themes.js`, run `stills` for that slug, look at the frames, then `render`.
+
+## Website crests
+After editing a theme run `sh scripts/export-themes.sh` to refresh `site/data/themes.json`.

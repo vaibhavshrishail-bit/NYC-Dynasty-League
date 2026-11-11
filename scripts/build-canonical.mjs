@@ -1,0 +1,113 @@
+// Builds site/data/canonical.json — the ONE current-season source every page and every video reads.
+// Input: site/data/sleeper/* (from fetch-sleeper.mjs), src/config/franchises.json, src/config/nicknames.json.
+// Runs in GitHub Actions after every Sleeper refresh. Fails loudly if identities do not reconcile.
+import { readFile, writeFile } from 'node:fs/promises';
+const J = async (p) => JSON.parse(await readFile(p, 'utf8'));
+const D = 'site/data/sleeper';
+const idx = await J(`${D}/index.json`), season = String(idx.seasons[0].season), S = `${D}/seasons/${season}`;
+const [league, users, rosters, matchups, traded, tx, players, cfg, nickCfg] = await Promise.all([
+  J(`${S}/league.json`), J(`${S}/users.json`), J(`${S}/rosters.json`), J(`${S}/matchups.json`), J(`${S}/traded_picks.json`),
+  J(`${S}/transactions.json`).catch(() => ({})), J(`${D}/players.json`), J('src/config/franchises.json'), J('src/config/nicknames.json')]);
+const U = Object.fromEntries(users.map((u) => [u.user_id, u]));
+const r1 = (x) => Math.round(x * 10) / 10, r2 = (x) => Math.round(x * 100) / 100;
+const problems = [];
+if (rosters.length !== 12) problems.push(`expected 12 rosters, found ${rosters.length}`);
+const weeks = Object.keys(matchups).map(Number).filter((w) => matchups[w].some((m) => (m.points || 0) > 0)).sort((a, b) => a - b);
+const through = weeks.length ? weeks[weeks.length - 1] : 0;
+const POS = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' };
+const pos = (p) => { const x = p?.position || p?.fantasy_positions?.[0] || '?'; return POS[x] || x; };
+const IDP = new Set(['DL', 'LB', 'DB']);
+const cleanNick = (s) => (s || '').replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{1F3FB}-\u{1F3FF}]/gu, '').replace(/\s+/g, ' ').trim();
+
+// ---- all-time history (roster_id is stable across seasons) ----
+const history = [], h2h = {}, titles = {};
+for (const s of idx.seasons) {
+  const d = `${D}/seasons/${s.season}`, ro = await J(`${d}/rosters.json`), us = Object.fromEntries((await J(`${d}/users.json`)).map((u) => [u.user_id, u]));
+  const mu = await J(`${d}/matchups.json`), wb = (await J(`${d}/winners_bracket.json`).catch(() => null)) || [];
+  const fin = wb.find((m) => m.p === 1 && m.w);
+  if (fin && s.season !== season) (titles[fin.w] ||= []).push(Number(s.season));
+  history.push({ season: Number(s.season), champion_roster: s.season !== season && fin ? fin.w : null, runner_up_roster: s.season !== season && fin ? fin.l : null,
+    teams: ro.map((r) => ({ roster_id: r.roster_id, owner_id: r.owner_id, handle: us[r.owner_id]?.display_name || null, wins: r.settings.wins, losses: r.settings.losses,
+      pf: r2((r.settings.fpts || 0) + (r.settings.fpts_decimal || 0) / 100) })) });
+  for (const [w, ms] of Object.entries(mu)) { const g = {};
+    for (const m of ms) if (m.matchup_id) (g[m.matchup_id] ||= []).push(m);
+    for (const pair of Object.values(g)) { if (pair.length !== 2 || !pair.some((m) => (m.points || 0) > 0)) continue; const [a, b] = pair;
+      for (const [x, y] of [[a, b], [b, a]]) { const e = ((h2h[x.roster_id] ||= {})[y.roster_id] ||= { w: 0, l: 0, t: 0, pf: 0, pa: 0 });
+        e.pf = r2(e.pf + x.points); e.pa = r2(e.pa + y.points); x.points > y.points ? e.w++ : x.points < y.points ? e.l++ : e.t++; } } }
+}
+// ---- current season, per roster ----
+const pfOf = (r) => (r.settings.fpts || 0) + (r.settings.fpts_decimal || 0) / 100, paOf = (r) => (r.settings.fpts_against || 0) + (r.settings.fpts_against_decimal || 0) / 100;
+const seedOrder = [...rosters].sort((a, b) => b.settings.wins - a.settings.wins || pfOf(b) - pfOf(a)), ptsOrder = [...rosters].sort((a, b) => pfOf(b) - pfOf(a));
+const playoffTeams = league.settings.playoff_teams, cut = seedOrder[playoffTeams - 1], firstOut = seedOrder[playoffTeams];
+const ord = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+const franchises = [];
+for (const r of [...rosters].sort((a, b) => a.roster_id - b.roster_id)) {
+  const f = cfg[String(r.roster_id)], u = U[r.owner_id];
+  if (!f) { problems.push(`roster ${r.roster_id} missing from franchises.json`); continue; }
+  if (f.owner_id !== r.owner_id) problems.push(`roster ${r.roster_id}: owner_id is ${r.owner_id} in Sleeper but ${f.owner_id} in franchises.json`);
+  if (!u) problems.push(`roster ${r.roster_id}: owner ${r.owner_id} not in league users`);
+  const sleeperName = (u?.metadata?.team_name || '').trim();
+  const results = [], credit = {};
+  for (const w of weeks) { const me = matchups[w].find((m) => m.roster_id === r.roster_id); if (!me) continue;
+    const opp = matchups[w].find((m) => m.matchup_id === me.matchup_id && m.roster_id !== r.roster_id);
+    results.push({ week: w, opp: opp?.roster_id ?? null, pf: me.points, pa: opp?.points ?? null, result: !opp ? null : me.points > opp.points ? 'W' : me.points < opp.points ? 'L' : 'T' });
+    (me.starters || []).forEach((pid, i) => { if (pid === '0') return; const c = (credit[pid] ||= { starts: 0, pts: 0, wk: {}, wins: 0 });
+      const v = me.starters_points?.[i] ?? me.players_points?.[pid] ?? 0; c.starts++; c.pts += v; c.wk[w] = v; if (opp && me.points > opp.points) c.wins += v; }); }
+  const starterTotal = Object.values(credit).reduce((a, c) => a + c.pts, 0);
+  const nicks = r.metadata || {};
+  let pool = (r.players || []).filter((pid) => credit[pid] && players[pid]).map((pid) => { const c = credit[pid], p = players[pid], last3 = weeks.slice(-3).filter((w) => w in c.wk);
+    const own = cleanNick(nicks['p_nick_' + pid]), blocked = nickCfg.blocked[pid], cr = nickCfg.creative[pid];
+    return { player_id: pid, name: p.full_name || `${p.first_name} ${p.last_name}`, first_name: p.first_name, last_name: p.last_name, position: pos(p), nfl_team: p.team || 'FA', number: p.number ?? null,
+      starts: c.starts, points: r1(c.pts), ppg: r1(c.pts / c.starts), share: r2(c.pts / starterTotal), last3_ppg: last3.length ? r1(last3.reduce((a, w) => a + c.wk[w], 0) / last3.length) : null,
+      nickname: own && !blocked ? own : cr?.nick || null, nickname_source: own && !blocked ? 'owner' : cr ? cr.source : null }; })
+    .sort((a, b) => b.points - a.points);
+  // selection: points scored while STARTING for THIS franchise; kickers only if one of its top two scorers; at most 10
+  const minStarts = Math.max(2, Math.ceil(weeks.length / 3));
+  const top2 = new Set(pool.slice(0, 2).map((p) => p.player_id));
+  const featured = pool.filter((p) => p.starts >= minStarts && p.share >= 0.04 && (p.position !== 'K' || top2.has(p.player_id))).slice(0, 10);
+  const bestIdp = featured.find((p) => IDP.has(p.position)), hot = [...featured].filter((p) => p.last3_ppg != null).sort((a, b) => (b.last3_ppg - b.ppg) - (a.last3_ppg - a.ppg))[0];
+  const seenPos = new Set();
+  featured.forEach((p, i) => { const why = [];
+    if (i === 0) why.push('Leading scorer'); else if (!seenPos.has(p.position)) why.push(`Top ${p.position}`);
+    if (bestIdp && p.player_id === bestIdp.player_id && i !== 0) why.push('Top defender');
+    if (hot && p.player_id === hot.player_id && p.last3_ppg - p.ppg >= 2) why.push(`Hot: ${p.last3_ppg} PPG last 3`);
+    if (!why.length) why.push(`${Math.round(p.share * 100)}% of starter points`);
+    if (p.starts < weeks.length / 2) why.push(`small sample (${p.starts} starts)`);
+    seenPos.add(p.position); p.reason = why.join(' · '); });
+  const seed = seedOrder.indexOf(r) + 1, prank = ptsOrder.indexOf(r) + 1, w = r.settings.wins, l = r.settings.losses, t = r.settings.ties || 0;
+  const rec = results.map((x) => x.result).filter(Boolean); let streakN = 0; for (let i = rec.length - 1; i >= 0 && rec[i] === rec[rec.length - 1]; i--) streakN++;
+  const streak = rec.length ? { type: rec[rec.length - 1], length: streakN } : null;
+  // storyline: generated only from the numbers above
+  const story = [];
+  if (l === 0 && w > 0) story.push(`${w}–0 and the only unbeaten team left.`); else if (w === 0 && l > 0) story.push(`Still looking for a first win at 0–${l}.`);
+  else story.push(`${w}–${l}${t ? '–' + t : ''}, ${ord(seed)} in the standings and ${ord(prank)} in points scored.`);
+  if (streak && streak.length >= 3 && !(l === 0) && !(w === 0)) story.push(streak.type === 'W' ? `Winners of ${streak.length} straight.` : `Losers of ${streak.length} straight.`);
+  if (prank - seed >= 3) story.push(`The record is running ahead of the scoring.`); else if (seed - prank >= 3) story.push(`Scoring like a ${ord(prank)} seed, sitting ${ord(seed)}.`);
+  const gamesLeft = league.settings.playoff_week_start - 1 - through;
+  const gap = seed <= playoffTeams ? w - firstOut.settings.wins : cut.settings.wins - w, g = `${gap} game${gap === 1 ? '' : 's'}`;
+  if (seed <= playoffTeams) story.push(gap === 0 ? `Holding a playoff spot on points only, level on wins with the first team out, ${gamesLeft} to play.` : `Inside the playoff line by ${g} with ${gamesLeft} to play.`);
+  else story.push(gap > gamesLeft ? `Cannot reach the playoff line on wins alone.` : gap === 0 ? `Level on wins with the last playoff spot but behind on points, ${gamesLeft} to play.` : `${g} back of the last playoff spot with ${gamesLeft} to play.`);
+  if (featured[0]) story.push(`${featured[0].name} leads the lineup at ${featured[0].ppg} points per start.`);
+  const myPicks = [];
+  const drafted = new Set([season]);
+  for (const yr of [...new Set(traded.map((p) => p.season))].sort()) { if (drafted.has(yr)) continue;
+    for (let rd = 1; rd <= 4; rd++) for (const orig of rosters.map((x) => x.roster_id)) { const tp = traded.find((p) => p.season === yr && p.round === rd && p.roster_id === orig);
+      if ((tp ? tp.owner_id : orig) === r.roster_id) myPicks.push({ season: Number(yr), round: rd, original_roster: orig }); } }
+  franchises.push({ roster_id: r.roster_id, slug: f.slug, owner_id: r.owner_id, sleeper_handle: u?.display_name || null, manager: f.manager,
+    team_name: sleeperName || f.fallback_name, team_name_source: sleeperName ? 'sleeper' : 'fallback (owner has set no team name)', former_names: f.former_names || [], former_managers: f.former_managers || [],
+    sleeper_team_avatar: u?.metadata?.avatar || null, sleeper_user_avatar: u?.avatar ? `https://sleepercdn.com/avatars/${u.avatar}` : null,
+    theme: f.theme, tagline: f.tagline, wins: w, losses: l, ties: t, record: `${w}–${l}${t ? '–' + t : ''}`, pf: r2(pfOf(r)), pa: r2(paOf(r)), seed, points_rank: prank,
+    in_playoff_position: seed <= playoffTeams, streak, results, titles: (titles[r.roster_id] || []).filter((y) => history.find((h) => h.season === y).teams.find((x) => x.roster_id === r.roster_id).owner_id === r.owner_id).sort(),
+    storyline: story.filter(Boolean), featured, roster_size: (r.players || []).length, future_picks: myPicks,
+    h2h: Object.fromEntries(Object.entries(h2h[r.roster_id] || {}).map(([k, v]) => [k, v])),
+    seasons: history.map((h) => { const x = h.teams.find((q) => q.roster_id === r.roster_id); return { season: h.season, wins: x.wins, losses: x.losses, pf: x.pf, champion: h.champion_roster === r.roster_id, runner_up: h.runner_up_roster === r.roster_id, same_owner: x.owner_id === r.owner_id, handle: x.handle }; }) });
+}
+const slugs = franchises.map((f) => f.slug); if (new Set(slugs).size !== slugs.length) problems.push('duplicate slugs');
+const trades = []; for (const [w, list] of Object.entries(tx)) for (const t of list) if (t.type === 'trade' && t.status === 'complete')
+  trades.push({ week: Number(w), rosters: t.roster_ids, players: Object.entries(t.adds || {}).map(([pid, to]) => ({ player_id: pid, name: players[pid]?.full_name || pid, to_roster: to })), picks: (t.draft_picks || []).map((p) => ({ season: p.season, round: p.round, original_roster: p.roster_id, to_roster: p.owner_id })) });
+if (problems.length) { console.error('IDENTITY RECONCILIATION FAILED:\n - ' + problems.join('\n - ')); process.exit(1); }
+const out = { generated_at: new Date().toISOString(), source: 'Sleeper public API', league_id: league.league_id, league_name: league.name, season: Number(season), through_week: through, current_week: idx.nfl_state.week,
+  playoff_teams: playoffTeams, playoff_week_start: league.settings.playoff_week_start, roster_positions: league.roster_positions.filter((p) => p !== 'BN'), scoring: { rec: league.scoring_settings.rec, pass_td: league.scoring_settings.pass_td, idp: true },
+  standings: seedOrder.map((r) => r.roster_id), franchises, history: history.map(({ teams, ...h }) => h), trades: trades.sort((a, b) => a.week - b.week) };
+await writeFile('site/data/canonical.json', JSON.stringify(out));
+console.log(`canonical.json: ${franchises.length} franchises reconciled, season ${season} through week ${through}`);

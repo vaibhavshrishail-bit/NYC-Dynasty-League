@@ -785,13 +785,13 @@
    "slug": "vaibhav",
    "roster_id": 10,
    "owner_id": "871044882217775104",
-   "theme": "temple",
-   "team": "THE PANTHEON",
-   "team_display": "The Pantheon",
+   "theme": "eclipse",
+   "team": "DIE ANOTHER DAY",
+   "team_display": "Die Another Day",
    "manager": "Vaibhav",
    "sleeper_team_name": "Die Another Day",
    "line1": "5\u20134   \u00b7   7TH IN POINTS",
-   "line2": "THE HEAVENS ARE DUE A NEW ORDER.",
+   "line2": "NOT TODAY. NOT THIS YEAR.",
    "sub": "VAIBHAV  \u00b7  NYC DYNASTY LEAGUE  \u00b7  EST. 2022",
    "record": "5\u20134",
    "points_rank": 7,
@@ -808,7 +808,7 @@
      "pos": "LINEBACKER",
      "tm": "SEA",
      "pts": "109.0",
-     "hon": "THE HERALD"
+     "hon": "THE SURVIVOR"
     },
     {
      "id": "11560",
@@ -819,7 +819,7 @@
      "pos": "QUARTERBACK",
      "tm": "CHI",
      "pts": "110.3",
-     "hon": "THE TITAN"
+     "hon": "THE SECOND WIND"
     },
     {
      "id": "3257",
@@ -830,7 +830,7 @@
      "pos": "QUARTERBACK",
      "tm": "BAL",
      "pts": "110.7",
-     "hon": "THE HAMMER"
+     "hon": "THE LAST STAND"
     },
     {
      "id": "96",
@@ -841,7 +841,7 @@
      "pos": "QUARTERBACK",
      "tm": "PIT",
      "pts": "118.1",
-     "hon": "THE ORACLE"
+     "hon": "THE COMEBACK"
     },
     {
      "id": "12527",
@@ -852,7 +852,7 @@
      "pos": "RUNNING BACK",
      "tm": "LV",
      "pts": "119.3",
-     "hon": "THE WAR GOD"
+     "hon": "THE UNKILLABLE"
     },
     {
      "id": "7547",
@@ -863,7 +863,7 @@
      "pos": "WIDE RECEIVER",
      "tm": "DET",
      "pts": "128.1",
-     "hon": "KING OF THE GODS"
+     "hon": "ONE MORE DAY"
     }
    ]
   },
