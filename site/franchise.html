@@ -19,7 +19,7 @@ loadAll().then(([c,L])=>{
   const hh=(o)=>{const v=f.h2h[o];return v?`${v.w}–${v.l}`:'0–0'};
   document.getElementById('page').innerHTML=`
 <header class="hero" id="hero"><div class="wrap">
- <div class="bar"><a href="./">← Franchise Hub</a><span><a href="franchise.html?f=${esc(prev.slug)}">‹ ${esc(prev.team_name)}</a> &nbsp; <a href="franchise.html?f=${esc(next.slug)}">${esc(next.team_name)} ›</a></span></div>
+ <div class="bar"><a href="./#franchises">← All franchises</a><span><a href="franchise.html?f=${esc(prev.slug)}">‹ ${esc(prev.team_name)}</a> &nbsp; <a href="franchise.html?f=${esc(next.slug)}">${esc(next.team_name)} ›</a></span></div>
  <div class="id">${emblem(th)}<div><div class="k">${esc(f.manager)}${stars(f)} · ${f.in_playoff_position?ord(f.seed)+' seed':ord(f.seed)+' in the standings'}${f.titles.length?` · Champion ${f.titles.join(', ')}`:''}</div>
   <h1 style="${fontOf(th)}">${esc(f.team_name)}</h1>${f.former_names.length?`<div class="was">Formerly ${esc(f.former_names.join(', '))}</div>`:''}</div></div>
  <div class="stats"><div><b>${esc(f.record)}</b><span>${c.season} record</span></div><div><b>${f.pf.toFixed(1)}</b><span>Points for · ${ord(f.points_rank)}</span></div><div><b>${f.pa.toFixed(1)}</b><span>Points against</span></div>
