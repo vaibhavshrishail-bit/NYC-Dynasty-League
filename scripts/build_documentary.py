@@ -58,7 +58,7 @@ def html(doc,audio=None):
     s=open(E+'/shell.html').read().replace('/*FONTS*/',open(E+'/fonts.css').read()).replace('/*CORE*/',open(E+'/core.js').read()).replace('/*THEMES*/',open(E+'/themes.js').read()+'\nconst DOC='+json.dumps(doc)+';\n'+open(E+'/doc.js').read())
     s=s.replace('/*TITLE*/','Season documentary').replace('/*CFG*/',json.dumps({'theme':'city','team':'','manager':'','sub':'','lines':[],'players':[{}]})).replace('/*AUDIO*/','data:audio/mp4;base64,'+base64.b64encode(open(audio,'rb').read()).decode() if audio else '')
     os.makedirs(B,exist_ok=True);open(B+'/doc.html','w').write(s)
-async def frames(doc,times=None,fps=30):
+async def frames(doc,times=None,fps=30,part=None):
     from playwright.async_api import async_playwright
     async with async_playwright() as p:
         b=await p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox']);pg=await b.new_page(viewport={'width':1300,'height':900});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
@@ -67,8 +67,9 @@ async def frames(doc,times=None,fps=30):
             os.makedirs(ROOT+'/build/stills',exist_ok=True)
             for tm in times:d=await pg.evaluate(f'window.__frame({tm},0.8)');open(f"{ROOT}/build/stills/doc_{tm:06.2f}.jpg",'wb').write(base64.b64decode(d.split(',')[1]))
         else:
-            ff=subprocess.Popen(['ffmpeg','-y','-loglevel','error','-f','image2pipe','-framerate',str(fps),'-c:v','mjpeg','-i','-','-c:v','libx264','-crf','23','-preset','slow','-pix_fmt','yuv420p',B+'/doc.video.mp4'],stdin=subprocess.PIPE)
-            for i in range(int(doc['dur']*fps)):d=await pg.evaluate(f'window.__frame({i/fps},0.9)');ff.stdin.write(base64.b64decode(d.split(',')[1]))
+            n=int(doc['dur']*fps);a,b_,tag=(0,n,'') if not part else (n*part[0]//part[1],n*(part[0]+1)//part[1],f'.part{part[0]}')
+            ff=subprocess.Popen(['ffmpeg','-y','-loglevel','error','-f','image2pipe','-framerate',str(fps),'-c:v','mjpeg','-i','-','-c:v','libx264','-crf','23','-preset','slow','-pix_fmt','yuv420p',B+f'/doc.video{tag}.mp4'],stdin=subprocess.PIPE)
+            for i in range(a,b_):d=await pg.evaluate(f'window.__frame({i/fps},0.9)');ff.stdin.write(base64.b64decode(d.split(',')[1]))
             ff.stdin.close();assert ff.wait()==0
             d=await pg.evaluate('window.__frame(2.6,0.9)');open(B+'/doc.poster.jpg','wb').write(base64.b64decode(d.split(',')[1]))
         await b.close();print('page errors',errs[:3]);return not errs
@@ -81,11 +82,20 @@ if __name__=='__main__':
         print('\ntotal',doc['dur'],'s')
     elif cmd=='stills':
         html(doc);asyncio.run(frames(doc,times=[float(a) for a in sys.argv[2:]] or [k['t0']+k['dur']-.6 for k in doc['chapters']]))
-    elif cmd=='render':
+    elif cmd in('render','audio','part','finish'):
+        # 'render' does everything in one go. On a session with a 10-minute command limit use: audio, then part 0 K ... part K-1 K (can run side by side), then finish K.
         spec=importlib.util.spec_from_file_location('da',E+'/doc_audio.py');a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a);os.makedirs(B,exist_ok=True);os.makedirs(OUT,exist_ok=True)
         hits=[k['t0']+b['at'] for k in doc['chapters'] for b in k['beats'] if b['type'] in('stat','emblem')]
-        a.doc_score(B+'/doc.wav',doc['dur'],[k['t0'] for k in doc['chapters']],hits);subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',B+'/doc.wav','-c:a','aac','-b:a','128k',B+'/doc.m4a'])
-        html(doc,B+'/doc.m4a');assert asyncio.run(frames(doc));name=f"season-{doc['season']}"
+        if cmd in('render','audio'):a.doc_score(B+'/doc.wav',doc['dur'],[k['t0'] for k in doc['chapters']],hits);
+        if cmd in('render','audio'):subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',B+'/doc.wav','-c:a','aac','-b:a','128k',B+'/doc.m4a'])
+        name=f"season-{doc['season']}"
+        if cmd in('render','audio'):html(doc,B+'/doc.m4a')
+        if cmd=='audio':sys.exit(0)
+        if cmd=='render':assert asyncio.run(frames(doc))
+        if cmd=='part':assert asyncio.run(frames(doc,part=(int(sys.argv[2]),int(sys.argv[3]))));print('part done',sys.argv[2],flush=True);sys.exit(0)
+        if cmd=='finish':
+            k=int(sys.argv[2]);open(B+'/parts.txt','w').write(''.join(f"file 'doc.video.part{i}.mp4'\n" for i in range(k)))
+            subprocess.check_call(['ffmpeg','-y','-loglevel','error','-f','concat','-safe','0','-i',B+'/parts.txt','-c','copy',B+'/doc.video.mp4'])
         subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',B+'/doc.video.mp4','-i',B+'/doc.m4a','-c:v','copy','-c:a','copy','-shortest','-movflags','+faststart',f"{OUT}/{name}.mp4"])
         subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',B+'/doc.poster.jpg','-vf','scale=960:-2','-q:v','4',f"{OUT}/{name}.jpg"])
         json.dump({'season':doc['season'],'through_week':doc['through_week'],'duration':doc['dur'],'chapters':[{'start':k['t0'],'title':k.get('title','Cold open')} for k in doc['chapters']]},open(f"{OUT}/{name}.json",'w'),indent=1)

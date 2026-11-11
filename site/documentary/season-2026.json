@@ -1,0 +1,39 @@
+{
+ "season": 2026,
+ "through_week": 9,
+ "duration": 88,
+ "chapters": [
+  {
+   "start": 0,
+   "title": "Cold open"
+  },
+  {
+   "start": 7,
+   "title": "THE UNBEATEN"
+  },
+  {
+   "start": 21,
+   "title": "THE CHASE"
+  },
+  {
+   "start": 33,
+   "title": "THE LINE"
+  },
+  {
+   "start": 48,
+   "title": "THE MARKET"
+  },
+  {
+   "start": 57,
+   "title": "THE STARS"
+  },
+  {
+   "start": 68,
+   "title": "THE BASEMENT"
+  },
+  {
+   "start": 76,
+   "title": "5 WEEKS LEFT"
+  }
+ ]
+}

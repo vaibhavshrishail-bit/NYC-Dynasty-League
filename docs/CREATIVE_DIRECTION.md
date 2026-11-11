@@ -35,6 +35,26 @@ The official identity is the live Sleeper team name and manager. The cinematic i
 ## Documentary
 Chapters borrow the worlds of the franchises they are about (the unbeaten team's chapter plays in its world), opening and closing on the night skyline. Tone is NFL-Films plain: short declarative lines, one idea on screen at a time, numbers that count up.
 
+## Music
+Every franchise has its own style, synthesized from scratch in `src/engine/audio.py` (no samples, no existing songs). A style is a data entry in `STY`: tempo, key, chords and 16-step patterns for drums, bass, chords and lead. All styles share the same film cues (hits on each player card, a snare build into the crest, a final chord).
+
+| Roster | Manager | Theme | Style | BPM |
+|---|---|---|---|---|
+| 1 | Soham | bunker | industrial metal | 100 |
+| 2 | Advaith | dawn | piano and strings | 84 |
+| 3 | Nihar | city | jazzy boom-bap | 90 |
+| 4 | Dev | circuit | synthwave | 124 |
+| 5 | Alan | range | orchestral | 100 |
+| 6 | Nishant | casino | swing jazz | 132 |
+| 7 | Achal | beach | island groove | 96 |
+| 8 | Manas | blueprint | lo-fi piano | 80 |
+| 9 | Shiamak | arcade | chiptune | 140 |
+| 10 | Vaibhav | eclipse | dark trap | 140 |
+| 11 | Taylor | inferno | hard rock | 150 |
+| 12 | Dhiraj | neighborhood | acoustic folk | 100 |
+
+The documentary has its own slower score in `src/engine/doc_audio.py`.
+
 ## Crests on the site
 The Hub and franchise pages draw each crest as SVG from the same glyph and palette the film uses (`site/data/themes.json`, exported from `themes.js`), so a franchise looks the same in all three places. Re-export after editing a theme (see the command in `docs/VIDEO_PRODUCTION.md`).
 

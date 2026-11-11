@@ -35,7 +35,16 @@ The film uses exactly the `featured` list in `site/data/canonical.json`, which i
     python3 scripts/build_documentary.py stills [seconds...]
     python3 scripts/build_documentary.py render           # site/documentary/season-2026.mp4, .jpg, .json (about 25 minutes)
 
+If a single command cannot run for 25 minutes, render in parts (these can run side by side):
+
+    python3 scripts/build_documentary.py audio
+    python3 scripts/build_documentary.py part 0 4   # then part 1 4, part 2 4, part 3 4
+    python3 scripts/build_documentary.py finish 4
+
 The film is a list of chapters in `chapters()` in that script. Each chapter has a theme (backdrop), a title and a list of beats: `line`, `stat`, `emblem`, `bars`, `cols`, `dots`, `jerseys`, `grid`, `dim`. Beats are drawn by `src/engine/doc.js`. Every value is computed in `facts()` from canonical.json, so re-running after new weeks updates the numbers; re-read the `facts` output, because the story may have changed (for example the unbeaten team may have lost) and chapter wording may need editing. To extend it into a full-season recap, add chapters; durations add up automatically.
+
+## Changing only the music
+Edit the team's entry in `STY` in `src/engine/audio.py`. The picture does not need re-rendering if `build/cine/<slug>.video.mp4` still exists: regenerate the WAV with `python3 src/engine/audio.py build/aud <theme>`, encode it to AAC and mux it onto the video with ffmpeg (`-c:v copy`). Otherwise run `render` for that slug.
 
 ## When to re-render
 Rosters and standings move weekly, so films date. Re-render after trades, at milestones, or before sharing. Always run `config` or `facts` first and read the output.
