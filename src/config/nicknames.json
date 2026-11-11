@@ -8,5 +8,51 @@
   "6783": "vulgar",
   "6119": "refers to a player's race"
  },
- "creative": {}
+ "creative": {
+  "3198": {
+   "nick": "King Henry",
+   "source": "real",
+   "player": "Derrick Henry"
+  },
+  "4034": {
+   "nick": "CMC",
+   "source": "real",
+   "player": "Christian McCaffrey"
+  },
+  "5991": {
+   "nick": "Mad Maxx",
+   "source": "real",
+   "player": "Maxx Crosby"
+  },
+  "6813": {
+   "nick": "JT",
+   "source": "real",
+   "player": "Jonathan Taylor"
+  },
+  "7547": {
+   "nick": "Sun God",
+   "source": "real",
+   "player": "Amon-Ra St. Brown"
+  },
+  "7564": {
+   "nick": "Uno",
+   "source": "real",
+   "player": "Ja'Marr Chase"
+  },
+  "8151": {
+   "nick": "K9",
+   "source": "real",
+   "player": "Kenneth Walker III"
+  },
+  "8289": {
+   "nick": "Hutch",
+   "source": "real",
+   "player": "Aidan Hutchinson"
+  },
+  "12526": {
+   "nick": "T-Mac",
+   "source": "real",
+   "player": "Tetairoa McMillan"
+  }
+ }
 }

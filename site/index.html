@@ -17,6 +17,6 @@ loadLeague().then((c)=>{
 <div class="dots">${f.results.map((r)=>`<i class="${r.result||''}" title="Week ${r.week}: ${r.result} ${r.pf}–${r.pa}"></i>`).join('')}</div>
 ${s?`<span class="pill ${s.type==='W'?'':'cold'}">${s.type==='W'?'Won':'Lost'} ${s.length} straight</span>`:''}</a>`}).join('');
   document.getElementById('stand').innerHTML=order.map((f)=>`<li class="${f.seed===c.playoff_teams?'cut':''}"><span>${f.seed}</span><a href="franchise.html?f=${esc(f.slug)}">${esc(f.team_name)} <span>· ${esc(f.manager)}</span></a><span>${esc(f.record)}</span><span>${f.pf.toFixed(1)}</span></li>`).join('');
-  document.getElementById('foot').textContent=`Top ${c.playoff_teams} make the playoffs, which start in Week ${c.playoff_week_start}. ${stamp(c)} Crests are original artwork made for this site.`;
+  document.getElementById('foot').textContent=`${c.playoff_rule} Playoffs start in Week ${c.playoff_week_start}. ${stamp(c)} Crests are original artwork made for this site.`;
 }).catch(()=>{document.getElementById('grid').textContent='League data could not be loaded. Try again shortly.'});
 </script></body></html>

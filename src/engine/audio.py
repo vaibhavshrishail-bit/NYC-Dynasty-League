@@ -1,12 +1,12 @@
-"""Original synthesized score, one per theme. numpy/scipy only. score(path, theme) writes a 25s stereo WAV."""
+"""Original synthesized score, one per theme. numpy/scipy only. score(path, theme, n_players) writes a 45s stereo WAV cut to the film timeline."""
 import numpy as np, scipy.signal as sg, wave
-SR=48000;D=25.0;N=int(SR*D);t=np.arange(N)/SR
-P0=7.5;PD=1.8;L0=18.6
+SR=48000;D=45.0;N=int(SR*D);t=np.arange(N)/SR
+P0=12.0;C0=36.0;L0=41.2
 # theme -> (semitone shift from D, major?, ambience)
 SPEC={'temple':(0,0,'storm'),'bunker':(-2,0,'hum'),'dawn':(3,1,'wind'),'city':(5,0,'wind'),'circuit':(-4,0,'hum'),'range':(2,0,'wind'),
       'casino':(-5,1,'hum'),'beach':(4,1,'waves'),'blueprint':(1,0,'hum'),'arcade':(5,0,'chip'),'inferno':(-3,0,'fire'),'neighborhood':(-1,1,'night'),'eclipse':(0,0,'hum')}
-def score(path,theme):
-    semi,major,amb=SPEC[theme];k=2**(semi/12);rs=np.random.RandomState(7+abs(hash(theme))%1000 if False else 7+sum(map(ord,theme)))
+def score(path,theme,n=10):
+    PD=24.0/n;semi,major,amb=SPEC[theme];k=2**(semi/12);rs=np.random.RandomState(7+abs(hash(theme))%1000 if False else 7+sum(map(ord,theme)))
     L=np.zeros(N);R=np.zeros(N)
     def add(sig,at,pan=0.0,g=1.0):
         i=int(at*SR);n=min(len(sig),N-i)
@@ -31,11 +31,11 @@ def score(path,theme):
     def blip(f,dur=.11):n=int(dur*SR);tt=np.arange(n)/SR;return np.sign(np.sin(2*np.pi*f*tt))*env(n,.002,dur/2.5)*.5
     root=36.71*k;third=1.26 if major else 1.189
     dr=lp(saw(root,N,.004)+.6*saw(root*2,N,.006)+.3*saw(root*1.498,N,.005),160)
-    add(dr*np.interp(t,[0,1.5,4.5,7.5,18.2,18.35,18.6,23,25],[0,.5,.6,.8,1.0,.15,1.0,.8,0]),0,0,.34)
+    add(dr*np.interp(t,[0,1.5,6,12,36,41.0,41.12,41.25,44,45],[0,.5,.6,.8,1.0,1.0,.15,1.0,.8,0]),0,0,.34)
     pad=sum(lp(saw(root*4*m,N,.007),900) for m in (1,third,1.498,2))/4
-    add(pad*np.interp(t,[0,4.5,7.5,16,18.25,18.4,18.6,19.2,23.5,25],[0,0,.25,.6,.9,0,0,1,.7,0])*(1+.15*np.sin(2*np.pi*.3*t)),0,0,.22)
-    br=sum(lp(saw(root*m,int(6*SR),.01),1400) for m in (1,2,3,4,6))/5*env(int(6*SR),.04,2.6);add(br,L0,0,.75)
-    opening=np.interp(t,[0,.8,4.2,7.5,8],[0,1,1,.3,0])
+    add(pad*np.interp(t,[0,6,12,34,41.0,41.1,41.2,41.8,44,45],[0,.12,.3,.6,.9,0,0,1,.7,0])*(1+.15*np.sin(2*np.pi*.3*t)),0,0,.22)
+    br=sum(lp(saw(root*m,int(3.8*SR),.01),1400) for m in (1,2,3,4,6))/5*env(int(3.8*SR),.04,2.0);add(br,L0,0,.75)
+    opening=np.interp(t,[0,.8,5.6,11,12],[0,1,1,.3,0])
     if amb=='storm':
         add(hp(lp(rs.randn(N),6000),1200)*opening,0,0,.035)
         for at,pan,g in[(.95,-.6,.5),(2.35,.1,.85),(3.55,.6,.6),(3.72,-.3,.5)]:add(thunder(3.2),at,pan,g)
@@ -50,18 +50,23 @@ def score(path,theme):
         if amb=='chip':
             for j in range(18):add(blip(root*8*[1,1.189,1.498,2,1.498,1.189][j%6]),.9+j*.19,(-1)**j*.5,.10)
         for at,pan,g in[(.95,-.5,.45),(2.35,.1,.7),(3.55,.5,.5)]:add(impact(70),at,pan,g);add(clang(root*4*[1,1.498,2][[.95,2.35,3.55].index(at)]),at,pan,.25)
-    beat=PD/4
-    for i in range(6):
-        at=P0+i*PD;add(whoosh(.45),at-.45,(-1)**i*.4,.22);add(impact(90),at,0,.8);add(clang(root*16/3*[1,1.122,third,1.335,1.498,1.782][i]),at,(-1)**i*-.35,.5)
+    add(impact(100),3.2,0,.9);add(clang(root*8),3.2,0,.35);add(whoosh(.5),2.7,0,.2)
+    for j,at in enumerate((6.0,8.0,10.0)):add(whoosh(.4),at-.4,(-1)**j*.3,.16);add(impact(60),at,0,.5);add(clang(root*4*[1,third,1.498][j]),at,(-1)**j*.3,.3)
+    beat=PD/4;deg=[1,1.122,third,1.335,1.498,1.682,1.782,2,2.244,2*third]
+    for i in range(n):
+        at=P0+i*PD;add(whoosh(.45),at-.45,(-1)**i*.4,.22);add(impact(90),at,0,.8);add(clang(root*16/3*deg[i%10]),at,(-1)**i*-.35,.5)
         for q in range(1,8):
-            add(tom(62*k**.5 if q%2==0 else 78*k**.5),at+q*beat/2,(.25 if q%2 else -.25),(.42 if q%2==0 else .2)*(.7+.06*i))
+            add(tom(62*k**.5 if q%2==0 else 78*k**.5),at+q*beat/2,(.25 if q%2 else -.25),(.42 if q%2==0 else .2)*(.6+.04*i))
             if amb=='chip':add(blip(root*8*[1,third,1.498,2][q%4],.08),at+q*beat/2,(-1)**q*.5,.07)
-    n=int(1.9*SR);q=np.linspace(0,1,n);add(hp(rs.randn(n),800)*q**2*.5+np.sin(2*np.pi*np.cumsum(200+1400*q**2)/SR)*q**2*.25,18.3-1.9,0,.3)
+    step=min(.34,(L0-C0-1.9)/n)
+    for j in range(n):add(impact(80+4*j),C0+.35+j*step,(-1)**j*.3,.6);add(clang(root*8*deg[j%10]),C0+.35+j*step,(-1)**j*-.3,.3)
+    for j in range(int((L0-C0)*8)):add(tom(62*k**.5 if j%2 else 78*k**.5),C0+j/8,(.2 if j%2 else -.2),.12+.3*(j/((L0-C0)*8))**2)
+    m_=int(2.2*SR);q=np.linspace(0,1,m_);add(hp(rs.randn(m_),800)*q**2*.5+np.sin(2*np.pi*np.cumsum(200+1400*q**2)/SR)*q**2*.25,L0-2.2,0,.32)
     add(thunder(4.5,1.6) if amb=='storm' else thunder(4.0,.5),L0,0,1.0 if amb=='storm' else .6);add(impact(110),L0,0,1.0)
-    for j,(dt,m) in enumerate([(1.9,16),(2.3,16*third),(2.7,24),(3.1,32),(3.6,24),(4.2,32)]):
-        n=int(2.5*SR);tt=np.arange(n)/SR;f=root*m;add((np.sin(2*np.pi*f*tt)+.4*np.sin(2*np.pi*f*2.01*tt))*np.exp(-tt/.8),L0+dt,(-1)**j*.5,.06)
+    for j,(dt,m) in enumerate([(1.1,16),(1.4,16*third),(1.7,24),(2.0,32),(2.4,24),(2.8,32)]):
+        nb=int(2.5*SR);tt=np.arange(nb)/SR;f=root*m;add((np.sin(2*np.pi*f*tt)+.4*np.sin(2*np.pi*f*2.01*tt))*np.exp(-tt/.8),L0+dt,(-1)**j*.5,.06)
     ir=rs.randn(int(2.2*SR))*np.exp(-np.arange(int(2.2*SR))/SR/.55);ir=lp(ir,5000)
     def rv(x):w=sg.fftconvolve(x,ir)[:N];return x+w/np.max(np.abs(w))*np.max(np.abs(x))*.28
     L=rv(L);R=rv(R);m=max(np.max(np.abs(L)),np.max(np.abs(R)));L=np.tanh(L/m*1.6)*.89;R=np.tanh(R/m*1.6)*.89
-    f=np.interp(t,[0,.3,24.3,25],[0,1,1,0]);L*=f;R*=f
+    f=np.interp(t,[0,.3,44.3,45],[0,1,1,0]);L*=f;R*=f
     w=wave.open(path,'wb');w.setnchannels(2);w.setsampwidth(2);w.setframerate(SR);w.writeframes((np.stack([L,R],1)*32767).astype('<i2').tobytes());w.close()

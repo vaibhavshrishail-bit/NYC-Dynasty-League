@@ -19,13 +19,13 @@ temple:{...base,metal:['#fbe6b8','#d9a862','#8a5c28','#e2b676','#4a2f12'],hi:'#f
     templeSil(ctx,960,960,1.02,fl);tile(ctx,TEX.c3,t*46,330,9,(.2+fl*.25)*e);ctx.restore();
     const fog=ctx.createLinearGradient(0,700,0,H);fog.addColorStop(0,'rgba(8,11,18,0)');fog.addColorStop(1,'rgba(8,11,18,.95)');ctx.fillStyle=fog;ctx.fillRect(0,700,W,H);if(e===1)rain(ctx,t,1)},
   back(ctx,t,e){hall(ctx,t,e>.9?.75:.35,e)},
-  fx(ctx,t,a){if(t>P0)motes(ctx,t,a,71,70,'#ffb866','#ffe2b0','#ff9a3c')}},
+  fx(ctx,t,a){if(t>6)motes(ctx,t,a,71,70,'#ffb866','#ffe2b0','#ff9a3c')}},
 eclipse:{...base,niche:'round',metal:['#ffffff','#ece4de','#9a2430','#f6cfc6','#2a070c'],hi:'#ffd9d0',mid:'#e0463e',glow:'#ff4a3a',flash:'255,90,70',tint1:[210,60,50],tint2:[70,60,95],nicheTop:'#220a0e',pale:'#fff3ee',wipe:'255,225,215',
   hon:['THE SURVIVOR','THE SECOND WIND','THE LAST STAND','THE COMEBACK','THE UNKILLABLE','ONE MORE DAY'],
   glyph:[{d:'M100 40a40 40 0 1 0 .01 0z M100 49a31 31 0 1 0 .01 0z',eo:1},{d:'M126 50a6 6 0 1 0 .01 0z',f:'hot'},{d:'M36 134h36l7-18 9 34 9-28 6 12h61v6h-65l-3-6-8 26-10-36-3 8h-39z'}],
   scene(ctx,t,e,fl){sky(ctx,[[0,'#020204'],[.6,'#0a0508'],[.86,'#2a0a10'],[1,'#080305']]);const R=rng(66);
     for(let i=0;i<150;i++){const x=R()*W,y=R()*700,s=R();ctx.fillStyle=`rgba(255,235,230,${(.15+.55*s)*(.6+.4*Math.sin(t*1.7+i))*e})`;ctx.fillRect(x,y,1.4+s,1.4+s)}
-    tile(ctx,TEX.b,t*8,0,8,.25*e);const cx=960,cy=470,pu=.5+.5*Math.sin(t*1.1);
+    tile(ctx,TEX.b,t*8,0,8,.25*e);const cx=960,cy=540,pu=.5+.5*Math.sin(t*1.1);
     glowAt(ctx,cx,cy,760,'200,40,40',(.3+.12*pu+fl*.3)*e);glowAt(ctx,cx,cy,380,'255,170,150',(.55+fl*.3)*e);glowAt(ctx,cx,cy,240,'255,255,255',.75*e);
     ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(cx,cy);ctx.rotate(t*.03);for(let i=0;i<28;i++){ctx.rotate(Math.PI/14);const L=420+R()*380+Math.sin(t*.6+i)*40;ctx.fillStyle=`rgba(255,140,120,${.05*e})`;ctx.beginPath();ctx.moveTo(150,-10);ctx.lineTo(L,0);ctx.lineTo(150,10);ctx.fill()}ctx.restore();
     ctx.fillStyle='#010102';ctx.beginPath();ctx.arc(cx,cy,172,0,7);ctx.fill();

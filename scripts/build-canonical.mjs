@@ -37,8 +37,11 @@ for (const s of idx.seasons) {
 }
 // ---- current season, per roster ----
 const pfOf = (r) => (r.settings.fpts || 0) + (r.settings.fpts_decimal || 0) / 100, paOf = (r) => (r.settings.fpts_against || 0) + (r.settings.fpts_against_decimal || 0) / 100;
-const seedOrder = [...rosters].sort((a, b) => b.settings.wins - a.settings.wins || pfOf(b) - pfOf(a)), ptsOrder = [...rosters].sort((a, b) => pfOf(b) - pfOf(a));
-const playoffTeams = league.settings.playoff_teams, cut = seedOrder[playoffTeams - 1], firstOut = seedOrder[playoffTeams];
+// League rule (commissioner, Nov 2026): seeds 1-5 by record, points-for breaks ties; seed 6 is the highest points-for among the other seven.
+const byRecord = [...rosters].sort((a, b) => b.settings.wins - a.settings.wins || pfOf(b) - pfOf(a)), ptsOrder = [...rosters].sort((a, b) => pfOf(b) - pfOf(a));
+const playoffTeams = league.settings.playoff_teams, top5 = byRecord.slice(0, playoffTeams - 1), rest = byRecord.slice(playoffTeams - 1);
+const wild = [...rest].sort((a, b) => pfOf(b) - pfOf(a))[0], chasers = rest.filter((r) => r !== wild), wildNext = [...chasers].sort((a, b) => pfOf(b) - pfOf(a))[0];
+const seedOrder = [...top5, wild, ...chasers], fifth = top5[top5.length - 1], bestOut = rest[0];
 const ord = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 const franchises = [];
 for (const r of [...rosters].sort((a, b) => a.roster_id - b.roster_id)) {
@@ -80,13 +83,15 @@ for (const r of [...rosters].sort((a, b) => a.roster_id - b.roster_id)) {
   // storyline: generated only from the numbers above
   const story = [];
   if (l === 0 && w > 0) story.push(`${w}–0 and the only unbeaten team left.`); else if (w === 0 && l > 0) story.push(`Still looking for a first win at 0–${l}.`);
-  else story.push(`${w}–${l}${t ? '–' + t : ''}, ${ord(seed)} in the standings and ${ord(prank)} in points scored.`);
+  else story.push(`${w}–${l}${t ? '–' + t : ''}, ${seed <= playoffTeams ? ord(seed) + ' seed' : ord(seed) + ' in the standings'} and ${ord(prank)} in points scored.`);
   if (streak && streak.length >= 3 && !(l === 0) && !(w === 0)) story.push(streak.type === 'W' ? `Winners of ${streak.length} straight.` : `Losers of ${streak.length} straight.`);
-  if (prank - seed >= 3) story.push(`The record is running ahead of the scoring.`); else if (seed - prank >= 3) story.push(`Scoring like a ${ord(prank)} seed, sitting ${ord(seed)}.`);
+  if (prank - seed >= 3) story.push(`The record is running ahead of the scoring.`); else if (seed - prank >= 3 && seed > playoffTeams) story.push(`Scoring like a ${ord(prank)} seed, sitting ${ord(seed)}.`);
   const gamesLeft = league.settings.playoff_week_start - 1 - through;
-  const gap = seed <= playoffTeams ? w - firstOut.settings.wins : cut.settings.wins - w, g = `${gap} game${gap === 1 ? '' : 's'}`;
-  if (seed <= playoffTeams) story.push(gap === 0 ? `Holding a playoff spot on points only, level on wins with the first team out, ${gamesLeft} to play.` : `Inside the playoff line by ${g} with ${gamesLeft} to play.`);
-  else story.push(gap > gamesLeft ? `Cannot reach the playoff line on wins alone.` : gap === 0 ? `Level on wins with the last playoff spot but behind on points, ${gamesLeft} to play.` : `${g} back of the last playoff spot with ${gamesLeft} to play.`);
+  const gs = (n) => `${n} game${n === 1 ? '' : 's'}`;
+  if (seed < playoffTeams) { const gap = w - bestOut.settings.wins; story.push(gap === 0 ? `Holding a top-five seed on the points tiebreak, ${gamesLeft} to play.` : `${gs(gap)} clear inside the top five with ${gamesLeft} to play.`); }
+  else if (seed === playoffTeams) story.push(`Holds the sixth seed as the highest scorer outside the top five, ${r1(pfOf(r) - pfOf(wildNext))} points clear of the next team.`);
+  else { const gw = fifth.settings.wins - w, gp = r1(pfOf(wild) - pfOf(r));
+    story.push(gw > gamesLeft ? `Only route left is the sixth seed on points: ${gp} behind.` : `${gw === 0 ? 'Level on wins with' : gs(gw) + ' back of'} the top five and ${gp} points behind the sixth-seed race, ${gamesLeft} to play.`); }
   if (featured[0]) story.push(`${featured[0].name} leads the lineup at ${featured[0].ppg} points per start.`);
   const myPicks = [];
   const drafted = new Set([season]);
@@ -107,7 +112,7 @@ const trades = []; for (const [w, list] of Object.entries(tx)) for (const t of l
   trades.push({ week: Number(w), rosters: t.roster_ids, players: Object.entries(t.adds || {}).map(([pid, to]) => ({ player_id: pid, name: players[pid]?.full_name || pid, to_roster: to })), picks: (t.draft_picks || []).map((p) => ({ season: p.season, round: p.round, original_roster: p.roster_id, to_roster: p.owner_id })) });
 if (problems.length) { console.error('IDENTITY RECONCILIATION FAILED:\n - ' + problems.join('\n - ')); process.exit(1); }
 const out = { generated_at: new Date().toISOString(), source: 'Sleeper public API', league_id: league.league_id, league_name: league.name, season: Number(season), through_week: through, current_week: idx.nfl_state.week,
-  playoff_teams: playoffTeams, playoff_week_start: league.settings.playoff_week_start, roster_positions: league.roster_positions.filter((p) => p !== 'BN'), scoring: { rec: league.scoring_settings.rec, pass_td: league.scoring_settings.pass_td, idp: true },
+  playoff_teams: playoffTeams, playoff_rule: 'Seeds 1–5 go to the best records, with points for as the tiebreaker. Seed 6 goes to the highest-scoring team among the other seven.', playoff_week_start: league.settings.playoff_week_start, roster_positions: league.roster_positions.filter((p) => p !== 'BN'), scoring: { rec: league.scoring_settings.rec, pass_td: league.scoring_settings.pass_td, idp: true },
   standings: seedOrder.map((r) => r.roster_id), franchises, history: history.map(({ teams, ...h }) => h), trades: trades.sort((a, b) => a.week - b.week) };
 await writeFile('site/data/canonical.json', JSON.stringify(out));
 console.log(`canonical.json: ${franchises.length} franchises reconciled, season ${season} through week ${through}`);
