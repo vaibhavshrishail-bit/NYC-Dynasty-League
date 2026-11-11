@@ -68,3 +68,4 @@ th{font-weight:600;font-size:12px;letter-spacing:.22em;text-transform:uppercase;
 .two{display:grid;grid-template-columns:1fr 1fr;gap:0 48px}@media(max-width:900px){.two{grid-template-columns:1fr}}
 .tw{overflow-x:auto}.note{color:var(--dim);font-size:14px;margin:8px 0 0}
 .chips{display:flex;flex-wrap:wrap;gap:8px}.chips span{border:1px solid var(--line);padding:5px 10px;font-size:15px}
+.tag{display:inline-block;font-weight:600;font-size:13px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border:1px solid}.tag.gold{color:#ffd76a;border-color:#a8862a;background:rgba(255,215,106,.08)}.tag.silver{color:#d5dbe3;border-color:#7b838f}.tag.brown{color:#d9a67a;border-color:#7a5236;background:rgba(217,166,122,.07)}

@@ -25,8 +25,11 @@ for (const s of idx.seasons) {
   const d = `${D}/seasons/${s.season}`, ro = await J(`${d}/rosters.json`), us = Object.fromEntries((await J(`${d}/users.json`)).map((u) => [u.user_id, u]));
   const mu = await J(`${d}/matchups.json`), wb = (await J(`${d}/winners_bracket.json`).catch(() => null)) || [];
   const fin = wb.find((m) => m.p === 1 && m.w);
+  // Toilet Bowl: in Sleeper's losers bracket the team that keeps 'advancing' is the one that keeps losing; the 'w' of its placement-1 game finishes last.
+  // Checked against the Commissioner's Playbook for 2022-2025 (4 of 4 match).
+  const lb = (await J(`${d}/losers_bracket.json`).catch(() => null)) || [], tb = s.season !== season ? lb.find((m) => m.p === 1 && m.w) : null;
   if (fin && s.season !== season) (titles[fin.w] ||= []).push(Number(s.season));
-  history.push({ season: Number(s.season), champion_roster: s.season !== season && fin ? fin.w : null, runner_up_roster: s.season !== season && fin ? fin.l : null,
+  history.push({ season: Number(s.season), champion_roster: s.season !== season && fin ? fin.w : null, runner_up_roster: s.season !== season && fin ? fin.l : null, toilet_bowl_roster: tb ? tb.w : null,
     teams: ro.map((r) => ({ roster_id: r.roster_id, owner_id: r.owner_id, handle: us[r.owner_id]?.display_name || null, wins: r.settings.wins, losses: r.settings.losses,
       pf: r2((r.settings.fpts || 0) + (r.settings.fpts_decimal || 0) / 100) })) });
   for (const [w, ms] of Object.entries(mu)) { const g = {};
@@ -105,7 +108,7 @@ for (const r of [...rosters].sort((a, b) => a.roster_id - b.roster_id)) {
     in_playoff_position: seed <= playoffTeams, streak, results, titles: (titles[r.roster_id] || []).filter((y) => history.find((h) => h.season === y).teams.find((x) => x.roster_id === r.roster_id).owner_id === r.owner_id).sort(),
     storyline: story.filter(Boolean), featured, roster_size: (r.players || []).length, future_picks: myPicks,
     h2h: Object.fromEntries(Object.entries(h2h[r.roster_id] || {}).map(([k, v]) => [k, v])),
-    seasons: history.map((h) => { const x = h.teams.find((q) => q.roster_id === r.roster_id); return { season: h.season, wins: x.wins, losses: x.losses, pf: x.pf, champion: h.champion_roster === r.roster_id, runner_up: h.runner_up_roster === r.roster_id, same_owner: x.owner_id === r.owner_id, handle: x.handle }; }) });
+    seasons: history.map((h) => { const x = h.teams.find((q) => q.roster_id === r.roster_id); return { season: h.season, wins: x.wins, losses: x.losses, pf: x.pf, champion: h.champion_roster === r.roster_id, runner_up: h.runner_up_roster === r.roster_id, toilet_bowl: h.toilet_bowl_roster === r.roster_id, same_owner: x.owner_id === r.owner_id, handle: x.handle }; }) });
 }
 const slugs = franchises.map((f) => f.slug); if (new Set(slugs).size !== slugs.length) problems.push('duplicate slugs');
 const trades = []; for (const [w, list] of Object.entries(tx)) for (const t of list) if (t.type === 'trade' && t.status === 'complete')
