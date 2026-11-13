@@ -63,6 +63,17 @@ Everything is static and data-driven. Nothing on these pages is typed by hand, s
 - `site/assets/app.js` holds shared helpers, the crest drawing and the site navigation (`NAV`).
 - Bye weeks come from an unofficial Sleeper schedule endpoint. If it stops working the last saved copy is used; if there is none, bye exposure is simply hidden.
 
+### The living layer (added November 2026)
+- **What "complete" means.** A week is complete only when Sleeper's NFL clock (`state.week`) has moved past it. Points on the board are not enough; Thursday scores appear mid-week. `through_week` is the last complete week, `current_week` the one being played or coming up, `week_in_progress` true once any score exists. Everything historical (results, streaks, head-to-head, records) uses complete weeks only.
+- `scripts/build-weekly.mjs` writes two files:
+  - `site/data/weekly.json`: the current week's preview (lineups as set, Sleeper projections scored with this league's settings, modeled win chance, headline, story, "when it swings" by game day, head-to-head, "how each side wins", live points while the week is played), weekly awards for every complete week, and season-to-date highlights. All sentences are templates in that script.
+  - `site/data/history.json`: one snapshot per complete week of seeds, records, power rankings and playoff odds. **Append-only**: a week already in the file is never recalculated. Weeks 1–9 are marked `reconstructed` (calculated afterwards with the model as it was on 13 Nov 2026); every later week is `recorded` when it finishes. Do not delete this file: reconstructing it would rewrite what the site showed.
+- `site/data/sleeper/projections/<week>.json` is refreshed only while that week is current, so past weeks keep the projections as they were. The endpoint is unofficial; without it the preview falls back to the scoring model and says so.
+- New and changed pages: `week.html` (The Fallout recap with awards, The Hype Show preview with downloadable matchup posters), `universe.html` (The Race: playoff-race chart, power-rankings bump chart, schedule gauntlet, all sharing one franchise and week selection), `playoffs.html` (the Chaos Machine: picks for every remaining week, bracket), `rivalry.html` (rivalry web, The Receipts), `index.html` (live hero, Time Machine selector, season highlights).
+- Named rivalries used to tag matchups are in `src/config/rivalries.json` (from the Commissioner's Playbook; roster 6's are left out because its manager changed).
+- Jersey colours live in two places that must match: `NFLC` in `site/assets/app.js` (website) and `NFL` in `src/engine/core.js` (films).
+- Weekly awards are calculated, not chosen. Definitions: Main Character = the winning-side starter whose points most exceeded the final margin; Heartbreaker = highest score by a losing team; Chaos = biggest upset by scoring average coming in; Steamroller = widest margin; Defensive Menace = top IDP starter; Collapse = biggest shortfall against a team's own average; Juggernaut = top of the power rankings.
+
 ### Scope rule
 The site describes; it does not advise. No trade, waiver, draft-target or start/sit recommendations. Win chances and odds are labelled as model estimates.
 
@@ -75,7 +86,7 @@ The site describes; it does not advise. No trade, waiver, draft-target or start/
 ## Status
 - Done: canonical data, League Pulse, Franchise HQ, Stakes Center, Rivalry Central, weekly recaps and previews, Archives, 12 cinematics (45s), Week 9 documentary.
 - Preserved as finished work: the 12 cinematics and `site/documentary/season-2026.mp4`. Do not re-render them without a reason.
-- Open: confirm the bracket and draft-order rules; Sleeper avatars are still not shown; trades before the current season are not loaded; a moving playoff bracket view for Weeks 15–17 has not been built.
+- Open: confirm the bracket and draft-order rules; kickoff times are not in the data (windows are by game day only); posters are made in the visitor's browser, not pre-rendered; Sleeper avatars are still not shown; trades before the current season are not loaded; a moving playoff bracket view for Weeks 15–17 has not been built.
 - The site is plain HTML, CSS and JS with no build step. A React + Vite + TypeScript shell was the stated preference and has not been done.
 - Rendering video is the only step that needs a capable session; everything else updates itself.
 - A checkpoint of the site before the league-hub work is on the branch `checkpoint-pre-league-hub`.

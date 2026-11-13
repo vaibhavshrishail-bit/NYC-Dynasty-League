@@ -35,7 +35,7 @@ for (const s of idx.seasons) {
   history.push({ season: Number(s.season), champion_roster: s.season !== season && fin ? fin.w : null, runner_up_roster: s.season !== season && fin ? fin.l : null, toilet_bowl_roster: tb ? tb.w : null,
     teams: ro.map((r) => ({ roster_id: r.roster_id, owner_id: r.owner_id, handle: us[r.owner_id]?.display_name || null, wins: r.settings.wins, losses: r.settings.losses,
       pf: r2((r.settings.fpts || 0) + (r.settings.fpts_decimal || 0) / 100) })) });
-  for (const [w, ms] of Object.entries(mu)) { const g = {};
+  for (const [w, ms] of Object.entries(mu)) { if (s.season === season && Number(w) > through) continue; /* a week still being played is not history yet */ const g = {};
     for (const m of ms) if (m.matchup_id) (g[m.matchup_id] ||= []).push(m);
     for (const pair of Object.values(g)) { if (pair.length !== 2 || !pair.some((m) => (m.points || 0) > 0)) continue; const [a, b] = pair;
       for (const [x, y] of [[a, b], [b, a]]) { const e = ((h2h[x.roster_id] ||= {})[y.roster_id] ||= { w: 0, l: 0, t: 0, pf: 0, pa: 0 });

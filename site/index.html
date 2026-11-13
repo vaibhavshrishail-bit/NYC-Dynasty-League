@@ -2,44 +2,65 @@
 <title>NYC Dynasty League — League Pulse</title><meta name="description" content="The NYC Dynasty League this week: the matchup that matters, the playoff race, power rankings and all twelve franchises.">
 <link rel="stylesheet" href="assets/app.css"></head><body>
 <div id="nav"></div>
-<div class="wrap">
-<header class="top" style="padding-bottom:6px"><div><div class="k" id="sub">NYC Dynasty League</div><h1 id="wk">League Pulse</h1></div>
-<nav><a class="btn" id="recap" href="week.html">Last week's recap</a><a class="btn" id="preview" href="week.html">This week's preview</a></nav></header>
+<div class="wrap show">
+<header class="top" style="padding-bottom:6px"><div><div class="k" id="sub">NYC Dynasty League</div><h1 id="wk">League Pulse</h1><div class="k" id="state" style="margin-top:8px"></div></div>
+<nav style="align-items:center"><label class="k" for="tm" style="margin-right:4px">Time machine</label><select class="sel" id="tm" aria-label="View the league as of a past week"></select></nav></header>
 <section class="pulse" id="pulse" aria-label="League Pulse"></section>
 <section class="two3" id="row2"></section>
-<header class="top" id="franchises" style="padding-top:44px"><div><div class="k">Franchise HQ · cinematics, storylines, history</div><h1 style="font-size:clamp(28px,4.6vw,56px)">Choose your franchise</h1></div>
+<section class="blk" id="hl" style="padding-top:26px"></section>
+<header class="top" id="franchises" style="padding-top:44px"><div><div class="k">Franchise HQ · cinematics, storylines, history · as of now</div><h1 style="font-size:clamp(28px,4.6vw,56px)">Choose your franchise</h1></div>
 <nav><a class="btn" href="documentary/">Season documentary</a><a class="btn" href="cinematics/">All cinematics</a></nav></header>
 <main class="grid" id="grid" aria-label="Franchises"></main>
 <section class="stand"><div class="k" id="st">Standings and the playoff line</div><ol id="stand"></ol></section>
 <footer id="foot"></footer></div>
 <script src="assets/app.js"></script><script src="assets/sim.js"></script><script>
 document.getElementById('nav').innerHTML=nav('League Pulse');
-loadAll().then(([c,L])=>{
-  const T=(id)=>c.byRoster[id],th=(id)=>c.themes[T(id).theme],fl=(id)=>`franchise.html?f=${esc(T(id).slug)}`,nm=(id)=>esc(T(id).team_name);
+loadLive().then(([c,L,WK,H])=>{
+  const T=(id)=>c.byRoster[id],th=(id)=>c.themes[T(id).theme],fl=(id)=>`franchise.html?f=${esc(T(id).slug)}`,nm=(id)=>esc(T(id).team_name),M=(id)=>esc(T(id).manager),f2=(x)=>x.toFixed(2),up=(x)=>esc(String(x).toUpperCase());
   document.getElementById('sub').textContent=`${c.league_name} · ${c.season} · Year Five`;
-  document.getElementById('wk').textContent=L.current_week<=L.regular_season_end?`Week ${L.current_week}`:`Week ${L.current_week} · Playoffs`;
-  document.getElementById('recap').href=`week.html?w=${L.through_week}`;document.getElementById('recap').textContent=`Week ${L.through_week} recap`;
-  document.getElementById('preview').href=`week.html?w=${L.current_week}`;document.getElementById('preview').textContent=`Week ${L.current_week} preview`;
-  const sim=simulate(c,L),m=L.pulse.matchups[0],up=L.pulse.upset,tp=L.pulse.top_player,ti=L.pulse.top_idp;
-  const side=(id)=>`<a href="${fl(id)}">${emblem(th(id))}<div class="n" style="color:${th(id).hi}">${nm(id)}</div><div class="r">${esc(T(id).record)} · ${L.teams[id].ppg} a week · ${pct(sim[id].playoff)} to make it</div></a>`;
-  const motw=m?`<div class="panel"><span class="k">Matchup of the week · Week ${m.week}</span><div class="vs">${side(m.a)}<div class="mid">VS</div>${side(m.b)}</div>
-   <p>${m.why.length?'Why this one: '+esc(m.why.join('; '))+'.':'The most evenly matched game on the slate.'} All-time: ${nm(m.a)} ${m.h2h.w}–${m.h2h.l} in ${m.h2h.games} meetings.</p>
-   <p class="small"><a href="rivalry.html?a=${esc(T(m.a).slug)}&b=${esc(T(m.b).slug)}">Open the rivalry file →</a> &nbsp; <a href="week.html?w=${m.week}">All ${L.pulse.matchups.length} games →</a></p></div>`
-   :`<div class="panel"><span class="k">Regular season complete</span><h3>The playoffs are here</h3><p><a href="playoffs.html">Open the Stakes Center →</a></p></div>`;
-  const heads=`<div class="panel"><span class="k">Headlines · through Week ${L.through_week}</span><ul class="heads">${L.pulse.headlines.map((h)=>`<li><b>${esc(h.title)}</b><span>${esc(h.detail)}</span></li>`).join('')||'<li><span>No headlines yet.</span></li>'}</ul></div>`;
-  document.getElementById('pulse').innerHTML=motw+heads;
-  const seeds=c.standings.map((id)=>T(id));
-  const picture=`<div class="panel"><span class="k">The playoff picture</span>${seeds.map((f,i)=>`${i===c.playoff_teams?'<div class="cutline"><span>PLAYOFF LINE</span></div>':''}<div class="odds" style="--c:${c.themes[f.theme].hi}"><a href="${fl(f.roster_id)}">${f.seed}. ${esc(f.team_name)}</a><span class="p">${pct(sim[f.roster_id].playoff)}</span><span class="bar"><i style="width:${(sim[f.roster_id].playoff*100).toFixed(1)}%"></i></span></div>`).join('')}
-   <p class="small">Chance to make the playoffs, from simulation. Seed 6 goes to the top scorer outside the top five. <a href="playoffs.html">Scenarios and draft stakes →</a></p></div>`;
-  const power=`<div class="panel"><span class="k">Power rankings · editorial, not the standings</span><ol class="pr">${L.pulse.power.map((id)=>{const p=L.teams[id].power,d=p.prev-p.rank;
-   return `<li><span>${p.rank}</span><span class="mv ${d>0?'up':d<0?'dn':''}">${d>0?'▲'+d:d<0?'▼'+(-d):'–'}</span><a href="${fl(id)}">${nm(id)}</a><span class="lab ${L.teams[id].momentum.label}">${L.teams[id].momentum.label}</span></li>`}).join('')}</ol>
-   <p class="small">40% record against every team every week, 35% scoring average, 25% last three weeks. Labels compare the last three weeks with the season average.</p></div>`;
-  const perf=`<div class="panel"><span class="k">Week ${L.through_week} standouts</span>
-   ${tp?`<h3>${esc(tp.name)} · ${tp.points.toFixed(1)}</h3><p class="small">Player of the week. ${esc(tp.position)}, ${esc(tp.nfl_team)}, for <a href="${fl(tp.roster_id)}">${nm(tp.roster_id)}</a>.</p>`:''}
-   ${ti?`<h3 style="margin-top:16px">${esc(ti.name)} · ${ti.points.toFixed(1)}</h3><p class="small">Defender of the week. ${esc(ti.position)}, ${esc(ti.nfl_team)}, for <a href="${fl(ti.roster_id)}">${nm(ti.roster_id)}</a>.</p>`:''}
-   <h3 style="margin-top:16px">${up?`Biggest upset: ${nm(up.winner)}`:'No upsets'}</h3>
-   <p class="small">${up?`Beat ${nm(up.loser)} ${up.winner_pts.toFixed(2)}–${up.loser_pts.toFixed(2)} despite averaging ${up.winner_ppg_before} a week coming in, against ${up.loser_ppg_before}.`:'Every winner was the higher-scoring team coming in.'} An upset is a win by the team with the lower scoring average entering the week.</p></div>`;
-  document.getElementById('row2').innerHTML=picture+power+perf;
+  const tm=document.getElementById('tm'),hw=Object.keys(H.weeks).map(Number).sort((a,b)=>b-a);
+  tm.innerHTML=`<option value="0">Now · Week ${c.current_week}</option>`+hw.map((w)=>`<option value="${w}">After Week ${w}</option>`).join('');
+  const liveSim=simulate(c,L);
+  function render(asOf){
+    const now=!asOf,w=asOf||L.through_week,hs=H.weeks[w],prev=H.weeks[w-1],aw=WK.awards[w],wkd=L.weeks[w];
+    document.getElementById('wk').textContent=now?(c.current_week<=L.regular_season_end?`Week ${c.current_week}`:`Week ${c.current_week} · Playoffs`):`After Week ${w}`;
+    document.getElementById('state').innerHTML=now?(c.week_in_progress?`<span class="chip live">LIVE</span> Week ${c.current_week} is being played · scores are provisional · results below are final through Week ${L.through_week}`:`Latest completed week: ${L.through_week} · next up: Week ${c.current_week}`)
+      :`<span class="chip">TIME MACHINE</span> The league as it stood after Week ${w} · <a href="#" id="back">back to now</a>`;
+    const g=WK.preview.games[0];
+    const hero=now&&g?`<div class="panel"><span class="k">Matchup of the week · Week ${WK.preview.week}${g.kicker?' · '+esc(g.kicker):''}</span>
+      <div class="vs"><a href="${fl(g.a)}">${emblem(th(g.a))}<div class="n hd" style="color:var(--bl);font-size:clamp(26px,3.4vw,44px)">${up(T(g.a).manager)}</div><div class="r">${nm(g.a)} · ${esc(T(g.a).record)}</div></a>
+       <div class="mid" style="font-family:'Bebas Neue';font-weight:400;font-size:clamp(26px,3.6vw,46px);color:#fff;line-height:1"><span style="color:var(--bl)">${f2(g.projected[0])}</span><br><span style="font-size:.4em">VS</span><br><span style="color:var(--rd)">${f2(g.projected[1])}</span></div>
+       <a href="${fl(g.b)}">${emblem(th(g.b))}<div class="n hd" style="color:var(--rd);font-size:clamp(26px,3.4vw,44px)">${up(T(g.b).manager)}</div><div class="r">${nm(g.b)} · ${esc(T(g.b).record)}</div></a></div>
+      <div class="hd" style="font-size:clamp(22px,2.6vw,32px);text-align:center;margin:4px 0 10px">${g.headline.map(esc).join('<br>')}</div>
+      <p class="small" style="text-align:center"><span class="chip">${up(g.rating)}</span>${g.live?`<span class="chip live">LIVE ${f2(g.live[0])} – ${f2(g.live[1])}</span>`:''} <a href="week.html?w=${WK.preview.week}#m0">Full preview →</a> &nbsp; <a href="week.html?w=${WK.preview.week}">All ${WK.preview.games.length} games →</a></p></div>`
+     :(()=>{const cg=wkd.closest,cw=cg.pa>cg.pb?cg.a:cg.b,cl=cw===cg.a?cg.b:cg.a,u=aw.chaos;const story=u&&u.gap>=10?{k:'Upset of the week',a:u.winner,b:u.loser,sa:u.winner_pts,sb:u.loser_pts,t:`${M(u.winner)} came in averaging ${u.winner_ppg_before} a week against ${M(u.loser)}'s ${u.loser_ppg_before}, and won.`}:{k:'Game of the week',a:cw,b:cl,sa:Math.max(cg.pa,cg.pb),sb:Math.min(cg.pa,cg.pb),t:`The closest game of Week ${w}: decided by ${f2(Math.abs(cg.pa-cg.pb))}.`};
+       return `<div class="panel"><span class="k">${story.k} · Week ${w}</span><div class="vs"><a href="${fl(story.a)}">${emblem(th(story.a))}<div class="n hd" style="color:var(--bl);font-size:clamp(26px,3.4vw,44px)">${up(T(story.a).manager)}</div><div class="r">${nm(story.a)}</div></a>
+        <div class="mid" style="font-family:'Bebas Neue';font-weight:400;font-size:clamp(26px,3.6vw,46px);color:#fff;line-height:1"><span style="color:var(--bl)">${f2(story.sa)}</span><br><span style="font-size:.4em">FINAL</span><br><span style="color:var(--rd)">${f2(story.sb)}</span></div>
+        <a href="${fl(story.b)}">${emblem(th(story.b))}<div class="n hd" style="color:var(--rd);font-size:clamp(26px,3.4vw,44px)">${up(T(story.b).manager)}</div><div class="r">${nm(story.b)}</div></a></div><p style="text-align:center">${story.t}</p><p class="small" style="text-align:center"><a href="week.html?w=${w}">Week ${w} recap and awards →</a></p></div>`})();
+    const heads=now?L.pulse.headlines.map((h)=>[h.title,h.detail]):[aw.main_character&&[`${aw.main_character.name} was the main character`,`${f2(aw.main_character.points)} for ${T(aw.main_character.roster_id).manager} in a game decided by ${f2(aw.main_character.margin)}.`],aw.heartbreaker&&[`${T(aw.heartbreaker.roster_id).manager} lost with ${f2(aw.heartbreaker.points)}`,`The highest losing score of the week, against ${T(aw.heartbreaker.opp).manager}.`],aw.steamroller&&[`${T(aw.steamroller.roster_id).manager} won by ${f2(aw.steamroller.margin)}`,`The widest margin of the week, over ${T(aw.steamroller.opp).manager}.`],aw.collapse&&[`${T(aw.collapse.roster_id).manager} fell ${aw.collapse.short} short of form`,`${f2(aw.collapse.points)} against an average of ${aw.collapse.average_before} coming in.`],[`${T(wkd.high.roster_id).manager} had the top score`,`${f2(wkd.high.pf)} in Week ${w}.`]].filter(Boolean);
+    document.getElementById('pulse').innerHTML=hero+`<div class="panel"><span class="k">${now?`Headlines · through Week ${L.through_week}`:`What happened in Week ${w}`}</span><ul class="heads">${heads.map(([t,d])=>`<li><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join('')}</ul><p class="small"><a href="week.html?w=${w}">All Week ${w} awards →</a></p></div>`;
+    const seeds=now?c.standings:hs.seeds,od=(id)=>now?liveSim[id].playoff:hs.odds[id].playoff,pw=now?L.pulse.power:hs.power,pprev=(id)=>now?L.teams[id].power.prev:(prev?prev.power.indexOf(id)+1:pw.indexOf(id)+1);
+    const picture=`<div class="panel"><span class="k">The playoff picture${now?'':` · after Week ${w}`}</span>${seeds.map((id,i)=>`${i===c.playoff_teams?'<div class="cutline"><span>PLAYOFF LINE</span></div>':''}<div class="odds" style="--c:${th(id).hi}"><a href="${fl(id)}">${i+1}. ${M(id)}${now?'':` <span class="note">${hs.records[id].w}–${hs.records[id].l}</span>`}</a><span class="p">${pct(od(id))}</span><span class="bar"><i style="width:${(od(id)*100).toFixed(1)}%"></i></span></div>`).join('')}
+      <p class="small">Chance to make the playoffs. ${now?'Simulated from results through Week '+L.through_week+'.':hs.source==='recorded'?'Recorded when Week '+w+' ended.':'Reconstructed afterwards from results through Week '+w+'; not a prediction made at the time.'} <a href="universe.html?w=${w}">See the race →</a> · <a href="playoffs.html">Chaos Machine →</a></p></div>`;
+    const power=`<div class="panel"><span class="k">Power rankings · editorial, not the standings</span><ol class="pr">${pw.map((id,i)=>{const d=pprev(id)-(i+1);return `<li><span>${i+1}</span><span class="mv ${d>0?'up':d<0?'dn':''}">${d>0?'▲'+d:d<0?'▼'+(-d):'–'}</span><a href="${fl(id)}">${M(id)} · ${nm(id)}</a><span class="lab ${now?L.teams[id].momentum.label:''}">${now?L.teams[id].momentum.label:''}</span></li>`}).join('')}</ol>
+      <p class="small">40% record against every team every week, 35% scoring average, 25% last three weeks. <a href="universe.html?w=${w}">Week-by-week chart →</a></p></div>`;
+    const tp=wkd.top_player,ti=wkd.top_idp,u=aw.chaos;
+    const perf=`<div class="panel"><span class="k">Week ${w} standouts</span><h3>${esc(tp.name)} · ${tp.points.toFixed(1)}</h3><p class="small">Player of the week. ${esc(tp.position)}, ${esc(tp.nfl_team)}, for <a href="${fl(tp.roster_id)}">${M(tp.roster_id)}</a>.</p>
+      <h3 style="margin-top:16px">${esc(ti.name)} · ${ti.points.toFixed(1)}</h3><p class="small">Defender of the week. ${esc(ti.position)}, ${esc(ti.nfl_team)}, for <a href="${fl(ti.roster_id)}">${M(ti.roster_id)}</a>.</p>
+      <h3 style="margin-top:16px">${u?`Biggest upset: ${M(u.winner)}`:'No upsets'}</h3><p class="small">${u?`Beat ${M(u.loser)} ${f2(u.winner_pts)}–${f2(u.loser_pts)} despite averaging ${u.winner_ppg_before} a week coming in, against ${u.loser_ppg_before}.`:'Every winner was the higher-scoring team coming in.'} An upset is a win by the team with the lower scoring average entering the week.</p></div>`;
+    document.getElementById('row2').innerHTML=picture+power+perf;
+    const sh=WK.season_highlights,hc=(lab,big,txt,wkk)=>`<a href="week.html?w=${wkk}" style="text-decoration:none"><div><span>${lab} · WEEK ${wkk}</span><b>${big}</b><p>${txt}</p></div></a>`;
+    document.getElementById('hl').innerHTML=now?`<h3>The season so far · updates as results come in</h3><div class="aw">
+      ${sh.high_score?hc('HIGHEST SCORE',f2(sh.high_score.pf),`${M(sh.high_score.roster_id)}'s ${nm(sh.high_score.roster_id)}.`,sh.high_score.week):''}
+      ${sh.biggest_upset?hc('BIGGEST UPSET',M(sh.biggest_upset.winner),`Beat ${M(sh.biggest_upset.loser)} while averaging ${sh.biggest_upset.winner_ppg_before} a week to ${sh.biggest_upset.loser_ppg_before}.`,sh.biggest_upset.week):''}
+      ${sh.closest?hc('CLOSEST FINISH',f2(sh.closest.v)+' pts',`${M(sh.closest.pa>sh.closest.pb?sh.closest.a:sh.closest.b)} over ${M(sh.closest.pa>sh.closest.pb?sh.closest.b:sh.closest.a)}.`,sh.closest.week):''}
+      ${sh.biggest_margin?hc('MOST DOMINANT WIN','+'+f2(sh.biggest_margin.margin),`${M(sh.biggest_margin.roster_id)} over ${M(sh.biggest_margin.opp)}, ${f2(sh.biggest_margin.points)}–${f2(sh.biggest_margin.opp_points)}.`,sh.biggest_margin.week):''}
+      ${sh.best_player?hc('BEST SINGLE GAME',esc(sh.best_player.name),`${f2(sh.best_player.points)} at ${esc(sh.best_player.position)} for ${M(sh.best_player.roster_id)}.`,sh.best_player.week):''}
+      ${sh.heartbreak?hc('CRUELEST LOSS',M(sh.heartbreak.roster_id),`Scored ${f2(sh.heartbreak.points)} and still lost to ${M(sh.heartbreak.opp)}.`,sh.heartbreak.week):''}
+      ${sh.longest_win_streak?hc('LONGEST WIN STREAK',sh.longest_win_streak.length+' straight',`${M(sh.longest_win_streak.roster_id)}, Weeks ${sh.longest_win_streak.from}–${sh.longest_win_streak.to}.`,sh.longest_win_streak.to):''}</div>`:'';
+    const bk=document.getElementById('back');if(bk)bk.onclick=(e)=>{e.preventDefault();tm.value='0';render(0)};
+  }
+  tm.onchange=()=>render(+tm.value);render(0);
   const order=c.standings.map((id)=>c.byRoster[id]);
   document.getElementById('grid').innerHTML=order.map((f,i)=>{const t=c.themes[f.theme],s=f.streak;
     return `<a class="card" href="franchise.html?f=${esc(f.slug)}" style="--c:${t.hi};--g:${t.flash};animation-delay:${i*45}ms" aria-label="${esc(f.team_name)}, ${esc(f.manager)}, ${c.season} record ${esc(f.record)}, ${f.pf.toFixed(1)} points for${f.titles.length?`, ${f.titles.length} titles`:''}">

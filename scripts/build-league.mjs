@@ -9,7 +9,7 @@ const sched = await J(`${D}/nfl_schedule.json`).catch(() => null);
 const F = Object.fromEntries(C.franchises.map((f) => [f.roster_id, f])), ids = C.franchises.map((f) => f.roster_id);
 const r1 = (x) => Math.round(x * 10) / 10, r2 = (x) => Math.round(x * 100) / 100, mean = (a) => a.reduce((x, y) => x + y, 0) / (a.length || 1);
 const sd = (a) => { const m = mean(a); return Math.sqrt(mean(a.map((x) => (x - m) ** 2))); };
-const W = C.through_week, regEnd = C.playoff_week_start - 1, cur = Math.min(W + 1, 17);
+const W = C.through_week, regEnd = C.playoff_week_start - 1, cur = C.current_week || Math.min(W + 1, 17);
 const POSMAP = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' }, pos = (p) => { const x = p?.position || p?.fantasy_positions?.[0] || '?'; return POSMAP[x] || x; };
 const IDP = new Set(['DL', 'LB', 'DB']), pname = (id) => players[id]?.full_name || `${players[id]?.first_name || ''} ${players[id]?.last_name || id}`.trim();
 
@@ -20,7 +20,7 @@ for (const s of [...idx.seasons].reverse()) {
   const wb = (await J(`${d}/winners_bracket.json`).catch(() => null)) || [], lb = (await J(`${d}/losers_bracket.json`).catch(() => null)) || [], pws = lg.settings.playoff_week_start;
   const tag = (w, a, b) => { if (w < pws) return 'regular'; const r = w - pws + 1, hit = (br) => br.find((m) => m.r === r && ((m.t1 === a && m.t2 === b) || (m.t1 === b && m.t2 === a)));
     const x = hit(wb); if (x) return x.p === 1 ? 'championship' : x.p ? 'placement' : 'playoff'; return hit(lb) ? 'toilet' : 'consolation'; };
-  for (const [w, ms] of Object.entries(mu)) { const g = {}; for (const m of ms) if (m.matchup_id) (g[m.matchup_id] ||= []).push(m);
+  for (const [w, ms] of Object.entries(mu)) { if (s.season === season && Number(w) > C.through_week) continue; /* in-progress weeks are not results */ const g = {}; for (const m of ms) if (m.matchup_id) (g[m.matchup_id] ||= []).push(m);
     for (const pr of Object.values(g)) { if (pr.length !== 2 || !pr.some((m) => (m.points || 0) > 0)) continue; const [a, b] = pr.sort((x, y) => x.roster_id - y.roster_id);
       meetings.push({ s: Number(s.season), w: Number(w), a: a.roster_id, b: b.roster_id, pa: a.points, pb: b.points, type: tag(Number(w), a.roster_id, b.roster_id) }); } }
   const h = C.history.find((x) => x.season === Number(s.season));

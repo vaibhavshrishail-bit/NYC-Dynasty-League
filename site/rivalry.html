@@ -2,6 +2,7 @@
 <title>Rivalry Central — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body>
 <div id="nav"></div><div class="wrap" style="padding-top:26px;padding-bottom:50px"><div class="k">Rivalry Central</div><h1 class="h-page">Head to head</h1>
 <p class="lede">Every meeting between any two franchises since the league began in 2022, from Sleeper results.</p>
+<div id="web"></div>
 <p style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0"><select class="sel" id="a" aria-label="First franchise"></select><span class="k">vs</span><select class="sel" id="b" aria-label="Second franchise"></select></p>
 <div id="page"></div><footer id="foot"></footer></div>
 <script src="assets/app.js"></script><script>
@@ -11,9 +12,22 @@ loadAll().then(([c,L])=>{
   const opts=c.standings.map((id)=>`<option value="${esc(T(id).slug)}">${esc(T(id).team_name)} · ${esc(T(id).manager)}</option>`).join('');sa.innerHTML=opts;sb.innerHTML=opts;
   const m0=L.pulse.matchups[0],def=m0?[T(m0.a).slug,T(m0.b).slug]:[T(c.standings[0]).slug,T(c.standings[1]).slug];
   sa.value=c.franchises.some((f)=>f.slug===q.get('a'))?q.get('a'):def[0];sb.value=c.franchises.some((f)=>f.slug===q.get('b'))?q.get('b'):def[1];
+  let hov=null;
+  function web(){const el=document.getElementById('web');if(innerWidth<760){el.innerHTML='';return}
+    const ids=c.standings,n=ids.length,R=250,cx=500,cy=300,pos=Object.fromEntries(ids.map((id,i)=>{const a=-Math.PI/2+i/n*2*Math.PI;return [id,[cx+Math.cos(a)*R*1.55,cy+Math.sin(a)*R]]}));
+    const A=c.franchises.find((f)=>f.slug===sa.value).roster_id,B=c.franchises.find((f)=>f.slug===sb.value).roster_id,foc=hov||A,rec=(a,b)=>{const g=L.meetings.filter((m)=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a));return [g.filter((m)=>(m.a===a?m.pa>m.pb:m.pb>m.pa)).length,g.filter((m)=>(m.a===a?m.pa<m.pb:m.pb<m.pa)).length,g.length]};
+    let s='<svg viewBox="0 0 1000 600" style="width:100%;height:auto;display:block" role="img" aria-label="Rivalry web: pick two franchises">';
+    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=ids[i],b=ids[j],r=rec(a,b),on=(a===foc||b===foc),pair=(a===A&&b===B)||(a===B&&b===A);if(!r[2])continue;const lop=Math.abs(r[0]-r[1])/r[2];
+      s+=`<line x1="${pos[a][0]}" y1="${pos[a][1]}" x2="${pos[b][0]}" y2="${pos[b][1]}" stroke="${pair?'#fff':on?`hsl(${Math.round(140-140*lop)} 70% 55%)`:'#3a3d48'}" stroke-width="${pair?4:on?1+r[2]*.45:1}" opacity="${pair?1:on?.85:.25}"/>`}
+    for(const id of ids){const t=c.themes[T(id).theme],p=pos[id],r=id!==foc?rec(foc,id):null,is=id===A||id===B;
+      s+=`<g data-id="${id}" style="cursor:pointer" transform="translate(${p[0]-34},${p[1]-34})"><circle cx="34" cy="34" r="40" fill="#07080b" stroke="${is?'#fff':'transparent'}" stroke-width="3"/><svg width="68" height="68" viewBox="0 0 200 200">${emblem(t).replace(/^<svg[^>]*>|<\/svg>$/g,'')}</svg>
+        <text x="34" y="${p[1]<cy?-14:96}" text-anchor="middle" style="font-family:'Barlow Condensed';font-size:17px;fill:${t.hi};font-weight:${is?600:400}">${esc(T(id).manager)}${r&&r[2]?` · ${r[0]}–${r[1]}`:''}</text></g>`}
+    el.innerHTML=s+`</svg><p class="note" style="text-align:center;margin-top:0">The rivalry web. Hover or tap a crest to see ${esc(T(foc).manager)}'s record against everyone (green lines are close series, red are lopsided, thicker means more meetings). Tap a second crest to open that rivalry.</p>`;
+    el.querySelectorAll('g[data-id]').forEach((g)=>{const id=+g.dataset.id;g.onmouseenter=()=>{if(hov!==id){hov=id;web()}};g.onclick=()=>{const cur=c.franchises.find((f)=>f.slug===sa.value).roster_id;if(id===cur)return;if(hov===id&&id!==cur&&!g.dataset.second){sb.value=sa.value===T(id).slug?sb.value:T(id).slug}sb.value=T(id).slug;hov=null;draw()}});
+    el.onmouseleave=()=>{if(hov){hov=null;web()}}}
   function draw(){
     const A=c.franchises.find((f)=>f.slug===sa.value),B=c.franchises.find((f)=>f.slug===sb.value),pg=document.getElementById('page');
-    if(A===B){pg.innerHTML='<p class="note">Pick two different franchises.</p>';return}
+    web();if(A===B){pg.innerHTML='<p class="note">Pick two different franchises.</p>';return}
     history.replaceState(null,'',`rivalry.html?a=${A.slug}&b=${B.slug}`);document.title=`${A.team_name} vs ${B.team_name} — Rivalry Central`;
     const a=A.roster_id,b=B.roster_id,ta=c.themes[A.theme],tb=c.themes[B.theme];
     const g=L.meetings.filter((m)=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a)).map((m)=>m.a===a?{...m,x:m.pa,y:m.pb}:{...m,x:m.pb,y:m.pa});
@@ -41,6 +55,13 @@ loadAll().then(([c,L])=>{
       <tr><td>Closest game</td><td>${close.x.toFixed(2)}–${close.y.toFixed(2)}, ${where(close)}</td></tr><tr><td>Last meeting</td><td>${esc(T(last.x>last.y?a:b).team_name)} ${Math.max(last.x,last.y).toFixed(2)}–${Math.min(last.x,last.y).toFixed(2)}, ${where(last)}</td></tr>
       <tr><td>Next meeting</td><td>${next?'Week '+next[0]+' of '+c.season:'None left on the '+c.season+' regular-season schedule'}</td></tr></table></div>
       ${prev.length?`<p class="note">Results follow the roster spot. ${prev.map((f)=>`${esc(f.team_name)}'s games before ${c.season} were played under ${esc(f.former_managers.join(', '))}.`).join(' ')}</p>`:''}
+      <h3 style="margin-top:26px">The receipts</h3><div class="tw"><table>${(()=>{const o=[],lossHi=(x)=>{const l=g.filter((m)=>x?m.x<m.y:m.y<m.x);return l.length?l.reduce((p,m)=>(x?m.x>p.x:m.y>p.y)?m:p):null},la=lossHi(1),lb=lossHi(0),ko=g.filter((m)=>m.type==='playoff'||m.type==='championship');
+        if(la)o.push(`<tr><td>${esc(A.team_name)} lost despite scoring</td><td>${la.x.toFixed(2)} (to ${la.y.toFixed(2)}), ${where(la)}</td></tr>`);if(lb)o.push(`<tr><td>${esc(B.team_name)} lost despite scoring</td><td>${lb.y.toFixed(2)} (to ${lb.x.toFixed(2)}), ${where(lb)}</td></tr>`);
+        if(best.n>=3)o.push(`<tr><td>Longest run</td><td>${esc(T(best.w).team_name)} won ${best.n} in a row</td></tr>`);
+        for(const m of ko)o.push(`<tr><td>${m.type==='championship'?'Championship game':'Playoff knockout'}</td><td>${esc(T(m.x>m.y?a:b).team_name)} ended ${esc(T(m.x>m.y?b:a).team_name)}'s season ${Math.max(m.x,m.y).toFixed(2)}–${Math.min(m.x,m.y).toFixed(2)}, ${where(m)}</td></tr>`);
+        const tb=g.filter((m)=>m.type==='toilet');if(tb.length)o.push(`<tr><td>Toilet Bowl bracket meetings</td><td>${tb.map((m)=>`${where(m)}: ${esc(T(m.x>m.y?a:b).team_name)} ${Math.max(m.x,m.y).toFixed(2)}–${Math.min(m.x,m.y).toFixed(2)}`).join('; ')}</td></tr>`);
+        const sc=g.filter((m)=>m.s===c.season);if(sc.length)o.push(`<tr><td>This season</td><td>${sc.map((m)=>`Week ${m.w}: ${esc(T(m.x>m.y?a:b).team_name)} ${Math.max(m.x,m.y).toFixed(2)}–${Math.min(m.x,m.y).toFixed(2)}`).join('; ')}</td></tr>`);return o.join('')})()}</table></div>
+      <p class="note">Every line is a result from Sleeper. No quotes, no opinions.</p>
       <h3 style="margin-top:26px">Share card</h3><canvas class="share" id="card" width="1200" height="630" aria-label="Shareable rivalry card"></canvas><p style="margin-top:10px"><button class="btn" id="dl">Download card (PNG)</button></p></section>
     <section class="blk"><h3>Every meeting</h3>${[...g].reverse().map((m)=>`<div class="meet"><span class="t">${m.s} · W${m.w}</span><span>${m.x>m.y?`<b>${esc(A.team_name)}</b>`:esc(A.team_name)} ${m.x.toFixed(2)} – ${m.y.toFixed(2)} ${m.y>m.x?`<b>${esc(B.team_name)}</b>`:esc(B.team_name)}</span><span class="t">${m.type==='regular'?'':typeLabel[m.type]}</span></div>`).join('')}</section></div>`:''}`;
     if(!g.length)return;
@@ -57,6 +78,6 @@ loadAll().then(([c,L])=>{
     document.fonts.ready.then(()=>Promise.all(["900 150px Cinzel","600 30px 'Barlow Condensed'"].map((f)=>document.fonts.load(f)))).then(paint);
     document.getElementById('dl').onclick=()=>{const l=document.createElement('a');l.download=`${A.slug}-vs-${B.slug}.png`;l.href=cv.toDataURL('image/png');l.click()};
   }
-  sa.onchange=sb.onchange=draw;draw();document.getElementById('foot').textContent=stamp(c);
+  sa.onchange=sb.onchange=draw;draw();addEventListener('resize',web);document.getElementById('foot').textContent=stamp(c);
 }).catch((e)=>{console.error(e);document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});
 </script></body></html>

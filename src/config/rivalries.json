@@ -1,0 +1,169 @@
+{
+ "_note": "Named rivalries from the Commissioner's Playbook 2026-27 (2026-09-08), keyed by roster_id. Rivalries involving roster 6 are left out because its manager changed for 2026. Used only to tag matchups; edit freely.",
+ "rivalries": [
+  {
+   "a": 1,
+   "b": 11,
+   "tag": "Marquee Rivalry",
+   "weeks": [
+    2,
+    13
+   ]
+  },
+  {
+   "a": 1,
+   "b": 4,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    6
+   ]
+  },
+  {
+   "a": 1,
+   "b": 7,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    4
+   ]
+  },
+  {
+   "a": 2,
+   "b": 3,
+   "tag": "Marquee Rivalry",
+   "weeks": [
+    3,
+    14
+   ]
+  },
+  {
+   "a": 2,
+   "b": 10,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    6
+   ]
+  },
+  {
+   "a": 2,
+   "b": 8,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    5
+   ]
+  },
+  {
+   "a": 2,
+   "b": 9,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    9
+   ]
+  },
+  {
+   "a": 2,
+   "b": 11,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    7
+   ]
+  },
+  {
+   "a": 2,
+   "b": 12,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    10
+   ]
+  },
+  {
+   "a": 3,
+   "b": 5,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    8
+   ]
+  },
+  {
+   "a": 3,
+   "b": 8,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    4
+   ]
+  },
+  {
+   "a": 3,
+   "b": 7,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    7
+   ]
+  },
+  {
+   "a": 4,
+   "b": 11,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    11
+   ]
+  },
+  {
+   "a": 5,
+   "b": 11,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    10
+   ]
+  },
+  {
+   "a": 5,
+   "b": 9,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    11
+   ]
+  },
+  {
+   "a": 8,
+   "b": 12,
+   "tag": "Marquee Rivalry",
+   "weeks": [
+    2,
+    13
+   ]
+  },
+  {
+   "a": 8,
+   "b": 10,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    11
+   ]
+  },
+  {
+   "a": 9,
+   "b": 10,
+   "tag": "Marquee Rivalry",
+   "weeks": [
+    2,
+    13
+   ]
+  },
+  {
+   "a": 9,
+   "b": 12,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    4
+   ]
+  },
+  {
+   "a": 10,
+   "b": 12,
+   "tag": "Personal Rivalry",
+   "weeks": [
+    8
+   ]
+  }
+ ]
+}
