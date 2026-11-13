@@ -3,7 +3,7 @@
 <div id="nav"></div><div class="wrap" style="padding-top:26px;padding-bottom:50px"><div class="k">Rivalry Central</div><h1 class="h-page">Head to head</h1>
 <p class="lede">Every meeting between any two franchises since the league began in 2022, from Sleeper results.</p>
 <div id="web"></div>
-<p style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0"><select class="sel" id="a" aria-label="First franchise"></select><span class="k">vs</span><select class="sel" id="b" aria-label="Second franchise"></select></p>
+<div class="steps" id="steps"><span class="on">1. Pick a franchise</span><span>2. Pick a rival</span></div><p style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0"><select class="sel" id="a" aria-label="First franchise"></select><span class="k">vs</span><select class="sel" id="b" aria-label="Second franchise"></select></p>
 <div id="page"></div><footer id="foot"></footer></div>
 <script src="assets/app.js"></script><script>
 document.getElementById('nav').innerHTML=nav('Rivalries');
@@ -12,7 +12,7 @@ loadAll().then(([c,L])=>{
   const opts=c.standings.map((id)=>`<option value="${esc(T(id).slug)}">${esc(T(id).team_name)} · ${esc(T(id).manager)}</option>`).join('');sa.innerHTML=opts;sb.innerHTML=opts;
   const m0=L.pulse.matchups[0],def=m0?[T(m0.a).slug,T(m0.b).slug]:[T(c.standings[0]).slug,T(c.standings[1]).slug];
   sa.value=c.franchises.some((f)=>f.slug===q.get('a'))?q.get('a'):def[0];sb.value=c.franchises.some((f)=>f.slug===q.get('b'))?q.get('b'):def[1];
-  let hov=null;
+  let hov=null,armed=false;const steps=()=>{const sp=document.querySelectorAll('#steps span');sp[0].className=armed?'':'on';sp[1].className=armed?'on':''};if(!q.get('a')&&myTeam.get()&&c.franchises.some((f)=>f.slug===myTeam.get())&&myTeam.get()!==sb.value)sa.value=myTeam.get();
   function web(){const el=document.getElementById('web');if(innerWidth<760){el.innerHTML='';return}
     const ids=c.standings,n=ids.length,R=250,cx=500,cy=300,pos=Object.fromEntries(ids.map((id,i)=>{const a=-Math.PI/2+i/n*2*Math.PI;return [id,[cx+Math.cos(a)*R*1.55,cy+Math.sin(a)*R]]}));
     const A=c.franchises.find((f)=>f.slug===sa.value).roster_id,B=c.franchises.find((f)=>f.slug===sb.value).roster_id,foc=hov||A,rec=(a,b)=>{const g=L.meetings.filter((m)=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a));return [g.filter((m)=>(m.a===a?m.pa>m.pb:m.pb>m.pa)).length,g.filter((m)=>(m.a===a?m.pa<m.pb:m.pb<m.pa)).length,g.length]};
@@ -22,8 +22,8 @@ loadAll().then(([c,L])=>{
     for(const id of ids){const t=c.themes[T(id).theme],p=pos[id],r=id!==foc?rec(foc,id):null,is=id===A||id===B;
       s+=`<g data-id="${id}" style="cursor:pointer" transform="translate(${p[0]-34},${p[1]-34})"><circle cx="34" cy="34" r="40" fill="#07080b" stroke="${is?'#fff':'transparent'}" stroke-width="3"/><svg width="68" height="68" viewBox="0 0 200 200">${emblem(t).replace(/^<svg[^>]*>|<\/svg>$/g,'')}</svg>
         <text x="34" y="${p[1]<cy?-14:96}" text-anchor="middle" style="font-family:'Barlow Condensed';font-size:17px;fill:${t.hi};font-weight:${is?600:400}">${esc(T(id).manager)}${r&&r[2]?` · ${r[0]}–${r[1]}`:''}</text></g>`}
-    el.innerHTML=s+`</svg><p class="note" style="text-align:center;margin-top:0">The rivalry web. Hover or tap a crest to see ${esc(T(foc).manager)}'s record against everyone (green lines are close series, red are lopsided, thicker means more meetings). Tap a second crest to open that rivalry.</p>`;
-    el.querySelectorAll('g[data-id]').forEach((g)=>{const id=+g.dataset.id;g.onmouseenter=()=>{if(hov!==id){hov=id;web()}};g.onclick=()=>{const cur=c.franchises.find((f)=>f.slug===sa.value).roster_id;if(id===cur)return;if(hov===id&&id!==cur&&!g.dataset.second){sb.value=sa.value===T(id).slug?sb.value:T(id).slug}sb.value=T(id).slug;hov=null;draw()}});
+    el.innerHTML=s+`</svg><p class="note" style="text-align:center;margin-top:0">Showing ${esc(T(foc).manager)}'s record against everyone. Green lines are close series, red are lopsided, thicker means more meetings. ${armed?'Now click the rival.':'Click a crest to start from a different franchise.'}</p>`;
+    el.querySelectorAll('g[data-id]').forEach((g)=>{const id=+g.dataset.id;g.onmouseenter=()=>{if(hov!==id){hov=id;web()}};g.onclick=()=>{if(!armed){if(T(id).slug===sb.value)sb.value=sa.value;sa.value=T(id).slug;armed=true}else{if(T(id).slug===sa.value)return;sb.value=T(id).slug;armed=false}hov=null;steps();draw()}});
     el.onmouseleave=()=>{if(hov){hov=null;web()}}}
   function draw(){
     const A=c.franchises.find((f)=>f.slug===sa.value),B=c.franchises.find((f)=>f.slug===sb.value),pg=document.getElementById('page');

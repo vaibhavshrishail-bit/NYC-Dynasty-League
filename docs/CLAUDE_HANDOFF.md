@@ -90,3 +90,25 @@ The site describes; it does not advise. No trade, waiver, draft-target or start/
 - The site is plain HTML, CSS and JS with no build step. A React + Vite + TypeScript shell was the stated preference and has not been done.
 - Rendering video is the only step that needs a capable session; everything else updates itself.
 - A checkpoint of the site before the league-hub work is on the branch `checkpoint-pre-league-hub`.
+
+## Polish cycle (Nov 2026): design system v3 and the six-destination layout
+
+Checkpoint before this work: branch `checkpoint-pre-polish`.
+
+**Navigation.** Six destinations in `NAV` (`site/assets/app.js`): League Pulse (`./`), Matchups (`week.html`), Playoffs (`playoffs.html`), Franchises (`./#franchises`), Rivalries (`rivalry.html`), Archives (`archives.html`). Desktop shows a top bar; at 820px and below `nav()` also renders a fixed bottom tab bar (`.tabbar`). `universe.html` is now a sub-page of Playoffs ("The race so far"), linked by `subnav()`. No URL was removed.
+
+**Page rules.** One primary story per screen, then a clear next action; reference material goes in `details.fold`.
+- `index.html`: hero (matchup of the week, headline, `why`) → this week strip → playoff picture | power rankings → rivalry spotlight → four awards → season so far → Franchise HQ → films → standings (folded). Time Machine mode shows the sticky `.tmbar` and hides `#nowonly`, so no current-week content appears beside a past week.
+- `week.html`: each game is a `details.mx` accordion. Summary = names, records, projected points, win chance, first headline line. Inside: headline, why it matters, jerseys, story, how each side wins, poster; then folds for game-day windows, head-to-head and lineups. `#m<n>` in the address opens that game.
+- `playoffs.html`: leads with "What happens if [franchise] beats [opponent]?", Wins / Loses / Reset scenario, four result cards showing baseline → scenario, who else moves. Everything else is folded (`data-f` keys keep folds open across redraws). `#draft` opens the draft fold.
+- `universe.html`: below 860px the charts use a narrow viewBox with full-height tap columns per week (no precision tapping), ◀ ▶ week buttons, a scrollable franchise chip row, and a card list for the gauntlet. Desktop keeps point clicks and adds crests to line-end labels.
+- `rivalry.html`: "1. Pick a franchise 2. Pick a rival" steps drive the web's two-click selection.
+- The chosen franchise is remembered in `localStorage` (`nyc.team`) via `myTeam` and pre-selects on Playoffs, the race and Rivalries.
+
+**Copy variation.** `vary(list, ...seed)` in `scripts/build-weekly.mjs` picks phrasing deterministically from roster ids and the week, so wording changes week to week but never between refreshes. Each game now carries `stakes` (playoff chance now / with a win / with a loss) and a `why` sentence. `win` is stored to three decimals so the bar and the headline agree.
+
+**Checks (run locally, not in CI).** Start `python3 -m http.server 8765` in `site/`, then:
+- `python3 scripts/ux-audit.py <outdir>`: 8 pages × 1440/768/390/320; reports horizontal overflow, page height, text under 12px, tap targets under 30px, console errors; saves screenshots.
+- `python3 scripts/ux-interact.py`: time machine in/out, scenario win/reset, fold persistence, deep links, chart tap and save, poster download, rivalry selection, old URLs.
+
+**Known and unresolved.** Nameplates on the jersey graphics render at 5–7px on phones (decorative; the name is printed underneath at 17px+). Headline/story templates have not been tuned against the Weeks 1–9 previews (not yet provided). Reseeding and the rookie draft-order rule are still flagged as unconfirmed on the site. No benchmark against other league sites was run. Charts were not screen-reader tested beyond labels and titles.

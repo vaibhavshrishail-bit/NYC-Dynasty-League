@@ -59,3 +59,10 @@ The documentary has its own slower score in `src/engine/doc_audio.py`.
 The Hub and franchise pages draw each crest as SVG from the same glyph and palette the film uses (`site/data/themes.json`, exported from `themes.js`), so a franchise looks the same in all three places. Re-export after editing a theme (see the command in `docs/VIDEO_PRODUCTION.md`).
 
 The `temple` theme belonged to roster 10's former identity, The Pantheon, and is retired.
+
+## Design system v3 (Nov 2026)
+- Type: Bebas Neue for every headline, name-in-a-matchup and big number; Barlow Condensed for everything else; franchise display faces only on crests and franchise cards. Body 18px, labels 14px, nothing below 12px.
+- Colour roles: blue = left side of a matchup, red = right side, green = league-wide or "why it matters", gold = titles. Each award has its own accent and icon (`AWICON`, `.aw .<key>`).
+- Touch targets 44px for buttons and controls; text links in lists at least 32px.
+- Motion is limited to fades and width transitions and is disabled under `prefers-reduced-motion`.
+- Above the fold answers "what matters right now"; tables and lineups sit behind folds.
