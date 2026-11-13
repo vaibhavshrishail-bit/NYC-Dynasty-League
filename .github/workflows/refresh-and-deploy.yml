@@ -26,6 +26,8 @@ jobs:
         run: node scripts/build-league.mjs
       - name: Build this week's preview, awards and the week-by-week history
         run: node scripts/build-weekly.mjs
+      - name: Check the playoff model before publishing
+        run: node scripts/test-playoff-model.mjs
       - name: Commit data if changed
         run: |
           git config user.name "sleeper-refresh[bot]"

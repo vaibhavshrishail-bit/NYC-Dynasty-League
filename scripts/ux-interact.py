@@ -11,13 +11,19 @@ async def main():
             t=await pg.inner_text('body');assert await pg.query_selector('.tmbar') and 'After Week 5' in t and 'Week 5 results' in t, 'tm'
             assert not await pg.is_visible('#nowonly') and 'Matchup of the week' not in t and 'Week 10' not in t.replace('Now · Week 10',''), 'tm mixes weeks'
             await pg.screenshot(path=f'build/tm_{wd}.png');await pg.click('#back');await pg.wait_for_timeout(200);assert not await pg.query_selector('.tmbar');print(wd,'time machine ok')
-            # scenario
-            await pg.goto(B+'playoffs.html');await pg.wait_for_selector('.ask');await pg.select_option('#me',label='Taylor');await pg.wait_for_timeout(600)
-            base=await pg.inner_text('.sc');await pg.click('[data-me=win]');await pg.wait_for_timeout(900);win=await pg.inner_text('.sc');assert '→' in win and 'Your scenario' in (await pg.inner_text('body')) or 'YOUR SCENARIO' in (await pg.inner_text('body')),'scn'
-            await pg.screenshot(path=f'build/scenario_{wd}.png');print(wd,'scenario:',' | '.join(win.split('\n')[:3]))
-            await pg.click('#reset');await pg.wait_for_timeout(600);assert (await pg.inner_text('.sc'))==base,'reset';print(wd,'reset ok')
-            await pg.click('details[data-f=more] summary');await pg.click('.pick button >> nth=0');await pg.wait_for_timeout(900);assert await pg.evaluate("document.querySelector('details[data-f=more]').open"),'fold stays open';print(wd,'bigger scenario ok')
-            await pg.goto(B+'playoffs.html#draft');await pg.wait_for_selector('.ask');assert await pg.evaluate("document.querySelector('#draft').open");print(wd,'draft deep link ok')
+            # war room
+            await pg.goto(B+'playoffs.html');await pg.wait_for_selector('svg.road');await pg.click('#pk button:has-text("Taylor")');await pg.wait_for_timeout(300)
+            base=await pg.inner_text('#bigp');assert 'Taylor' in await pg.inner_text('#A .nm') or 'TAYLOR' in await pg.inner_text('#A .nm')
+            await pg.click('.forkb [data-br=win]');await pg.wait_for_timeout(300);win=await pg.inner_text('#bigp');assert win!=base and await pg.query_selector('.sb.hyp'),'scenario'
+            assert await pg.evaluate("document.querySelector('.cmp button[data-br=win]').classList.contains('col-on')") and 'HYPOTHETICAL' in (await pg.inner_text('#C')).upper() and 'UNDER YOUR SCENARIO' in (await pg.inner_text('#E')).upper()
+            await pg.screenshot(path=f'build/scenario_{wd}.png');print(wd,'war room: win scenario',base,'->',win)
+            await pg.click('#rs1');await pg.wait_for_timeout(300);assert (await pg.inner_text('#bigp'))==base and not await pg.query_selector('.sb');print(wd,'reset ok')
+            await pg.evaluate("document.querySelector('svg.road .hit[data-w=\"5\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))");await pg.wait_for_timeout(300)
+            assert await pg.query_selector('.sb.his') and 'AFTER WEEK 5' in (await pg.inner_text('#C')).upper() and not await pg.query_selector('.forkb');await pg.click('#rc1');await pg.wait_for_timeout(200);assert not await pg.query_selector('.sb');print(wd,'historical week and return ok')
+            await pg.focus('svg.road .hit[data-br=lose]');await pg.keyboard.press('Enter');await pg.wait_for_timeout(300);assert await pg.query_selector('.sb.hyp');await pg.click('#rs1');print(wd,'keyboard scenario ok')
+            await pg.click('details[data-f=more] summary');await pg.click('.pk2 button >> nth=2');await pg.wait_for_timeout(300);assert await pg.evaluate("document.querySelector('details[data-f=more]').open");await pg.click('#rs1');print(wd,'other games ok')
+            await pg.click('#C .w-row[data-id="10"]');await pg.wait_for_timeout(300);assert 'VAIBHAV' in (await pg.inner_text('#D h2')).upper() and len(await pg.query_selector_all('#D .ra a'))>=1;print(wd,'franchise switch updates road ahead')
+            await pg.goto(B+'playoffs.html#draft');await pg.wait_for_selector('#draft');assert await pg.evaluate("document.querySelector('#draft').open");print(wd,'draft deep link ok')
             # race
             await pg.goto(B+'universe.html');await pg.wait_for_selector('svg.chart');await pg.click('#fc button >> nth=4');await pg.click('#pw');await pg.click('#pw');await pg.wait_for_timeout(200)
             assert 'After Week 7' in await pg.inner_text('#wkl') or 'AFTER WEEK 7' in await pg.inner_text('#wkl');

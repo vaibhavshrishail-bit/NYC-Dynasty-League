@@ -1,6 +1,6 @@
 // Builds the "living" layer: site/data/weekly.json (this week's preview, live scores, weekly awards, season highlights)
 // and site/data/history.json (one snapshot per completed week of standings, power rankings and playoff odds).
-// history.json is append-only: a week's snapshot is written once and never recalculated, so what the site showed then stays what it shows.
+// history.json: the latest completed week stays 'open' and is rewritten if its results change (stat corrections); once the next week completes it is 'locked' and never recalculated.
 // No AI. Every sentence below is a template filled from Sleeper numbers.
 import { readFile, writeFile } from 'node:fs/promises';
 const J = async (p) => JSON.parse(await readFile(p, 'utf8'));
@@ -39,15 +39,17 @@ const season = { biggest_upset: pick((x) => x.v, (w) => ({ v: awards[w].chaos?.g
 // ---------- history snapshots (append-only) ----------
 const hist = await J('site/data/history.json').catch(() => ({ _note: 'One snapshot per completed week. "reconstructed" weeks were calculated after the fact with the current model from results through that week; "recorded" weeks were saved when that week finished and are never recalculated.', weeks: {} }));
 const firstBuild = Object.keys(hist.weeks).length === 0;
-for (let w = 1; w <= W; w++) { if (hist.weeks[w]) continue;
+for (let w = 1; w <= W; w++) { const prevSnap = hist.weeks[w]; if (prevSnap && w < W) { prevSnap.status = 'locked'; continue; } // only the latest completed week stays open to stat corrections
   const rows = ids.map((id) => { const rs = F[id].results.filter((r) => r.week <= w), sc = rs.map((r) => r.pf); return { roster_id: id, wins: rs.filter((r) => r.result === 'W').length, losses: rs.filter((r) => r.result === 'L').length, pf: r2(sc.reduce((a, b) => a + b, 0)), ppg: mean(sc), last3: mean(sc.slice(-3)), sd: sdv(sc) }; });
   const schedule = {}; for (let k = w + 1; k <= regEnd; k++) { const g = {}; for (const m of matchups[k] || []) if (m.matchup_id) (g[m.matchup_id] ||= []).push(m.roster_id); const pr = Object.values(g).filter((x) => x.length === 2).map((x) => x.sort((a, b) => a - b)); if (pr.length) schedule[k] = pr; }
   const Cw = { franchises: rows, playoff_teams: C.playoff_teams }, Lw = { teams: Object.fromEntries(rows.map((r) => [r.roster_id, r])), league_sd: mean(rows.map((r) => r.sd)) || 25, schedule };
   const o = sim.simulate(Cw, Lw, {}, 6000), ap = (id) => { let x = 0, y = 0; for (let k = 1; k <= w; k++) { const me = matchups[k].find((m) => m.roster_id === id).points; for (const m of matchups[k]) if (m.roster_id !== id) me > m.points ? x++ : me < m.points && y++; } return x / ((x + y) || 1); };
   const mp = Math.max(...rows.map((r) => r.ppg)), ml = Math.max(...rows.map((r) => r.last3)), ps = (r) => 100 * (0.4 * ap(r.roster_id) + 0.35 * r.ppg / mp + 0.25 * r.last3 / ml);
-  hist.weeks[w] = { source: firstBuild && w < W ? 'reconstructed' : w === W && !firstBuild ? 'recorded' : 'reconstructed', saved_at: new Date().toISOString(), seeds: sim.seedTeams(rows.map((r) => ({ id: r.roster_id, w: r.wins, pf: r.pf })), C.playoff_teams),
+  const snap = { source: prevSnap ? prevSnap.source : firstBuild && w < W ? 'reconstructed' : w === W && !firstBuild ? 'recorded' : 'reconstructed', saved_at: prevSnap ? prevSnap.saved_at : new Date().toISOString(), status: w === W ? 'open' : 'locked', seeds: sim.seedTeams(rows.map((r) => ({ id: r.roster_id, w: r.wins, pf: r.pf })), C.playoff_teams),
     records: Object.fromEntries(rows.map((r) => [r.roster_id, { w: r.wins, l: r.losses, pf: r.pf }])), power: [...rows].sort((a, b) => ps(b) - ps(a)).map((r) => r.roster_id),
-    odds: Object.fromEntries(ids.map((id) => [id, { playoff: r2(o[id].playoff), top5: r2(o[id].top5), sixth: r2(o[id].sixth), champ: r2(o[id].champ) }])) }; }
+    odds: Object.fromEntries(ids.map((id) => [id, { playoff: r2(o[id].playoff), top5: r2(o[id].top5), sixth: r2(o[id].sixth), champ: r2(o[id].champ) }])) };
+  const same = prevSnap && JSON.stringify(prevSnap.records) === JSON.stringify(snap.records); // unchanged results: keep the saved snapshot exactly
+  if (same) { prevSnap.status = snap.status; } else { if (prevSnap) snap.corrected_at = new Date().toISOString(); hist.weeks[w] = snap; } }
 await writeFile('site/data/history.json', JSON.stringify(hist));
 
 // ---------- this week's preview (and live scores while it is being played) ----------

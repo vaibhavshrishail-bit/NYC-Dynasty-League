@@ -115,3 +115,20 @@ Checkpoint before this work: branch `checkpoint-pre-polish`.
 
 ## Newsletter library and Playbook rules (13 Nov 2026)
 See `docs/reference/NEWSLETTER_ARCHIVE.md`. The commissioner's Weeks 1–8 previews and the League History series are stored in `site/library/` and listed in `site/data/library.json`; Archives shows them under "Newsletter library". Reseeding and the draft-order rule are now taken from the Commissioner's Playbook and are no longer flagged as unconfirmed (`sim.js` reseeds after Week 15).
+
+## Playoff War Room 2.0 (13 Nov 2026)
+Checkpoint before this work: branch `checkpoint-pre-warroom2`. Only `site/playoffs.html` was rebuilt; its styles are scoped to `body.wr` inside that file, so no other page changed look.
+
+**Design.** Warm off-white page (`#f3f0e8`) with white analytical cards; deep navy (`#0f1b2d`, not black) only for the hero/flagship diagram and the bracket. Body 18px, secondary 15px, nothing under 13px; primary controls 44px or taller.
+
+**One shared state** (`S` in the page script): `me` (franchise), `wk` (historical week, `null` = now), `forced` (scenario picks). Every section re-renders from it in `draw()`, so sections cannot disagree. Choosing a historical week clears the scenario and vice versa; a sticky bar says HYPOTHETICAL or HISTORICAL with Reset / Return to current week.
+
+**Sections.** A "Road to the playoffs" (`road()`): the franchise's playoff chance after each week (filled dot = win, hollow = loss), dashed gold rings on its biggest swings, a NOW marker, and a fork to the win and loss outcomes of this week's game. Phones and tablets (<1000px) get a separate composition sized to the screen in CSS pixels, with no other teams' lines and full-height tap columns. B What if: now / win / lose table from three real simulations, plus "Test other games". C league-wide ranking with week stepper. D road ahead: per-game leverage (playoff chance with a win and with a loss in that game alone, 4,000 simulations each). E reseeded bracket. F folds: exact clinch notes, full table, draft order (`#draft`), method, data status.
+
+**Turning points** are computed, never written by hand: weeks where the saved playoff chance moved 12 points or more, described by that week's actual result, plus the longest streak of three or more.
+
+**Result finalization policy** (`scripts/build-weekly.mjs`, history section): a week counts once Sleeper's NFL week has moved past it. The latest completed week's snapshot has `status: "open"` and is rewritten if its results change at a later refresh (stat corrections, marked `corrected_at`); when the next week completes it becomes `"locked"` and is never recalculated. A week in progress is never counted.
+
+**Checks.** `node scripts/test-playoff-model.mjs` (10 checks: seeding rule, sixth seed on points, six qualifiers per simulation, determinism, forced results, reseeding, clinch arithmetic, identities, results reconcile). It also runs in the GitHub workflow before data is committed, so a failing check leaves the last good site in place. `python3 scripts/ux-warroom-audit.py <outdir>` renders the page at 320/375/390/430/768/1440 and reports overflow, text under 13px, contrast under 4.5:1, tap targets under 40px and near-black share. `scripts/ux-interact.py` covers franchise select, win scenario, reset, historical week, keyboard activation, other games and the draft deep link.
+
+**Not done.** `universe.html` (full twelve-line chart and schedule matrix) keeps the older dark look and is linked from the War Room. The reference article named in the brief could not be opened from the build environment. No screen-reader pass beyond labels, roles and keyboard activation. Weeks 1–9 probabilities are reconstructions.
