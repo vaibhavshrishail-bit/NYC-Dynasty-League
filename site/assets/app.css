@@ -206,3 +206,4 @@ details.mx .in{padding:22px 0 30px}.mrow .more{grid-column:1/-1;text-align:cente
 td a,.mrow small a{display:inline-block;padding:7px 0;min-height:32px}.chip.live{font-size:14px!important}
 @media(max-width:860px){.chart .pt{pointer-events:none}}
 .hero2 .num span{font-size:max(12px,.26em)}
+.libg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:6px 0 12px}.libg a{text-decoration:none;border:1px solid var(--line);background:#0c0d12;display:block}.libg img{width:100%;aspect-ratio:4/7;object-fit:cover;object-position:top;display:block}.libg span{display:block;padding:8px 10px;font-size:15px;min-height:44px}

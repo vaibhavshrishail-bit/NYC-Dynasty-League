@@ -111,4 +111,7 @@ Checkpoint before this work: branch `checkpoint-pre-polish`.
 - `python3 scripts/ux-audit.py <outdir>`: 8 pages × 1440/768/390/320; reports horizontal overflow, page height, text under 12px, tap targets under 30px, console errors; saves screenshots.
 - `python3 scripts/ux-interact.py`: time machine in/out, scenario win/reset, fold persistence, deep links, chart tap and save, poster download, rivalry selection, old URLs.
 
-**Known and unresolved.** Nameplates on the jersey graphics render at 5–7px on phones (decorative; the name is printed underneath at 17px+). Headline/story templates have not been tuned against the Weeks 1–9 previews (not yet provided). Reseeding and the rookie draft-order rule are still flagged as unconfirmed on the site. No benchmark against other league sites was run. Charts were not screen-reader tested beyond labels and titles.
+**Known and unresolved.** Nameplates on the jersey graphics render at 5–7px on phones (decorative; the name is printed underneath at 17px+). Headline/story templates have not been tuned against the Weeks 1–9 previews (not yet provided). No benchmark against other league sites was run. Charts were not screen-reader tested beyond labels and titles.
+
+## Newsletter library and Playbook rules (13 Nov 2026)
+See `docs/reference/NEWSLETTER_ARCHIVE.md`. The commissioner's Weeks 1–8 previews and the League History series are stored in `site/library/` and listed in `site/data/library.json`; Archives shows them under "Newsletter library". Reseeding and the draft-order rule are now taken from the Commissioner's Playbook and are no longer flagged as unconfirmed (`sim.js` reseeds after Week 15).

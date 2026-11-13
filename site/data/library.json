@@ -1,0 +1,355 @@
+{
+ "source": {
+  "site": "https://niharullal.github.io/nyc-dynasty-site/",
+  "repo": "https://github.com/niharullal/nyc-dynasty-site",
+  "commit": "82525b5",
+  "copied": "2026-11-13"
+ },
+ "weeks": [
+  {
+   "week": 1,
+   "pages": [
+    {
+     "title": "Week 1 Preview",
+     "file": "library/newsletters/week-01/01-week-1-preview.jpg",
+     "thumb": "library/newsletters/week-01/01-week-1-preview.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-01/01-week-1-preview.jpeg"
+    },
+    {
+     "title": "Featured Rivalry Vaibhav Taylor",
+     "file": "library/newsletters/week-01/02-featured-rivalry-vaibhav-taylor.jpg",
+     "thumb": "library/newsletters/week-01/02-featured-rivalry-vaibhav-taylor.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-01/02-featured-rivalry-vaibhav-taylor.jpeg"
+    }
+   ]
+  },
+  {
+   "week": 2,
+   "pages": [
+    {
+     "title": "Week 2 Preview",
+     "file": "library/newsletters/week-02/01-week-2-preview.jpg",
+     "thumb": "library/newsletters/week-02/01-week-2-preview.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-02/01-week-2-preview.jpeg"
+    },
+    {
+     "title": "Advaith vs Alan",
+     "file": "library/newsletters/week-02/02-advaith-vs-alan.jpg",
+     "thumb": "library/newsletters/week-02/02-advaith-vs-alan.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-02/02-advaith-vs-alan.jpeg"
+    },
+    {
+     "title": "Manas vs Dhiraj",
+     "file": "library/newsletters/week-02/03-manas-vs-dhiraj.jpg",
+     "thumb": "library/newsletters/week-02/03-manas-vs-dhiraj.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-02/03-manas-vs-dhiraj.jpeg"
+    },
+    {
+     "title": "Soham vs Taylor",
+     "file": "library/newsletters/week-02/04-soham-vs-taylor.jpg",
+     "thumb": "library/newsletters/week-02/04-soham-vs-taylor.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-02/04-soham-vs-taylor.jpeg"
+    },
+    {
+     "title": "Shiamak vs Vaibhav",
+     "file": "library/newsletters/week-02/05-shiamak-vs-vaibhav.jpg",
+     "thumb": "library/newsletters/week-02/05-shiamak-vs-vaibhav.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-02/05-shiamak-vs-vaibhav.jpeg"
+    },
+    {
+     "title": "Dev vs Achal",
+     "file": "library/newsletters/week-02/06-dev-vs-achal.jpg",
+     "thumb": "library/newsletters/week-02/06-dev-vs-achal.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-02/06-dev-vs-achal.jpeg"
+    },
+    {
+     "title": "Nihar vs Varun",
+     "file": "library/newsletters/week-02/07-nihar-vs-varun.jpg",
+     "thumb": "library/newsletters/week-02/07-nihar-vs-varun.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-02/07-nihar-vs-varun.jpeg"
+    }
+   ]
+  },
+  {
+   "week": 4,
+   "pages": [
+    {
+     "title": "Week 4 Preview",
+     "file": "library/newsletters/week-04/01-week-4-preview.jpg",
+     "thumb": "library/newsletters/week-04/01-week-4-preview.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-04/01-week-4-preview.png"
+    },
+    {
+     "title": "Advaith vs Dev",
+     "file": "library/newsletters/week-04/02-advaith-vs-dev.jpg",
+     "thumb": "library/newsletters/week-04/02-advaith-vs-dev.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-04/02-advaith-vs-dev.png"
+    },
+    {
+     "title": "Nihar vs Manas",
+     "file": "library/newsletters/week-04/03-nihar-vs-manas.jpg",
+     "thumb": "library/newsletters/week-04/03-nihar-vs-manas.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-04/03-nihar-vs-manas.png"
+    },
+    {
+     "title": "Alan vs Vaibhav",
+     "file": "library/newsletters/week-04/04-alan-vs-vaibhav.jpg",
+     "thumb": "library/newsletters/week-04/04-alan-vs-vaibhav.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-04/04-alan-vs-vaibhav.png"
+    },
+    {
+     "title": "Nishant vs Taylor",
+     "file": "library/newsletters/week-04/05-nishant-vs-taylor.jpg",
+     "thumb": "library/newsletters/week-04/05-nishant-vs-taylor.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-04/05-nishant-vs-taylor.png"
+    },
+    {
+     "title": "Soham vs Achal",
+     "file": "library/newsletters/week-04/06-soham-vs-achal.jpg",
+     "thumb": "library/newsletters/week-04/06-soham-vs-achal.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-04/06-soham-vs-achal.png"
+    },
+    {
+     "title": "Shiamak vs Dhiraj",
+     "file": "library/newsletters/week-04/07-shiamak-vs-dhiraj.jpg",
+     "thumb": "library/newsletters/week-04/07-shiamak-vs-dhiraj.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-04/07-shiamak-vs-dhiraj.png"
+    }
+   ]
+  },
+  {
+   "week": 5,
+   "pages": [
+    {
+     "title": "Week 5 Preview",
+     "file": "library/newsletters/week-05/01-week-5-preview.jpg",
+     "thumb": "library/newsletters/week-05/01-week-5-preview.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-05/01-week-5-preview.png"
+    },
+    {
+     "title": "Advaith vs Manas",
+     "file": "library/newsletters/week-05/02-advaith-vs-manas.jpg",
+     "thumb": "library/newsletters/week-05/02-advaith-vs-manas.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-05/02-advaith-vs-manas.png"
+    },
+    {
+     "title": "Dev vs Vaibhav",
+     "file": "library/newsletters/week-05/03-dev-vs-vaibhav.jpg",
+     "thumb": "library/newsletters/week-05/03-dev-vs-vaibhav.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-05/03-dev-vs-vaibhav.png"
+    },
+    {
+     "title": "Nihar vs Taylor",
+     "file": "library/newsletters/week-05/04-nihar-vs-taylor.jpg",
+     "thumb": "library/newsletters/week-05/04-nihar-vs-taylor.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-05/04-nihar-vs-taylor.png"
+    },
+    {
+     "title": "Soham vs Alan",
+     "file": "library/newsletters/week-05/05-soham-vs-alan.jpg",
+     "thumb": "library/newsletters/week-05/05-soham-vs-alan.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-05/05-soham-vs-alan.png"
+    },
+    {
+     "title": "Nishant vs Shiamak",
+     "file": "library/newsletters/week-05/06-nishant-vs-shiamak.jpg",
+     "thumb": "library/newsletters/week-05/06-nishant-vs-shiamak.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-05/06-nishant-vs-shiamak.png"
+    },
+    {
+     "title": "Achal vs Dhiraj",
+     "file": "library/newsletters/week-05/07-achal-vs-dhiraj.jpg",
+     "thumb": "library/newsletters/week-05/07-achal-vs-dhiraj.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-05/07-achal-vs-dhiraj.png"
+    }
+   ]
+  },
+  {
+   "week": 6,
+   "pages": [
+    {
+     "title": "Week 6 Preview",
+     "file": "library/newsletters/week-06/01-week-6-preview.jpg",
+     "thumb": "library/newsletters/week-06/01-week-6-preview.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-06/01-week-6-preview.png"
+    },
+    {
+     "title": "Advaith vs Vaibhav",
+     "file": "library/newsletters/week-06/02-advaith-vs-vaibhav.jpg",
+     "thumb": "library/newsletters/week-06/02-advaith-vs-vaibhav.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-06/02-advaith-vs-vaibhav.png"
+    },
+    {
+     "title": "Manas vs Taylor",
+     "file": "library/newsletters/week-06/03-manas-vs-taylor.jpg",
+     "thumb": "library/newsletters/week-06/03-manas-vs-taylor.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-06/03-manas-vs-taylor.png"
+    },
+    {
+     "title": "Soham vs Dev",
+     "file": "library/newsletters/week-06/04-soham-vs-dev.jpg",
+     "thumb": "library/newsletters/week-06/04-soham-vs-dev.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-06/04-soham-vs-dev.png"
+    },
+    {
+     "title": "Nihar vs Shiamak",
+     "file": "library/newsletters/week-06/05-nihar-vs-shiamak.jpg",
+     "thumb": "library/newsletters/week-06/05-nihar-vs-shiamak.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-06/05-nihar-vs-shiamak.png"
+    },
+    {
+     "title": "Alan vs Dhiraj",
+     "file": "library/newsletters/week-06/06-alan-vs-dhiraj.jpg",
+     "thumb": "library/newsletters/week-06/06-alan-vs-dhiraj.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-06/06-alan-vs-dhiraj.png"
+    },
+    {
+     "title": "Nishant vs Achal",
+     "file": "library/newsletters/week-06/07-nishant-vs-achal.jpg",
+     "thumb": "library/newsletters/week-06/07-nishant-vs-achal.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-06/07-nishant-vs-achal.png"
+    }
+   ]
+  },
+  {
+   "week": 7,
+   "pages": [
+    {
+     "title": "Week 7 Preview",
+     "file": "library/newsletters/week-07/01-week-7-preview.jpg",
+     "thumb": "library/newsletters/week-07/01-week-7-preview.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-07/01-week-7-preview.png"
+    },
+    {
+     "title": "Advaith vs Taylor",
+     "file": "library/newsletters/week-07/02-advaith-vs-taylor.jpg",
+     "thumb": "library/newsletters/week-07/02-advaith-vs-taylor.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-07/02-advaith-vs-taylor.png"
+    },
+    {
+     "title": "Soham vs Vaibhav",
+     "file": "library/newsletters/week-07/03-soham-vs-vaibhav.jpg",
+     "thumb": "library/newsletters/week-07/03-soham-vs-vaibhav.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-07/03-soham-vs-vaibhav.png"
+    },
+    {
+     "title": "Manas vs Shiamak",
+     "file": "library/newsletters/week-07/04-manas-vs-shiamak.jpg",
+     "thumb": "library/newsletters/week-07/04-manas-vs-shiamak.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-07/04-manas-vs-shiamak.png"
+    },
+    {
+     "title": "Dev vs Dhiraj",
+     "file": "library/newsletters/week-07/05-dev-vs-dhiraj.jpg",
+     "thumb": "library/newsletters/week-07/05-dev-vs-dhiraj.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-07/05-dev-vs-dhiraj.png"
+    },
+    {
+     "title": "Nihar vs Achal",
+     "file": "library/newsletters/week-07/06-nihar-vs-achal.jpg",
+     "thumb": "library/newsletters/week-07/06-nihar-vs-achal.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-07/06-nihar-vs-achal.png"
+    },
+    {
+     "title": "Alan vs Nishant",
+     "file": "library/newsletters/week-07/07-alan-vs-nishant.jpg",
+     "thumb": "library/newsletters/week-07/07-alan-vs-nishant.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-07/07-alan-vs-nishant.png"
+    },
+    {
+     "title": "Schedule Luck Report",
+     "file": "library/newsletters/week-07/08-extra-schedule-luck-report.jpg",
+     "thumb": "library/newsletters/week-07/08-extra-schedule-luck-report.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-07/08-extra-schedule-luck-report.png"
+    },
+    {
+     "title": "Behind The Records",
+     "file": "library/newsletters/week-07/09-extra-behind-the-records.jpg",
+     "thumb": "library/newsletters/week-07/09-extra-behind-the-records.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-07/09-extra-behind-the-records.png"
+    }
+   ]
+  },
+  {
+   "week": 8,
+   "pages": [
+    {
+     "title": "Week 8 Preview",
+     "file": "library/newsletters/week-08/01-week-8-preview.jpg",
+     "thumb": "library/newsletters/week-08/01-week-8-preview.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-08/01-week-8-preview.png"
+    },
+    {
+     "title": "Soham vs Advaith",
+     "file": "library/newsletters/week-08/02-soham-vs-advaith.jpg",
+     "thumb": "library/newsletters/week-08/02-soham-vs-advaith.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-08/02-soham-vs-advaith.png"
+    },
+    {
+     "title": "Shiamak vs Taylor",
+     "file": "library/newsletters/week-08/03-shiamak-vs-taylor.jpg",
+     "thumb": "library/newsletters/week-08/03-shiamak-vs-taylor.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-08/03-shiamak-vs-taylor.png"
+    },
+    {
+     "title": "Vaibhav vs Dhiraj",
+     "file": "library/newsletters/week-08/04-vaibhav-vs-dhiraj.jpg",
+     "thumb": "library/newsletters/week-08/04-vaibhav-vs-dhiraj.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-08/04-vaibhav-vs-dhiraj.png"
+    },
+    {
+     "title": "Achal vs Manas",
+     "file": "library/newsletters/week-08/05-achal-vs-manas.jpg",
+     "thumb": "library/newsletters/week-08/05-achal-vs-manas.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-08/05-achal-vs-manas.png"
+    },
+    {
+     "title": "Dev vs Nishant",
+     "file": "library/newsletters/week-08/06-dev-vs-nishant.jpg",
+     "thumb": "library/newsletters/week-08/06-dev-vs-nishant.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-08/06-dev-vs-nishant.png"
+    },
+    {
+     "title": "Nihar vs Alan",
+     "file": "library/newsletters/week-08/07-nihar-vs-alan.jpg",
+     "thumb": "library/newsletters/week-08/07-nihar-vs-alan.thumb.jpg",
+     "original": "https://niharullal.github.io/nyc-dynasty-site/newsletters/week-08/07-nihar-vs-alan.png"
+    }
+   ]
+  }
+ ],
+ "history": [
+  {
+   "title": "Draft vs Trade",
+   "file": "library/history/01-draft-vs-trade.jpg",
+   "thumb": "library/history/01-draft-vs-trade.thumb.jpg",
+   "original": "https://niharullal.github.io/nyc-dynasty-site/history/01-draft-vs-trade.png"
+  },
+  {
+   "title": "Scorecard",
+   "file": "library/history/02-scorecard.jpg",
+   "thumb": "library/history/02-scorecard.thumb.jpg",
+   "original": "https://niharullal.github.io/nyc-dynasty-site/history/02-scorecard.png"
+  },
+  {
+   "title": "Draft Room",
+   "file": "library/history/03-draft-room.jpg",
+   "thumb": "library/history/03-draft-room.thumb.jpg",
+   "original": "https://niharullal.github.io/nyc-dynasty-site/history/03-draft-room.png"
+  },
+  {
+   "title": "Trade Room",
+   "file": "library/history/04-trade-room.jpg",
+   "thumb": "library/history/04-trade-room.thumb.jpg",
+   "original": "https://niharullal.github.io/nyc-dynasty-site/history/04-trade-room.png"
+  },
+  {
+   "title": "Follow The Picks",
+   "file": "library/history/05-follow-the-picks.jpg",
+   "thumb": "library/history/05-follow-the-picks.thumb.jpg",
+   "original": "https://niharullal.github.io/nyc-dynasty-site/history/05-follow-the-picks.png"
+  }
+ ],
+ "playbook": "https://niharullal.github.io/nyc-dynasty-site/playbook/NYC-Dynasty-Commissioners-Playbook-2026-27.pdf",
+ "note": "Pages are the commissioner's weekly previews as published. Player photographs in the matchup pages were not copied; each page links to the original."
+}

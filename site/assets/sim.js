@@ -2,7 +2,7 @@
 // Two kinds of answer, kept separate on purpose:
 //   exact()    - arithmetic that is certain whatever the scores are (who has clinched a top-five seed, who cannot reach one)
 //   simulate() - probabilities from thousands of simulated finishes (anything that depends on points, including the sixth seed)
-// League rules live here: seeds 1-5 by record (points for breaks ties), seed 6 = most points for among the rest, fixed bracket.
+// League rules live here: seeds 1-5 by record (points for breaks ties), seed 6 = most points for among the rest, bracket reseeded each round (Commissioner's Playbook 2026-27).
 function rng32(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function seedTeams(rows, nPlayoff) { // rows: [{id,w,pf}] -> ids in seed order 1..12
   const rec = [...rows].sort((a, b) => b.w - a.w || b.pf - a.pf), top = rec.slice(0, nPlayoff - 1), rest = rec.slice(nPlayoff - 1);
@@ -20,7 +20,7 @@ function simulate(C, L, forced = {}, n = 8000) {
     for (const g of games) { let sa = draw(g.a), sb = draw(g.b); const f = forced[g.key]; if (f && ((f === g.a) !== (sa > sb))) [sa, sb] = [sb, sa]; st[g.a].pf += sa; st[g.b].pf += sb; (sa > sb ? st[g.a] : st[g.b]).w++; }
     const s = seedTeams(Object.values(st), NP);
     s.forEach((id, k) => { const o = out[id]; o.seed[k]++; o.wins += st[id].w; if (k < NP) o.playoff++; if (k < NP - 1) o.top5++; if (k === NP - 1) o.sixth++; if (k < 2) o.bye++; if (k >= NP) o.slot[11 - k]++; });
-    const f1 = play(s[0], play(s[3], s[4])), f2 = play(s[1], play(s[2], s[5])); out[play(f1, f2)].champ++;
+    const w45 = play(s[3], s[4]), w36 = play(s[2], s[5]), lo = w36 === s[5] ? w36 : w45, hi = w36 === s[5] ? w45 : w36; /* reseeded: seed 1 meets the lowest seed left */ const f1 = play(s[0], lo), f2 = play(s[1], hi); out[play(f1, f2)].champ++;
   }
   for (const id of ids) { const o = out[id]; for (const k of ['playoff', 'top5', 'sixth', 'bye', 'champ']) o[k] /= n; o.seed = o.seed.map((x) => x / n); o.slot = o.slot.map((x) => x / n); o.wins /= n; o.miss = 1 - o.playoff; }
   return out;
