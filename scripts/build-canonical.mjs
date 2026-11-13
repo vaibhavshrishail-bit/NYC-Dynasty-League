@@ -12,7 +12,10 @@ const U = Object.fromEntries(users.map((u) => [u.user_id, u]));
 const r1 = (x) => Math.round(x * 10) / 10, r2 = (x) => Math.round(x * 100) / 100;
 const problems = [];
 if (rosters.length !== 12) problems.push(`expected 12 rosters, found ${rosters.length}`);
-const weeks = Object.keys(matchups).map(Number).filter((w) => matchups[w].some((m) => (m.points || 0) > 0)).sort((a, b) => a - b);
+// A week counts as complete only once Sleeper's NFL clock has moved past it. Points on the board are not enough:
+// Thursday-night scores appear while the week is still being played.
+const st = idx.nfl_state, liveWeek = String(st.season) === season && st.season_type === 'regular' ? st.week : st.season_type === 'post' ? 99 : 0;
+const weeks = Object.keys(matchups).map(Number).filter((w) => w < liveWeek && matchups[w].some((m) => (m.points || 0) > 0)).sort((a, b) => a - b);
 const through = weeks.length ? weeks[weeks.length - 1] : 0;
 const POS = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' };
 const pos = (p) => { const x = p?.position || p?.fantasy_positions?.[0] || '?'; return POS[x] || x; };
@@ -114,7 +117,7 @@ const slugs = franchises.map((f) => f.slug); if (new Set(slugs).size !== slugs.l
 const trades = []; for (const [w, list] of Object.entries(tx)) for (const t of list) if (t.type === 'trade' && t.status === 'complete')
   trades.push({ week: Number(w), rosters: t.roster_ids, players: Object.entries(t.adds || {}).map(([pid, to]) => ({ player_id: pid, name: players[pid]?.full_name || pid, to_roster: to })), picks: (t.draft_picks || []).map((p) => ({ season: p.season, round: p.round, original_roster: p.roster_id, to_roster: p.owner_id })) });
 if (problems.length) { console.error('IDENTITY RECONCILIATION FAILED:\n - ' + problems.join('\n - ')); process.exit(1); }
-const out = { generated_at: new Date().toISOString(), source: 'Sleeper public API', league_id: league.league_id, league_name: league.name, season: Number(season), through_week: through, current_week: idx.nfl_state.week,
+const out = { generated_at: new Date().toISOString(), source: 'Sleeper public API', league_id: league.league_id, league_name: league.name, season: Number(season), through_week: through, current_week: Math.min(liveWeek, 18), week_in_progress: liveWeek <= 18 && (matchups[liveWeek] || []).some((m) => (m.points || 0) > 0),
   playoff_teams: playoffTeams, playoff_rule: 'Seeds 1–5 go to the best records, with points for as the tiebreaker. Seed 6 goes to the highest-scoring team among the other seven.', playoff_week_start: league.settings.playoff_week_start, roster_positions: league.roster_positions.filter((p) => p !== 'BN'), scoring: { rec: league.scoring_settings.rec, pass_td: league.scoring_settings.pass_td, idp: true },
   standings: seedOrder.map((r) => r.roster_id), franchises, history: history.map(({ teams, ...h }) => h), trades: trades.sort((a, b) => a.week - b.week) };
 // keep the previous timestamp when nothing but the clock changed, so scheduled runs do not create empty commits

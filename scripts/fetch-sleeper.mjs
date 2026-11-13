@@ -56,7 +56,15 @@ while (id && id !== '0') {
 // NFL schedule (for bye weeks). Unofficial endpoint: optional, never fails the run; the last good copy stays in the repo.
 for (const host of ['https://api.sleeper.app', 'https://api.sleeper.com']) {
   try { const r = await fetch(`${host}/schedule/nfl/regular/${state.season}`); if (!r.ok) continue; const g = await r.json();
-    if (Array.isArray(g) && g.length > 100) { await save('nfl_schedule', g.map((x) => ({ week: x.week, home: x.home, away: x.away, date: x.date, status: x.status }))); console.log('NFL schedule saved', g.length); break; } } catch {}
+    if (Array.isArray(g) && g.length > 100) { await save('nfl_schedule', g); console.log('NFL schedule saved', g.length); break; } } catch {}
+}
+// Weekly player projections (unofficial endpoint, optional). Raw stat lines; the site applies this league's own scoring to them.
+// One file per week, refreshed only while that week is current, so earlier weeks keep what was known at the time.
+if (state.season_type === 'regular') for (const host of ['https://api.sleeper.app', 'https://api.sleeper.com']) {
+  try { const q = ['QB', 'RB', 'WR', 'TE', 'K', 'DL', 'LB', 'DB'].map((p) => 'position[]=' + p).join('&');
+    const r = await fetch(`${host}/projections/nfl/${state.season}/${state.week}?season_type=regular&${q}`); if (!r.ok) continue; const g = await r.json();
+    if (Array.isArray(g) && g.length > 200) { const o = {}; for (const x of g) if (rostered.has(String(x.player_id)) && x.stats) o[x.player_id] = { stats: x.stats, team: x.team, opponent: x.opponent, game_id: x.game_id };
+      await save(`projections/${state.week}`, o); console.log('projections saved', Object.keys(o).length); break; } } catch {}
 }
 // Full player file is large; keep only players this league has touched, and only display fields.
 const all = await get('/players/nfl');
