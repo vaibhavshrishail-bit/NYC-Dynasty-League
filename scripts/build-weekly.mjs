@@ -70,19 +70,43 @@ const games = [];
 for (const [a, b] of (L.schedule[cur] || (matchups[cur] ? Object.values(Object.groupBy(matchups[cur].filter((m) => m.matchup_id), (m) => m.matchup_id)).map((x) => x.map((m) => m.roster_id).sort((p, q) => p - q)) : []))) {
   const la = lineup(a), lb = lineup(b), have = prj && [...la, ...lb].filter((p) => p.projected != null).length >= 16, pa = have ? r2(la.reduce((s, p) => s + (p.projected || 0), 0)) : r1(model[a].mu), pb = have ? r2(lb.reduce((s, p) => s + (p.projected || 0), 0)) : r1(model[b].mu);
   const p = phi((pa - pb) / Math.sqrt(model[a].sd ** 2 + model[b].sd ** 2)), fav = p >= 0.5 ? a : b, dog = fav === a ? b : a, fp = Math.max(p, 1 - p), gap = r2(Math.abs(pa - pb));
-  const rating = fp < 0.6 ? 'Toss-up' : fp < 0.75 ? `Lean ${mgr(fav)}` : fp < 0.9 ? `Likely ${mgr(fav)}` : `Safe ${mgr(fav)}`, g = meet(a, b), wa = g.filter((m) => m.x > m.y).length, wb = g.filter((m) => m.x < m.y).length, last = g[g.length - 1];
+  const g = meet(a, b), wa = g.filter((m) => m.x > m.y).length, wb = g.filter((m) => m.x < m.y).length, last = g[g.length - 1];
   const lead = wa === wb ? null : wa > wb ? a : b, finals = g.filter((m) => m.type === 'championship'), tag = tagOf(a, b), firstMgr = [a, b].some((id) => F[id].former_managers.length) && g.every((m) => m.s < C.season);
+  const rating = fp < 0.57 ? 'Razor-thin' : lead && lead === dog && !firstMgr ? 'Upset watch' : fp < 0.75 ? 'Fair fight' : 'Blowout potential';
   let st = 0, sw = null; for (let i = g.length - 1; i >= 0; i--) { const w = g[i].x > g[i].y ? a : b; if (sw === null) sw = w; if (w !== sw) break; st++; }
   const stakes = stakeOf(a, b), swing = stakes ? { a: stakes.a.win - stakes.a.lose, b: stakes.b.win - stakes.b.lose } : { a: 0, b: 0 }, hot = swing.a >= swing.b ? a : b, hs = stakes ? (hot === a ? stakes.a : stakes.b) : null;
   const favLine = vary([`${U(mgr(fav))} IS A ${(fp * 100).toFixed(1)}% FAVORITE BY ${gap.toFixed(2)}.`, `THE NUMBERS LEAN ${U(mgr(fav))} BY ${gap.toFixed(2)}.`, fp < 0.6 ? `CALL IT A COIN FLIP: ${U(mgr(fav))} BY ${gap.toFixed(2)}.` : `${U(mgr(dog))} NEEDS A ${Math.round((1 - fp) * 100)}% SHOT TO LAND.`, `${U(mgr(fav))} ${(fp * 100).toFixed(1)}%. ${U(mgr(dog))} ${((1 - fp) * 100).toFixed(1)}%.`], a, b), series = lead ? `${U(mgr(lead))} LEADS ${Math.max(wa, wb)}-${Math.min(wa, wb)}` : `THE SERIES IS LEVEL AT ${wa}-${wb}`;
-  const head = !g.length || firstMgr ? [`FIRST MEETING BETWEEN THESE MANAGERS.`, favLine] : tag ? [`RIVALRY WEEK. ${series}.`, gap < 10 ? `THIS TIME, THE PROJECTED GAP IS JUST ${gap.toFixed(2)}.` : favLine]
-    : finals.length ? [`${U(mgr(finals[finals.length - 1].x > finals[finals.length - 1].y ? a : b))} WON THE ${finals.length > 1 ? 'LAST ' + finals.length + ' TITLE GAMES' : finals[0].s + ' TITLE GAME'} BETWEEN THEM.`, favLine]
-    : [a, b].some((id) => F[id].losses === 0 && F[id].wins > 2) ? [`${U(mgr([a, b].find((id) => F[id].losses === 0)))} IS STILL UNBEATEN AT ${F[[a, b].find((id) => F[id].losses === 0)].record.replace('–', '-')}.`, favLine]
-    : [a, b].some((id) => F[id].wins === 0 && F[id].losses > 2) ? [`${U(mgr([a, b].find((id) => F[id].wins === 0)))} IS STILL HUNTING A FIRST WIN.`, favLine]
-    : hs && Math.max(swing.a, swing.b) >= 0.2 ? [vary([`A ${Math.round(Math.max(swing.a, swing.b) * 100)}-POINT PLAYOFF SWING FOR ${U(mgr(hot))}.`, `${U(mgr(hot))}'S SEASON TILTS HERE: ${pc(hs.win).toUpperCase()} OR ${pc(hs.lose).toUpperCase()}.`, `WIN AND ${U(mgr(hot))} IS AT ${pc(hs.win).toUpperCase()}. LOSE AND IT IS ${pc(hs.lose).toUpperCase()}.`], a, b, 1), favLine]
-    : st >= 3 && g.length ? [`${U(mgr(sw))} HAS WON ${st} STRAIGHT IN THIS SERIES.`, favLine]
-    : [a, b].some((id) => F[id].streak && F[id].streak.length >= 4) ? (() => { const id = [a, b].find((x) => F[x].streak && F[x].streak.length >= 4), k = F[id].streak; return [k.type === 'W' ? `${U(mgr(id))} HAS WON ${k.length} STRAIGHT.` : `${U(mgr(id))} HAS LOST ${k.length} STRAIGHT.`, favLine]; })()
-    : [vary([`${series}.`, lead ? `${U(mgr(lead === a ? b : a))} IS CHASING A ${Math.max(wa, wb)}-${Math.min(wa, wb)} SERIES.` : `NOTHING BETWEEN THEM IN ${g.length} MEETINGS.`], a, b, 2), favLine];
+  const NUM = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE'], N = (n) => NUM[n] || String(n), rec = (id) => F[id].record.replace('–', '-');
+  const trail = lead ? (lead === a ? b : a) : null, sweep = g.length >= 3 && !firstMgr && Math.min(wa, wb) === 0, lastGap = last ? Math.abs(last.x - last.y) : null;
+  const slide = [a, b].find((id) => F[id].streak && F[id].streak.type === 'L' && F[id].streak.length >= 3), run = [a, b].find((id) => F[id].streak && F[id].streak.type === 'W' && F[id].streak.length >= 3);
+  const winless = [a, b].find((id) => F[id].wins === 0 && F[id].losses > 2), perfect = [a, b].find((id) => F[id].losses === 0 && F[id].wins > 2);
+  const shared = (() => { const c = {}; for (const x of [...la, ...lb]) { if (!x.opp || x.opp === 'BYE' || x.empty) continue; const k = x.opp.startsWith('at ') ? `${x.nfl_team}-${x.opp.slice(3)}` : `${x.opp.slice(3)}-${x.nfl_team}`; c[k] = (c[k] || 0) + 1; } const t = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return t && t[1] >= 5 ? t : null; })();
+  // line one
+  const one = !g.length || firstMgr ? vary([`A FIRST MEETING. NO HISTORY TO LEAN ON.`, `NEW MANAGERS. A BLANK LEDGER.`, `FIRST MEETING BETWEEN THESE MANAGERS.`], a, b)
+    : perfect && F[a].seed <= 3 && F[b].seed <= 3 ? `${rec(a)} MEETS ${rec(b)}. THE TOP OF THE TABLE COLLIDES.`
+    : perfect ? vary([`${U(mgr(perfect))} PUTS ${rec(perfect)} ON THE LINE.`, `STILL UNBEATEN. ${U(mgr(perfect))} IS ${rec(perfect)}.`], a, b)
+    : winless ? vary([`${N(F[winless].losses)} WEEKS WITHOUT A WIN.`, `${U(mgr(winless))} IS STILL SEARCHING FOR WIN NUMBER ONE.`], a, b)
+    : sweep ? `${N(g.length)} MEETINGS. ${N(g.length)} ${U(mgr(lead))} WINS.`
+    : finals.length ? `${U(mgr(finals[finals.length - 1].x > finals[finals.length - 1].y ? a : b))} WON THE ${finals.length > 1 ? 'LAST ' + N(finals.length) + ' TITLE GAMES' : finals[0].s + ' TITLE GAME'} BETWEEN THEM.`
+    : F[a].record === F[b].record && F[a].wins > F[a].losses ? `TWO ${rec(a)} TEAMS. ONE LEAVES AHEAD.`
+    : lastGap !== null && lastGap < 3 ? `THE LAST MEETING: A ${lastGap.toFixed(2)}-POINT FINISH.`
+    : tag ? `RIVALRY WEEK. ${series}.`
+    : !lead ? `${N(g.length)} MEETINGS. ${N(wa)} WINS EACH.`
+    : st >= 3 ? `${U(mgr(sw))} HAS WON ${N(st)} STRAIGHT IN THIS SERIES.`
+    : vary([`${U(mgr(lead))} OWNS THE HISTORY, ${Math.max(wa, wb)}-${Math.min(wa, wb)}.`, `${series}.`, `${U(mgr(lead))} LEADS THE SERIES. ${U(mgr(trail))} WANTS IT BACK.`], a, b, 2);
+  // line two: never repeat the fact used in line one
+  const two = [
+    sweep && `${U(mgr(trail))} NEEDS A DIFFERENT ENDING.`,
+    hs && Math.max(swing.a, swing.b) >= 0.2 && vary([`WIN AND ${U(mgr(hot))} IS AT ${pc(hs.win).toUpperCase()}. LOSE AND IT IS ${pc(hs.lose).toUpperCase()}.`, `A ${Math.round(Math.max(swing.a, swing.b) * 100)}-POINT PLAYOFF SWING FOR ${U(mgr(hot))}.`], a, b, 1),
+    rating === 'Upset watch' && `${U(mgr(fav))} IS A ${(fp * 100).toFixed(1)}% FAVORITE THIS TIME.`,
+    gap < 5 && vary([`JUST ${gap.toFixed(2)} PROJECTED POINTS BETWEEN THEM.`, `${U(mgr(fav))}'S PROJECTED EDGE: JUST ${gap.toFixed(2)}.`], a, b, 5),
+    slide && !winless && `${U(mgr(slide))} LOOKS TO END A ${N(F[slide].streak.length)}-GAME SLIDE.`,
+    winless && vary([`SOMETHING HAS TO GIVE.`, `${U(mgr(fav))} IS A ${(fp * 100).toFixed(1)}% FAVORITE.`], a, b, 6),
+    shared && `${N(shared[1])} STARTERS SHARE ${shared[0]}.`,
+    run && !perfect && `${U(mgr(run))} BRINGS ${N(F[run].streak.length)} STRAIGHT WINS.`,
+    lead && st >= 2 && sw === trail && !one.includes('STRAIGHT') && `${U(mgr(trail))} WON THE LAST ${N(st)}.`,
+    favLine].find(Boolean);
+  const head = [one, two];
   const why = !stakes ? '' : Math.max(swing.a, swing.b) < 0.03 ? vary([`Neither side's playoff chance moves much on this one: it is about pride, seeding and the head-to-head ledger.`, `The playoff picture barely notices this game. The series record does.`], a, b, 3)
     : `${mgr(hot)} has the most riding on it: a win puts the playoff chance at ${pc(hs.win)}, a loss at ${pc(hs.lose)}.${Math.min(swing.a, swing.b) >= 0.05 ? ` For ${mgr(hot === a ? b : a)} it is ${pc((hot === a ? stakes.b : stakes.a).win)} or ${pc((hot === a ? stakes.b : stakes.a).lose)}.` : ''}`;
   const kicker = !g.length || firstMgr ? 'First manager-to-manager meeting' : tag || (finals.length ? 'Finals matchup repeat' : [a, b].every((id) => F[id].seed >= 4 && F[id].seed <= 9) ? 'Playoff-line game' : [a, b].every((id) => F[id].wins === F[a].wins) ? `Two ${F[a].record} teams` : null);
@@ -105,9 +129,14 @@ for (const [a, b] of (L.schedule[cur] || (matchups[cur] ? Object.values(Object.g
 games.sort((x, y) => (y.tag ? 1 : 0) - (x.tag ? 1 : 0) || y.interest - x.interest);
 const slate = [...new Set(sched.filter((g) => g.week === cur).map((g) => g.date))].sort().map((d) => ({ date: d, day: DAY[new Date(d + 'T12:00:00Z').getUTCDay()], games: sched.filter((g) => g.week === cur && g.date === d).map((g) => ({ home: g.home, away: g.away, status: g.status })) }));
 const byeTeams = L.nfl_byes ? Object.entries(L.nfl_byes).filter(([, w]) => w === cur).map(([t]) => t).sort() : [];
+// overview banner in the house style: two leading records, then what the week holds
+const banner = (() => { if (!games.length) return null; const top = C.standings.slice(0, 2).map((id) => F[id]), riv = games.filter((x) => x.tag).length, close = games.filter((x) => x.rating === 'Razor-thin').length, rc = (f) => f.record.replace('–', '-');
+  const h = top[0].losses === 0 && top[0].wins > 2 ? `${rc(top[0])} ${U(top[0].manager)}. ${rc(top[1])} ${U(top[1].manager)}. NEXT UP.` : cur >= L.regular_season_end - 2 ? `WEEK ${cur}. THE LINE IS RIGHT THERE.` : `WEEK ${cur} RAISES THE STAKES.`;
+  const bits = [riv ? `${riv} rivalry game${riv > 1 ? 's' : ''}` : null, close ? `${close} razor-thin projection${close > 1 ? 's' : ''}` : null, byeTeams.length ? `${byeTeams.length} NFL byes` : null].filter(Boolean);
+  return [h, bits.length ? bits.join(' · ') + '.' : `${games.length} games.`]; })();
 // last week's commentary: plain sentences from the awards
 const aw = awards[W], lw = L.weeks[W], comm = aw ? [aw.chaos ? `The upset of Week ${W}: ${mgr(aw.chaos.winner)} beat ${mgr(aw.chaos.loser)} ${aw.chaos.winner_pts.toFixed(2)}–${aw.chaos.loser_pts.toFixed(2)} despite averaging ${aw.chaos.winner_ppg_before} a week coming in, against ${aw.chaos.loser_ppg_before}.` : `No upsets in Week ${W}: every winner was the higher-scoring team coming in.`,
   `${mgr(lw.high.roster_id)} put up the top score, ${lw.high.pf.toFixed(2)}.`, aw.heartbreaker ? `${mgr(aw.heartbreaker.roster_id)} scored ${aw.heartbreaker.points.toFixed(2)}, the ${['', 'best', 'second-best', 'third-best', 'fourth-best', 'fifth-best', 'sixth-best'][aw.heartbreaker.week_rank] || aw.heartbreaker.week_rank + 'th-best'} total of the week, and still lost to ${mgr(aw.heartbreaker.opp)}.` : ''].filter(Boolean).join(' ') : '';
 await writeFile('site/data/weekly.json', JSON.stringify({ generated_at: C.generated_at, season: C.season, through_week: W, current_week: cur, in_progress: !!C.week_in_progress, projections: !!prj, slots, awards, season_highlights: season,
-  preview: { week: cur, games, slate, byes: byeTeams, commentary: comm, note: 'Projected points are Sleeper\'s player projections scored with this league\'s settings, for the lineups currently set. Win chances are a model estimate. Nothing here is lineup advice.' } }));
+  preview: { week: cur, games, banner, slate, byes: byeTeams, commentary: comm, note: 'Projected points are Sleeper\'s player projections scored with this league\'s settings, for the lineups currently set. Win chances are a model estimate. Nothing here is lineup advice.' } }));
 console.log(`weekly.json: week ${cur} preview with ${games.length} games (${prj ? 'projections' : 'model only'}), awards for ${wkList.length} weeks; history.json has ${Object.keys(hist.weeks).length} weeks`);
