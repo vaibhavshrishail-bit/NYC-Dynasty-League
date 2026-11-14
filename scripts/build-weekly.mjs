@@ -10,6 +10,16 @@ const [matchups, players, lg, riv, sched] = await Promise.all([J(`${S}/matchups.
 const sim = new Function(await readFile('site/assets/sim.js', 'utf8') + '; return { simulate, seedTeams, modelOf, winChance, priorWeight };')();
 const F = Object.fromEntries(C.franchises.map((f) => [f.roster_id, f])), ids = C.franchises.map((f) => f.roster_id), W = C.through_week, cur = C.current_week, regEnd = C.playoff_week_start - 1;
 const r1 = (x) => Math.round(x * 10) / 10, r2 = (x) => Math.round(x * 100) / 100, mean = (a) => a.reduce((x, y) => x + y, 0) / (a.length || 1), sdv = (a) => { const m = mean(a); return Math.sqrt(mean(a.map((x) => (x - m) ** 2))); };
+// An upset is decided before the game, not after it: the winner must have gone in as a clear underdog on the site's own model
+// (this season's scoring so far, blended with the preseason expectation while that still carries weight). The old rule compared
+// season averages only, which after one week called a favourite an underdog. Threshold: 40% or less to win.
+const UPSET_MAX = 0.40;
+function preGameModel(w) { const PRE0 = L.preseason, rows = {}; for (const f of C.franchises) { const sc = f.results.filter((r) => r.week < w).map((r) => r.pf); rows[f.roster_id] = { ppg: sc.length ? mean(sc) : NaN, last3: sc.length ? mean(sc.slice(-3)) : NaN, sd: sc.length > 1 ? sdv(sc) : 0, ...(PRE0 ? { prior: { mu: PRE0.mu[f.roster_id], w: sim.priorWeight(w - 1) } } : {}) }; }
+  const sds = Object.values(rows).map((r) => r.sd).filter((x) => x > 0); return { teams: rows, league_sd: sds.length ? mean(sds) : 25 }; }
+function upsetOf(w) { if (w === 1 && !L.preseason) return null; const Lw = preGameModel(w), gs = (L.weeks[w] || {}).games || [];
+  const c = gs.map((m) => { const win = m.pa > m.pb ? m.a : m.b, lose = win === m.a ? m.b : m.a, p = sim.winChance(Lw, win, lose); return { winner: win, loser: lose, winner_pts: Math.max(m.pa, m.pb), loser_pts: Math.min(m.pa, m.pb), win_prob: r2(p), gap: r2(0.5 - p) }; }).filter((x) => isFinite(x.win_prob) && x.win_prob <= UPSET_MAX).sort((a, b) => a.win_prob - b.win_prob);
+  return c[0] || null; }
+const pcu = (p) => Math.round(p * 100) + '%';
 const POSMAP = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' }, pos = (p) => { const x = p?.position || p?.fantasy_positions?.[0] || '?'; return POSMAP[x] || x; };
 const IDP = new Set(['DL', 'LB', 'DB']), nm = (id) => players[id]?.full_name || `${players[id]?.first_name || ''} ${players[id]?.last_name || id}`.trim(), U = (s) => String(s).toUpperCase();
 const mgr = (id) => F[id].manager, best = (arr, f) => (arr.length ? arr.reduce((x, y) => (f(y) > f(x) ? y : x)) : null);
@@ -27,7 +37,7 @@ for (let w = 1; w <= W; w++) { const ms = matchups[w] || [], g = {}; for (const 
   const hb = best(games, (x) => x.lose.points), col = w > 1 ? best(ms.map((m) => ({ roster_id: m.roster_id, points: m.points, average_before: r1(before(m.roster_id)), short: r1(before(m.roster_id) - m.points) })), (x) => x.short) : null;
   const blow = best(games, (x) => x.win.points - x.lose.points), wk = L.weeks[w], rank = [...ms].sort((a, b) => b.points - a.points);
   awards[w] = { main_character: mc && { ...mc, swing: r2(mc.swing), decisive: mc.swing > 0 }, heartbreaker: hb && { roster_id: hb.lose.roster_id, points: hb.lose.points, opp: hb.win.roster_id, opp_points: hb.win.points, week_rank: rank.findIndex((m) => m.roster_id === hb.lose.roster_id) + 1 },
-    collapse: col && col.short > 0 ? col : null, chaos: wk?.upset || null, menace: wk?.top_idp || null, steamroller: blow && { roster_id: blow.win.roster_id, opp: blow.lose.roster_id, points: blow.win.points, opp_points: blow.lose.points, margin: r2(blow.win.points - blow.lose.points) } }; }
+    collapse: col && col.short > 0 ? col : null, chaos: upsetOf(w), menace: wk?.top_idp || null, steamroller: blow && { roster_id: blow.win.roster_id, opp: blow.lose.roster_id, points: blow.win.points, opp_points: blow.lose.points, margin: r2(blow.win.points - blow.lose.points) } }; }
 
 // ---------- player awards (about players and position groups, never managers) ----------
 // Every award is a ranking of Sleeper points for that week. A player can win only one solo award per week; the next best takes the other.
@@ -68,10 +78,10 @@ const story = []; { let hiSoFar = 0, tot = {};
   for (const w of wkList.sort((a, b) => a - b)) { const d = L.weeks[w], a = awards[w], cl = d.closest, cg = Math.abs(cl.pa - cl.pb), up = a.chaos, hi = d.high, bl = a.steamroller, mvp = a.list.find((x) => x.key === 'mvp'), newHigh = hi.pf > hiSoFar && w > 1;
     const cw = cl.pa > cl.pb ? cl.a : cl.b, clo = cl.pa > cl.pb ? cl.b : cl.a;
     const ev = cg < 3 ? { kind: 'thriller', head: `DECIDED BY ${cg.toFixed(2)}`, text: `${mgr(cw)} edged ${mgr(clo)} ${Math.max(cl.pa, cl.pb).toFixed(2)}–${Math.min(cl.pa, cl.pb).toFixed(2)}.`, rosters: [cw, clo] }
-      : up && up.gap >= 8 ? { kind: 'upset', head: `${U(mgr(up.winner))} STUNS ${U(mgr(up.loser))}`, text: `${mgr(up.winner)} came in averaging ${up.winner_ppg_before} a week to ${mgr(up.loser)}'s ${up.loser_ppg_before}, and won ${up.winner_pts.toFixed(2)}–${up.loser_pts.toFixed(2)}.`, rosters: [up.winner, up.loser] }
+      : up && up.win_prob <= 0.30 ? { kind: 'upset', head: `${U(mgr(up.winner))} STUNS ${U(mgr(up.loser))}`, text: `${mgr(up.winner)} went in with a ${pcu(up.win_prob)} chance to win on the site's model, and beat ${mgr(up.loser)} ${up.winner_pts.toFixed(2)}–${up.loser_pts.toFixed(2)}.`, rosters: [up.winner, up.loser] }
       : newHigh ? { kind: 'record', head: `${hi.pf.toFixed(2)}: A NEW SEASON HIGH`, text: `${mgr(hi.roster_id)} posted the biggest score of the season to that point.`, rosters: [hi.roster_id] }
       : bl && bl.margin >= 40 ? { kind: 'rout', head: `${U(mgr(bl.roster_id))} BY ${bl.margin.toFixed(2)}`, text: `${mgr(bl.roster_id)} beat ${mgr(bl.opp)} ${bl.points.toFixed(2)}–${bl.opp_points.toFixed(2)}, the widest margin of the week.`, rosters: [bl.roster_id, bl.opp] }
-      : up ? { kind: 'upset', head: `${U(mgr(up.winner))} OVER ${U(mgr(up.loser))}`, text: `The lower-scoring team coming in won ${up.winner_pts.toFixed(2)}–${up.loser_pts.toFixed(2)}.`, rosters: [up.winner, up.loser] }
+      : up ? { kind: 'upset', head: `${U(mgr(up.winner))} OVER ${U(mgr(up.loser))}`, text: `${mgr(up.winner)} had a ${pcu(up.win_prob)} chance going in and won ${up.winner_pts.toFixed(2)}–${up.loser_pts.toFixed(2)}.`, rosters: [up.winner, up.loser] }
       : { kind: 'high', head: `${U(mgr(hi.roster_id))} TOPS THE WEEK`, text: `${hi.pf.toFixed(2)} was the high score of Week ${w}.`, rosters: [hi.roster_id] };
     hiSoFar = Math.max(hiSoFar, hi.pf);
     story.push({ week: w, ...ev, high: hi, closest: { winner: cw, loser: clo, margin: r2(cg) }, mvp: mvp && { name: mvp.big, points: mvp.points, roster_id: mvp.roster_id, nfl_team: mvp.players[0].nfl_team, position: mvp.players[0].position } });
@@ -107,7 +117,7 @@ const pcw = (x) => (x > 0.99 ? '>99%' : x < 0.01 ? '<1%' : Math.round(x * 100) +
 const swingOf = (w) => { const now = hist.weeks[w], bef = w > 1 ? hist.weeks[w - 1] : hist.preseason; if (!now || !bef) return null; let b = null;
   for (const gm of L.weeks[w].games) for (const [me, opp, mp, op] of [[gm.a, gm.b, gm.pa, gm.pb], [gm.b, gm.a, gm.pb, gm.pa]]) { const d = now.odds[me].playoff - bef.odds[me].playoff; if (!b || Math.abs(d) > Math.abs(b.delta)) b = { roster_id: me, opp, won: mp > op, pf: mp, pa: op, from: bef.odds[me].playoff, to: now.odds[me].playoff, delta: r2(d) }; }
   if (!b || Math.abs(b.delta) < 0.1) return null; const wn = b.won ? b.roster_id : b.opp, ls = b.won ? b.opp : b.roster_id;
-  return { ...b, head: `${U(F[wn].team_name)} ${b.won ? 'BEAT' : 'UPSET'} ${U(F[ls].team_name)}`.replace(/ UPSET /, F[ls].wins > F[wn].wins ? ' UPSET ' : ' BEAT '), text: `${mgr(wn)} beat ${mgr(ls)} ${Math.max(b.pf, b.pa).toFixed(2)}–${Math.min(b.pf, b.pa).toFixed(2)}, and ${mgr(b.roster_id)}'s playoff chance went from ${pcw(b.from)} to ${pcw(b.to)}: the biggest move in the race that week.` }; };
+  return { ...b, head: `${U(F[wn].team_name)} ${awards[w].chaos && awards[w].chaos.winner === wn && awards[w].chaos.loser === ls ? 'UPSET' : 'BEAT'} ${U(F[ls].team_name)}`, text: `${mgr(wn)} beat ${mgr(ls)} ${Math.max(b.pf, b.pa).toFixed(2)}–${Math.min(b.pf, b.pa).toFixed(2)}, and ${mgr(b.roster_id)}'s playoff chance went from ${pcw(b.from)} to ${pcw(b.to)}: the biggest move in the race that week.` }; };
 for (const e of story) { const sw = swingOf(e.week); if (sw) { e.swing = sw; if (Math.abs(sw.delta) >= 0.25) Object.assign(e, { kind: 'swing', head: sw.head, text: sw.text, rosters: [sw.won ? sw.roster_id : sw.opp, sw.won ? sw.opp : sw.roster_id] }); } }
 season.biggest_swing = story.filter((e) => e.swing).map((e) => ({ week: e.week, ...e.swing })).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0] || null;
 
@@ -211,7 +221,7 @@ const banner = (() => { if (!games.length) return null; const top = C.standings.
   const bits = [riv ? `${riv} rivalry game${riv > 1 ? 's' : ''}` : null, close ? `${close} razor-thin projection${close > 1 ? 's' : ''}` : null, byeTeams.length ? `${byeTeams.length} NFL byes` : null].filter(Boolean);
   return [h, bits.length ? bits.join(' · ') + '.' : `${games.length} games.`]; })();
 // last week's commentary: plain sentences from the awards
-const aw = awards[W], lw = L.weeks[W], comm = aw ? [aw.chaos ? `The upset of Week ${W}: ${mgr(aw.chaos.winner)} beat ${mgr(aw.chaos.loser)} ${aw.chaos.winner_pts.toFixed(2)}–${aw.chaos.loser_pts.toFixed(2)} despite averaging ${aw.chaos.winner_ppg_before} a week coming in, against ${aw.chaos.loser_ppg_before}.` : `No upsets in Week ${W}: every winner was the higher-scoring team coming in.`,
+const aw = awards[W], lw = L.weeks[W], comm = aw ? [aw.chaos ? `The upset of Week ${W}: ${mgr(aw.chaos.winner)} beat ${mgr(aw.chaos.loser)} ${aw.chaos.winner_pts.toFixed(2)}–${aw.chaos.loser_pts.toFixed(2)} after going in with a ${pcu(aw.chaos.win_prob)} chance to win on the site's model.` : `No upsets in Week ${W}: every winner was the higher-scoring team coming in.`,
   `${mgr(lw.high.roster_id)} put up the top score, ${lw.high.pf.toFixed(2)}.`, aw.heartbreaker ? `${mgr(aw.heartbreaker.roster_id)} scored ${aw.heartbreaker.points.toFixed(2)}, the ${['', 'best', 'second-best', 'third-best', 'fourth-best', 'fifth-best', 'sixth-best'][aw.heartbreaker.week_rank] || aw.heartbreaker.week_rank + 'th-best'} total of the week, and still lost to ${mgr(aw.heartbreaker.opp)}.` : ''].filter(Boolean).join(' ') : '';
 await writeFile('site/data/weekly.json', JSON.stringify({ generated_at: C.generated_at, season: C.season, through_week: W, current_week: cur, in_progress: !!C.week_in_progress, projections: !!prj, slots, awards, season_highlights: season, season_story: story.map((e) => ({ ...e, top_seed: hist.weeks[e.week]?.seeds[0] ?? null, top_seed_record: hist.weeks[e.week] ? `${hist.weeks[e.week].records[hist.weeks[e.week].seeds[0]].w}–${hist.weeks[e.week].records[hist.weeks[e.week].seeds[0]].l}` : null })),
   preview: { week: cur, games, banner, slate, byes: byeTeams, commentary: comm, note: 'Projected points are Sleeper\'s player projections scored with this league\'s settings, for the lineups currently set. Win chances are a model estimate. Nothing here is lineup advice.' } }));

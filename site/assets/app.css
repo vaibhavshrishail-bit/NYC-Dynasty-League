@@ -429,3 +429,8 @@ svg.em,.dark svg.em,.card svg.em,.hero2 svg.em,.panel svg.em,#web svg.em,.fhero 
 .dr-yr{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px}.dr-yr button{all:unset;cursor:pointer;min-height:44px;padding:0 18px;border-radius:22px;border:1.5px solid var(--line2);background:var(--card);font-weight:600;font-size:16px;display:inline-flex;align-items:center}.dr-yr button[aria-pressed=true]{background:var(--invbg);color:var(--invfg);border-color:var(--invbg)}
 .dr-boards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:12px}.dr-boards .pkwrap{margin:0}
 .card h2 span{overflow-wrap:normal;word-break:normal;hyphens:none}@media(max-width:560px){.card h2{font-size:clamp(17px,5.2vw,24px)}}
+/* advisory notes: readable on the light page; the pale version is kept only inside dark panels */
+.wr .flag{color:#3a3320;background:#fff7d6;border-left:4px solid #e3a800;border-radius:0 8px 8px 0}.wr .dark .flag,.wr .fhero .flag,.wr .panel .flag,.wr #web .flag,.wr .card .flag{color:#d9cfae;background:rgba(201,162,58,.07)}
+.nav .brand{display:inline-flex;align-items:center;gap:10px}.nav .brand img{width:40px;height:40px;border-radius:50%;display:block}
+.lg-mark{width:clamp(84px,18vw,132px);height:auto;border-radius:50%;flex:0 0 auto;margin-right:clamp(12px,2vw,24px);box-shadow:0 2px 14px rgba(0,0,0,.25)}header.top:has(.lg-mark){display:flex;align-items:center;flex-wrap:wrap}
+header.top:has(.lg-mark){justify-content:flex-start}

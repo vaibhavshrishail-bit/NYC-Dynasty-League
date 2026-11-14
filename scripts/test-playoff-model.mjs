@@ -100,4 +100,8 @@ t('weekly awards: about ten per week, each tied to named players, no player wins
 t('hype banner: a "NEXT UP" line only names two teams that actually play each other this week', async () => {
   const WKJ = JSON.parse(await readFile(new URL('../site/data/weekly.json', import.meta.url))), CJ = JSON.parse(await readFile(new URL('../site/data/canonical.json', import.meta.url))), b = WKJ.preview?.banner?.[0] || '';
   if (/NEXT UP/.test(b)) { const named = CJ.franchises.filter((f) => b.includes(' ' + f.manager.toUpperCase())).map((f) => f.roster_id); assert.equal(named.length, 2, b); assert.ok(WKJ.preview.games.some((g) => named.includes(g.a) && named.includes(g.b)), b); } });
+t('upsets are decided before the game: every upset has a pre-game win chance of 40% or less, and no headline says UPSET without one', async () => {
+  const WKJ = JSON.parse(await readFile(new URL('../site/data/weekly.json', import.meta.url)));
+  for (const [w, a] of Object.entries(WKJ.awards)) if (a.chaos) assert.ok(a.chaos.win_prob > 0 && a.chaos.win_prob <= 0.4, `week ${w}: ${a.chaos.win_prob}`);
+  for (const e of WKJ.season_story) if (/UPSET|STUNS/.test(e.head)) assert.ok(WKJ.awards[e.week].chaos, `week ${e.week} headline says upset without one: ${e.head}`); });
 console.log(`${n} checks passed`);

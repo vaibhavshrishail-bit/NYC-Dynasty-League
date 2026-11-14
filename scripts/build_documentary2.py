@@ -52,7 +52,8 @@ def plan():
         if sect and sect[-1][2] == kind: sect[-1] = (sect[-1][0], sect[-1][1] + s['bars'], kind)
         else: sect.append((b, s['bars'], kind))
         b += s['bars']
-    return {'dur': dur, 'beat': BEAT, 'bar': BAR, 'weeks': W, 'season': c['season'], 'through_week': W, 'titles': {f['theme']: len(f['titles']) for f in c['franchises']}, 'shots': shots, 'sections': sect,
+    lg = E + '/league-logo.png'
+    return {'logo': ('data:image/png;base64,' + base64.b64encode(open(lg, 'rb').read()).decode()) if os.path.exists(lg) else '', 'dur': dur, 'beat': BEAT, 'bar': BAR, 'weeks': W, 'season': c['season'], 'through_week': W, 'titles': {f['theme']: len(f['titles']) for f in c['franchises']}, 'shots': shots, 'sections': sect,
             'hits': [s['t0'] for s in shots[1:]] + [BAR * 2]}
 
 
@@ -66,7 +67,7 @@ async def frames(doc, times=None, fps=30, part=None):
     from playwright.async_api import async_playwright
     async with async_playwright() as p:
         b = await p.chromium.launch(**({'executable_path': '/usr/bin/google-chrome'} if os.path.exists('/usr/bin/google-chrome') else {}), args=['--no-sandbox']); pg = await b.new_page(viewport={'width': 1300, 'height': 900}); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
-        await pg.goto('file://' + B + '/doc.html'); await pg.evaluate('window.__ready')
+        await pg.goto('file://' + B + '/doc.html'); await pg.evaluate('window.__ready'); await pg.evaluate("LOGO.src ? LOGO.decode().catch(() => 0) : 0")
         if times:
             os.makedirs(ROOT + '/build/stills', exist_ok=True)
             for tm in times: d = await pg.evaluate(f'window.__frame({tm},0.8)'); open(f"{ROOT}/build/stills/doc2_{tm:06.2f}.jpg", 'wb').write(base64.b64decode(d.split(',')[1]))

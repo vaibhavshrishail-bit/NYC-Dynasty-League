@@ -2,6 +2,8 @@
 // from the site's own data files, so the film re-cuts itself every time the data changes. Loaded after core.js and themes.js; replaces render().
 // Every shot moves: the backdrop pushes in and drifts, each cut lands on a bar with a flash and a shake, numbers count, lines draw.
 TITLES=DOC2.titles||{};
+const LOGO=new Image();if(DOC2.logo)LOGO.src=DOC2.logo; // the league's own logo, supplied by the commissioner
+function logo(ctx,x,y,size,p){if(p<=0||!LOGO.complete||!LOGO.naturalWidth)return;const k=back(p)*size;ctx.save();ctx.globalAlpha=Math.min(1,p*2.5);ctx.shadowColor='rgba(255,255,255,.35)';ctx.shadowBlur=40;ctx.beginPath();ctx.arc(x,y,k/2,0,7);ctx.fillStyle='#000';ctx.fill();ctx.shadowBlur=0;ctx.clip();ctx.drawImage(LOGO,x-k/2,y-k/2,k,k);ctx.restore()}
 function setTheme(n){CURT=n;T=THEMES[n];if(!T._a){T._a=noiseTex(61,256,...T.tint1,1.6);T._b=noiseTex(73,256,...T.tint2,1.3)}TEX.a=T._a;TEX.b=T._b;GLY=T._g||(T._g=T.glyph.map(g=>({...g,p:new Path2D(g.d)})))}
 function emb(ctx,theme,x,y,size,p,glow=1){const k=T,g=GLY,c=CURT;setTheme(theme);emblem(ctx,x,y,size,p,glow);T=k;GLY=g;CURT=c;TEX.a=k._a;TEX.b=k._b}
 const HI=(theme)=>THEMES[theme].hi,pc=(x)=>x>.99?'>99%':x<.01?'<1%':Math.round(x*100)+'%';
@@ -14,9 +16,9 @@ const SHOT={
  open(ctx,s,lt){const e8=DOC2.beat/2,n=s.teams.length,tb=DOC2.bar*2;
   s.teams.forEach((tm,i)=>{const p=seg(lt,i*e8,i*e8+.5);if(p<=0)return;const c=i%6,r=Math.floor(i/6),out=eio(seg(lt,tb-.1,tb+.5)),x=mix(W/2+(c-2.5)*270,W/2+(c-2.5)*300,out),y=mix(390+r*290,r?862:226,out),sz=mix(210,124,out)*back(seg(lt,i*e8,i*e8+.35));
    ctx.save();ctx.globalAlpha=1-out*.45;emb(ctx,tm.theme,x,y,sz,p,1.2);ctx.restore()});
-  const q=seg(lt,tb,tb+.5);slam(ctx,'NYC DYNASTY LEAGUE',W/2,520,`400 %px ${BOLD}`,190,'#fff',q,10);
-  const q2=seg(lt,tb+DOC2.beat,tb+DOC2.beat+.4);if(q2>0){ctx.save();ctx.globalAlpha=q2;ctx.fillStyle=T.hi;ctx.fillRect(W/2-eo(q2)*420,566,eo(q2)*840,4);text(ctx,s.sub,W/2,640+(1-eo(q2))*20,`600 46px ${SANS}`,T.hi,16);ctx.restore()}
-  const q3=seg(lt,tb+DOC2.beat*3,tb+DOC2.beat*3+.4);if(q3>0){ctx.save();ctx.globalAlpha=q3;text(ctx,s.line,W/2,740,`600 40px ${SANS}`,'#dfe7f3',8);ctx.restore()}},
+  const q=seg(lt,tb,tb+.5),hasL=LOGO.complete&&LOGO.naturalWidth;logo(ctx,W/2,470,340,seg(lt,tb,tb+.45));if(!hasL)slam(ctx,'NYC DYNASTY LEAGUE',W/2,520,`400 %px ${BOLD}`,190,'#fff',q,10);
+  const q2=seg(lt,tb+DOC2.beat,tb+DOC2.beat+.4),y2=hasL?716:640;if(q2>0){ctx.save();ctx.globalAlpha=q2;ctx.fillStyle=T.hi;ctx.fillRect(W/2-eo(q2)*420,y2-74,eo(q2)*840,4);text(ctx,s.sub,W/2,y2+(1-eo(q2))*20,`600 46px ${SANS}`,T.hi,16);ctx.restore()}
+  const q3=seg(lt,tb+DOC2.beat*3,tb+DOC2.beat*3+.4);if(q3>0){ctx.save();ctx.globalAlpha=q3;text(ctx,s.line,W/2,y2+72,`600 40px ${SANS}`,'#dfe7f3',8);ctx.restore()}},
  // ---- the race: every franchise's playoff chance, drawn week by week ----
  race(ctx,s,lt){const x0=250,x1=1420,y0=250,y1=860,n=s.labels.length,X=(i)=>x0+(x1-x0)*i/(n-1),Y=(v)=>y1-(y1-y0)*v,prog=eio(seg(lt,.5,s.dur-2.0))*(n-1);
   slam(ctx,'THE RACE',W/2,214,`400 %px ${BOLD}`,64,'#fff',seg(lt,0,.4),12);
@@ -67,8 +69,8 @@ const SHOT={
   ctx.save();ctx.globalAlpha=seg(lt,.4,.8);text(ctx,'RECORD',x0+820,y0-8,`600 18px ${SANS}`,'#9fb0c8',4);text(ctx,'POINTS',x0+940,y0-8,`600 18px ${SANS}`,'#9fb0c8',4);text(ctx,'PLAYOFF CHANCE',x0+1160,y0-8,`600 18px ${SANS}`,'#9fb0c8',4);ctx.restore()},
  // ---- close: the crests circle, the countdown lands ----
  close(ctx,s,lt){const n=s.teams.length;s.teams.forEach((tm,i)=>{const p=seg(lt,i*.06,i*.06+.6),an=i/n*Math.PI*2+lt*.22,rx=760,ry=300;if(p<=0)return;const z=Math.sin(an);ctx.save();ctx.globalAlpha=p*(.45+.55*(z+1)/2);emb(ctx,tm.theme,W/2+Math.cos(an)*rx,540+z*ry,110+40*(z+1)/2,1,.6);ctx.restore()});
-  plate(ctx,W/2-560,360,1120,360,.62,24);slam(ctx,s.big,W/2,520,`400 %px ${BOLD}`,170,'#fff',seg(lt,DOC2.beat*2,DOC2.beat*2+.5),8);
-  const q=seg(lt,DOC2.beat*4,DOC2.beat*4+.4);if(q>0){ctx.save();ctx.globalAlpha=q;text(ctx,s.sub,W/2,606,`600 44px ${SANS}`,'#ffd24a',12);text(ctx,s.foot,W/2,672,`600 30px ${SANS}`,'#dfe7f3',10);ctx.restore()}}
+  plate(ctx,W/2-560,290,1120,500,.66,24);logo(ctx,W/2,400,190,seg(lt,.2,.7));slam(ctx,s.big,W/2,620,`400 %px ${BOLD}`,150,'#fff',seg(lt,DOC2.beat*2,DOC2.beat*2+.5),8);
+  const q=seg(lt,DOC2.beat*4,DOC2.beat*4+.4);if(q>0){ctx.save();ctx.globalAlpha=q;text(ctx,s.sub,W/2,694,`600 44px ${SANS}`,'#ffd24a',12);text(ctx,s.foot,W/2,750,`600 30px ${SANS}`,'#dfe7f3',10);ctx.restore()}}
 };
 function render(ctx,t){
   t=cl(t,0,DOC2.dur-1e-6);const f=Math.round(t*FPS);ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.setLineDash([]);ctx.letterSpacing='0px';ctx.textBaseline='alphabetic';
