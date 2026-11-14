@@ -14,19 +14,7 @@ def configs():
     """One config per franchise, taken entirely from site/data/canonical.json (the single source of truth)."""
     c=J(ROOT+'/site/data/canonical.json');wild=[f for f in c['franchises'] if f['seed']==c['playoff_teams']][0];bestout=max(f['wins'] for f in c['franchises'] if f['seed']>=c['playoff_teams'])
     left=c['playoff_week_start']-1-c['through_week'];out=[]
-    # Season rank at each position: total points in this league's scoring, over every player on a league roster, through the last completed week.
-    PM={'DE':'DL','DT':'DL','CB':'DB','S':'DB','SS':'DB','FS':'DB','OLB':'LB','ILB':'LB'};mu=J(f"{ROOT}/site/data/sleeper/seasons/{c['season']}/matchups.json");sp=J(ROOT+'/site/data/sleeper/players.json');tot={}
-    for w,ms in mu.items():
-        if int(w)>c['through_week']:continue
-        for m in ms:
-            for pid,pts in (m.get('players_points') or {}).items():tot[pid]=tot.get(pid,0)+(pts or 0)
-    gp={}
-    for pid,pts in tot.items():
-        ps_=(sp.get(pid) or {}).get('position');ps_=PM.get(ps_,ps_)
-        if ps_:gp.setdefault(ps_,[]).append((pts,pid))
-    RANK={}
-    for ps_,l in gp.items():
-        for i,(pts,pid) in enumerate(sorted(l,reverse=True)):RANK[pid]=f"{ps_}{i+1}"
+    RANK=c.get('player_ranks') or {}   # season rank at each position, from canonical.json (total points in league scoring through the last completed week)
     for f in c['franchises']:
         st=f['streak'] or {'type':'','length':0};ti=f['titles']
         l1=f"{f['record']}   ·   "+(f"{ORD(f['seed'])} SEED" if f['in_playoff_position'] else f"{ORD(f['seed'])} IN THE STANDINGS")+f"   ·   {ORD(f['points_rank'])} IN POINTS"

@@ -33,7 +33,7 @@ for (let w = 1; w <= W; w++) { const ms = matchups[w] || [], g = {}; for (const 
 // Every award is a ranking of Sleeper points for that week. A player can win only one solo award per week; the next best takes the other.
 for (let w = 1; w <= W; w++) { const ms = matchups[w] || [], g = {}; for (const m of ms) if (m.matchup_id) (g[m.matchup_id] ||= []).push(m);
   const res = {}; for (const [a, b] of Object.values(g).filter((x) => x.length === 2)) { res[a.roster_id] = { won: a.points > b.points, opp: b.roster_id, margin: r2(a.points - b.points) }; res[b.roster_id] = { won: b.points > a.points, opp: a.roster_id, margin: r2(b.points - a.points) }; }
-  const P = (pid, pts, rid) => ({ player_id: pid, name: nm(pid), position: pos(players[pid]), nfl_team: players[pid]?.team || 'FA', points: r2(pts ?? 0), roster_id: rid });
+  const P = (pid, pts, rid) => ({ rank: C.player_ranks?.[pid] || null, player_id: pid, name: nm(pid), position: pos(players[pid]), nfl_team: players[pid]?.team || 'FA', points: r2(pts ?? 0), roster_id: rid });
   const starters = ms.flatMap((m) => (m.starters || []).map((p, i) => P(p, m.starters_points?.[i], m.roster_id)).filter((x) => x.player_id !== '0'));
   const bench = ms.flatMap((m) => (m.players || []).filter((p) => !(m.starters || []).includes(p)).map((p) => P(p, m.players_points?.[p], m.roster_id)));
   const used = new Set(), list = [], f2 = (x) => x.toFixed(2), by = (a) => [...a].sort((x, y) => y.points - x.points);
@@ -48,7 +48,7 @@ for (let w = 1; w <= W; w++) { const ms = matchups[w] || [], g = {}; for (const 
   unit('idp_unit', 'THE IDP UNIT', (x) => IDP.has(x.position), 'defensive starters', 3);
   unit('receiver_room', 'THE RECEIVER ROOM', (x) => x.position === 'WR', 'wide receivers');
   unit('backfield', 'THE BACKFIELD', (x) => x.position === 'RB', 'running backs');
-  unit('te_mafia', 'TE MAFIA', (x) => x.position === 'TE', 'tight ends', 1);
+  unit('te_mafia', 'THE TIGHTEST END', (x) => x.position === 'TE', 'tight ends', 1);
   solo('field_general', 'THE FIELD GENERAL', starters.filter((x) => x.position === 'QB'), (p, b) => `${f2(p.points)}, the top quarterback score of the week${b ? ' ' + b : ''}, for ${side(p)}.`);
   solo('boot', 'THE BOOT', starters.filter((x) => x.position === 'K'), (p) => `${f2(p.points)} from the kicker, the most by any starting kicker this week, for ${side(p)}.`);
   solo('wasted', 'THE WASTED MASTERPIECE', starters.filter((x) => res[x.roster_id] && !res[x.roster_id].won), (p, b) => `${f2(p.points)} in a losing effort${b ? ` (${b})` : ''}: ${mgr(p.roster_id)} still fell to ${mgr(res[p.roster_id].opp)} by ${f2(-res[p.roster_id].margin)}.`);
@@ -117,7 +117,7 @@ const proj = (pid) => { const s = prj?.[pid]?.stats; return s && Object.keys(s).
 const gameOf = (team) => sched.find((g) => g.week === cur && (g.home === team || g.away === team));
 const model = sim.modelOf(L), phi = (z) => { const t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2), p = 1 - d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z >= 0 ? p : 1 - p; };
 const lineup = (id) => { const m = (matchups[cur] || []).find((x) => x.roster_id === id); return (m?.starters || []).map((p, i) => { const pl = players[p], g = pl && gameOf(pl.team), d = g ? new Date(g.date + 'T12:00:00Z') : null;
-  return { slot: slots[i] || 'FLEX', player_id: p, empty: p === '0' || !pl, name: pl ? nm(p) : 'Empty slot', last_name: pl?.last_name || '', number: pl?.number ?? null, position: pos(pl), nfl_team: pl?.team || 'FA', status: pl?.injury_status || null,
+  return { slot: slots[i] || 'FLEX', rank: C.player_ranks?.[p] || null, player_id: p, empty: p === '0' || !pl, name: pl ? nm(p) : 'Empty slot', last_name: pl?.last_name || '', number: pl?.number ?? null, position: pos(pl), nfl_team: pl?.team || 'FA', status: pl?.injury_status || null,
     opp: !pl ? '' : g ? (g.home === pl.team ? 'vs ' + g.away : 'at ' + g.home) : 'BYE', day: d ? DAY[d.getUTCDay()] : null, date: g?.date || null, projected: g ? proj(p) : 0, live: m.starters_points?.[i] ?? null }; }); };
 // ---- When it swings: real kickoff windows (Eastern Time). Needs nfl_kickoffs.json; without it the timeline falls back to game days and says so. ----
 const KO = await J(process.env.KICKOFFS_FILE || `${D}/nfl_kickoffs.json`).catch(() => null), koList = KO?.[cur] || null;

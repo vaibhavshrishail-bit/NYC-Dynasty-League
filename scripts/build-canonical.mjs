@@ -16,6 +16,11 @@ if (rosters.length !== 12) problems.push(`expected 12 rosters, found ${rosters.l
 // Thursday-night scores appear while the week is still being played.
 const st = idx.nfl_state, liveWeek = String(st.season) === season && st.season_type === 'regular' ? st.week : st.season_type === 'post' ? 99 : 0;
 const weeks = Object.keys(matchups).map(Number).filter((w) => w < liveWeek && matchups[w].some((m) => (m.points || 0) > 0)).sort((a, b) => a - b);
+// Season rank at each position: total points in this league's scoring (starting or not) through the last completed week, across every player who has been on a league roster.
+const RPOS = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' }, SEASON_PTS = {}, RANK = {};
+for (const w of weeks) for (const m of matchups[w]) for (const [pid, pts] of Object.entries(m.players_points || {})) SEASON_PTS[pid] = Math.round(((SEASON_PTS[pid] || 0) + (pts || 0)) * 100) / 100;
+{ const g = {}; for (const [pid, pts] of Object.entries(SEASON_PTS)) { const ps = RPOS[players[pid]?.position] || players[pid]?.position; if (ps) (g[ps] ||= []).push([pts, pid]); }
+  for (const [ps, l] of Object.entries(g)) l.sort((a, b) => b[0] - a[0]).forEach(([, pid], i) => { RANK[pid] = ps + (i + 1); }); }
 const through = weeks.length ? weeks[weeks.length - 1] : 0;
 const POS = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' };
 const pos = (p) => { const x = p?.position || p?.fantasy_positions?.[0] || '?'; return POS[x] || x; };
@@ -76,9 +81,9 @@ for (const r of [...rosters].sort((a, b) => a.roster_id - b.roster_id)) {
   const featured = pool.filter((p) => p.starts >= minStarts && p.share >= 0.04 && (p.position !== 'K' || top2.has(p.player_id))).slice(0, 10);
   const bestIdp = featured.find((p) => IDP.has(p.position)), hot = [...featured].filter((p) => p.last3_ppg != null).sort((a, b) => (b.last3_ppg - b.ppg) - (a.last3_ppg - a.ppg))[0];
   const seenPos = new Set();
-  featured.forEach((p, i) => { const why = [];
-    if (i === 0) why.push('Leading scorer'); else if (!seenPos.has(p.position)) why.push(`Top ${p.position}`);
-    if (bestIdp && p.player_id === bestIdp.player_id && i !== 0) why.push('Top defender');
+  featured.forEach((p, i) => { const why = []; p.rank = RANK[p.player_id] || null; p.season_points = SEASON_PTS[p.player_id] ?? null;
+    if (i === 0) why.push("This team's leading scorer");
+    if (bestIdp && p.player_id === bestIdp.player_id && i !== 0) why.push("This team's top defender");
     if (hot && p.player_id === hot.player_id && p.last3_ppg - p.ppg >= 2) why.push(`Hot: ${p.last3_ppg} PPG last 3`);
     if (!why.length) why.push(`${Math.round(p.share * 100)}% of starter points`);
     if (p.starts < weeks.length / 2) why.push(`small sample (${p.starts} starts)`);
@@ -113,6 +118,7 @@ for (const r of [...rosters].sort((a, b) => a.roster_id - b.roster_id)) {
     h2h: Object.fromEntries(Object.entries(h2h[r.roster_id] || {}).map(([k, v]) => [k, v])),
     seasons: history.map((h) => { const x = h.teams.find((q) => q.roster_id === r.roster_id); return { season: h.season, wins: x.wins, losses: x.losses, pf: x.pf, champion: h.champion_roster === r.roster_id, runner_up: h.runner_up_roster === r.roster_id, toilet_bowl: h.toilet_bowl_roster === r.roster_id, same_owner: x.owner_id === r.owner_id, handle: x.handle }; }) });
 }
+const punishments = await J('src/config/punishments.json').then((x) => Object.fromEntries(Object.entries(x).filter(([k]) => /^\d{4}$/.test(k)))).catch(() => ({}));
 const slugs = franchises.map((f) => f.slug); if (new Set(slugs).size !== slugs.length) problems.push('duplicate slugs');
 const trades = []; for (const [w, list] of Object.entries(tx)) for (const t of list) if (t.type === 'trade' && t.status === 'complete')
   trades.push({ week: Number(w), rosters: t.roster_ids, players: Object.entries(t.adds || {}).map(([pid, to]) => ({ player_id: pid, name: players[pid]?.full_name || pid, position: players[pid]?.position || null, nfl_team: players[pid]?.team || null, to_roster: to, from_roster: t.drops?.[pid] ?? null })), picks: (t.draft_picks || []).map((p) => ({ season: p.season, round: p.round, original_roster: p.roster_id, to_roster: p.owner_id, from_roster: p.previous_owner_id ?? null })) });
@@ -125,7 +131,7 @@ const tradeSeasons = idx.seasons.map((s) => Number(s.season)).filter((se) => Str
 if (problems.length) { console.error('IDENTITY RECONCILIATION FAILED:\n - ' + problems.join('\n - ')); process.exit(1); }
 const out = { generated_at: new Date().toISOString(), source: 'Sleeper public API', league_id: league.league_id, league_name: league.name, season: Number(season), through_week: through, current_week: Math.min(liveWeek, 18), week_in_progress: liveWeek <= 18 && (matchups[liveWeek] || []).some((m) => (m.points || 0) > 0),
   playoff_teams: playoffTeams, playoff_rule: 'Seeds 1–5 go to the best records, with points for as the tiebreaker. Seed 6 goes to the highest-scoring team among the other seven.', playoff_week_start: league.settings.playoff_week_start, roster_positions: league.roster_positions.filter((p) => p !== 'BN'), scoring: { rec: league.scoring_settings.rec, pass_td: league.scoring_settings.pass_td, idp: true },
-  standings: seedOrder.map((r) => r.roster_id), franchises, history: history.map(({ teams, ...h }) => h), trades: trades.sort((a, b) => a.week - b.week).map((t) => ({ season: Number(season), ...t })), past_trades: pastTrades, trade_seasons: tradeSeasons };
+  standings: seedOrder.map((r) => r.roster_id), franchises, history: history.map(({ teams, ...h }) => h), trades: trades.sort((a, b) => a.week - b.week).map((t) => ({ season: Number(season), ...t })), past_trades: pastTrades, player_ranks: RANK, punishments, trade_seasons: tradeSeasons };
 // keep the previous timestamp when nothing but the clock changed, so scheduled runs do not create empty commits
 try { const prev = JSON.parse(await readFile('site/data/canonical.json', 'utf8')); const strip = (o) => JSON.stringify({ ...o, generated_at: 0 }); if (strip(prev) === strip(out)) out.generated_at = prev.generated_at; } catch {}
 await writeFile('site/data/canonical.json', JSON.stringify(out));

@@ -414,3 +414,8 @@ canvas.share.tall{max-width:440px;border-radius:var(--r)}
 .ss-w{font-size:12px;letter-spacing:.06em}.st-t span{font-size:12px;letter-spacing:.08em}.ss-c .nb,.awt .nb,.tr-a .nb{font-size:12px}.tr-wk{font-size:12px;letter-spacing:.04em}.pk-n{font-size:12px}
 .weeks .b em{top:auto;bottom:6px;color:#10151d;font-weight:600}.weeks .w.L .b em{color:var(--txt)}
 .ss-n.swing{--ac:#0f7a5a}
+.wr .pl .nick{color:var(--txt);font-weight:600;font-style:italic;font-size:17px}.pl .rk{font-weight:700;color:var(--txt);letter-spacing:.04em}.pl .why b{color:var(--txt)}
+.pun{display:block;font-size:14px;color:var(--dim);margin-top:4px;max-width:30em}.awt small{font-size:12px;font-weight:700;color:var(--dim);letter-spacing:.04em}
+.pkwrap{background:var(--navy);border-radius:var(--r);padding:12px;margin:10px 0}.pkwrap .pk-card{margin:0;border:0;background:none;padding:4px}a.pc{text-decoration:none}
+/* crests stay visible on any background: every crest sits on its own dark disc with a light ring and a dark outer edge */
+svg.em,.dark svg.em,.card svg.em,.hero2 svg.em,.panel svg.em,#web svg.em,.fhero svg.em,details.mx svg.em{background:radial-gradient(circle,#24385a 0%,#0f1b2d 78%);border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.6),0 0 0 3px rgba(9,12,18,.55)}
