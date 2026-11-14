@@ -1,7 +1,18 @@
 {
  "second_edition": [
-  "vaibhav"
+  "soham",
+  "advaith",
+  "nihar",
+  "dev",
+  "alan",
+  "nishant",
+  "achal",
+  "manas",
+  "shiamak",
+  "vaibhav",
+  "taylor",
+  "dhiraj"
  ],
- "_note": "Films re-rendered automatically each week by .github/workflows/render-films.yml. second_edition: franchise slugs whose second-edition film is approved. documentary_second_edition: re-render site/documentary/season-<year>-v2.mp4.",
+ "_note": "Second-edition films re-rendered every Wednesday by .github/workflows/render-films.yml (one parallel job each) and published to the 'films' branch. second_edition: franchise slugs. documentary_second_edition: the season documentary.",
  "documentary_second_edition": true
 }

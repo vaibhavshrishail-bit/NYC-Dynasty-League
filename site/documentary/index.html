@@ -5,6 +5,10 @@
 <div class="doc"><a class="k" href="../" style="text-decoration:none">← League Pulse</a> &nbsp; <a class="k" href="../archives.html" style="text-decoration:none">Archives</a><h1>The 2026 season so far</h1>
 <video id="v" controls playsinline preload="metadata" poster="season-2026.jpg" src="season-2026.mp4"></video>
 <div class="ch" id="ch"></div><p class="note" id="n"></p></div>
-<script>fetch('season-2026.json').then(r=>r.json()).then(d=>{const v=document.getElementById('v');
+<script>
+// The newest edition is listed in ../cinematics/editions.json by the weekly film workflow; the first edition is the fallback.
+fetch('../cinematics/editions.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).catch(()=>null).then(ed=>{const file=(ed&&ed.documentary&&ed.documentary.file)||'season-2026',v=document.getElementById('v');
+ if(file!=='season-2026'){v.poster=file+'.jpg';v.src=file+'.mp4'}
+ return fetch(file+'.json').then(r=>r.json()).then(d=>{
  document.getElementById('ch').append(...d.chapters.map(c=>{const b=document.createElement('button');b.className='btn';b.textContent=c.title;b.onclick=()=>{v.currentTime=c.start;v.play().catch(()=>{})};return b}));
- document.getElementById('n').textContent=`A season-to-date film built from Sleeper results through Week ${d.through_week}. Every number on screen comes from league data. Music and imagery are original.`}).catch(()=>{document.getElementById('v').style.display='none';document.getElementById('n').textContent='The documentary is being rendered and will appear here shortly.'});</script></body></html>
+ document.getElementById('n').innerHTML=`A season-to-date film built from Sleeper results through Week ${d.through_week}${d.edition===2?', re-cut automatically every Wednesday':''}. Every number on screen comes from league data. Music and imagery are original.${d.edition===2?' <a href="season-2026.mp4">Watch the first edition</a>.':''}`})}).catch(()=>{document.getElementById('v').style.display='none';document.getElementById('n').textContent='The documentary is being rendered and will appear here shortly.'});</script></body></html>

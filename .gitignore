@@ -6,3 +6,11 @@ out/pantheon_audio.wav
 __pycache__/
 build/
 tests/last-run.json
+
+# second-edition films live on the 'films' branch (replaced weekly), not in main
+site/cinematics/*-v2.mp4
+site/cinematics/*-v2.jpg
+site/cinematics/editions.json
+site/documentary/*-v2.mp4
+site/documentary/*-v2.jpg
+site/documentary/*-v2.json

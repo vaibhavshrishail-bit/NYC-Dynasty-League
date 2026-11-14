@@ -1,9 +1,12 @@
-# Re-renders the approved second-edition franchise films from fresh Sleeper data once a week, so the films keep up with the site.
-# Which films: src/config/films.json ("second_edition"). The originals (<slug>.mp4) and the documentary are never touched.
+# Re-renders the second-edition films from fresh Sleeper data every Wednesday morning, one film per parallel job.
+# Which films: src/config/films.json. The first editions (<slug>.mp4, season-<year>.mp4) are never touched.
+# Finished films are published to the "films" branch as a single commit that is replaced each week, so the
+# repository does not grow by a few hundred megabytes of video history every week. The deploy workflow lays that
+# branch over site/ before it publishes. If one film fails to render, last week's copy of it is kept.
 name: Render films
 on:
   schedule:
-    - cron: '40 11 * * 3'   # Wednesdays, after Monday night and most stat corrections
+    - cron: '40 11 * * 3'   # Wednesdays 11:40 UTC: 6:40am Eastern in winter, 7:40am in summer
   workflow_dispatch:
 permissions:
   contents: write
@@ -12,9 +15,28 @@ concurrency:
   group: render-films
   cancel-in-progress: false
 jobs:
-  render:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    outputs:
+      targets: ${{ steps.t.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: t
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          f = json.load(open('src/config/films.json'))
+          t = list(f.get('second_edition', [])) + (['documentary'] if f.get('documentary_second_edition') else [])
+          print('targets=' + json.dumps(t))
+          PY
+  render:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.plan.outputs.targets) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,28 +54,58 @@ jobs:
           node scripts/build-canonical.mjs
           node scripts/build-league.mjs
           node scripts/build-weekly.mjs
-      - name: Render approved second editions
-        run: python scripts/build_cinematics.py auto2
-      - name: Render the season documentary (second edition)
+      - name: Render
         run: |
-          if python3 -c "import json,sys; sys.exit(0 if json.load(open('src/config/films.json')).get('documentary_second_edition') else 1)"; then python scripts/build_documentary2.py render; fi
-      - name: Check the output is a playable film
+          if [ "${{ matrix.target }}" = "documentary" ]; then python scripts/build_documentary2.py render; else python scripts/build_cinematics.py render2 "${{ matrix.target }}"; fi
+      - name: Check the output is a playable film, and collect it
         run: |
-          for f in site/cinematics/*-v2.mp4 site/documentary/*-v2.mp4; do
-            [ -f "$f" ] || continue
+          mkdir -p out/site/cinematics out/site/documentary
+          if [ "${{ matrix.target }}" = "documentary" ]; then cp site/documentary/*-v2.* out/site/documentary/; else cp site/cinematics/${{ matrix.target }}-v2.* out/site/cinematics/; fi
+          for f in out/site/*/*-v2.mp4; do
             d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$f"); echo "$f ${d}s"
             python3 -c "import sys; d=float('$d'); sys.exit(0 if 40 < d < 150 else 1)"
           done
-      - name: Commit films
+      - uses: actions/upload-artifact@v4
+        with:
+          name: film-${{ matrix.target }}
+          path: out
+          retention-days: 3
+  publish:
+    needs: render
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start from last week's films, then lay this week's over them
+        run: |
+          if git fetch --depth=1 origin films 2>/dev/null; then git archive FETCH_HEAD | tar -x; echo "kept last week's films as the base"; fi
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: film-*
+          merge-multiple: true
+          path: .
+        continue-on-error: true
+      - name: Write the list of films that exist
+        run: |
+          python3 - <<'PY'
+          import json, glob, os, datetime
+          fr = sorted(os.path.basename(p)[:-7] for p in glob.glob('site/cinematics/*-v2.mp4'))
+          doc = None
+          for p in sorted(glob.glob('site/documentary/*-v2.json')):
+              d = json.load(open(p)); doc = {'file': os.path.basename(p)[:-5], 'duration': round(d.get('duration', 0)), 'through_week': d.get('through_week'), 'season': d.get('season')}
+          json.dump({'franchise_second_edition': fr, 'documentary': doc, 'rendered_at': datetime.datetime.utcnow().isoformat() + 'Z'}, open('site/cinematics/editions.json', 'w'), indent=1)
+          print(fr, doc)
+          assert fr or doc, 'no films were produced or kept'
+          PY
+      - name: Publish to the films branch (one commit, replaced each week)
         run: |
           git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/cinematics/*-v2.mp4 site/cinematics/*-v2.jpg
-          git add site/documentary/*-v2.mp4 site/documentary/*-v2.jpg site/documentary/*-v2.json 2>/dev/null || true
-          if git diff --cached --quiet; then echo "No film changes"; exit 0; fi
-          git stash -q --include-untracked --keep-index || true
-          git commit -q -m "Re-render second-edition films from current data"
-          git pull -q --rebase --autostash origin main
-          git push -q origin HEAD:main
-      - name: Publish
+          git checkout -q --orphan films-next
+          git rm -rfq --cached .
+          git add -f site/cinematics/*-v2.mp4 site/cinematics/*-v2.jpg site/cinematics/editions.json
+          git add -f site/documentary/*-v2.mp4 site/documentary/*-v2.jpg site/documentary/*-v2.json 2>/dev/null || true
+          git commit -q -m "Films rendered $(date -u +%F)"
+          git push -q -f origin films-next:films
+      - name: Publish the site
         env: { GH_TOKEN: '${{ github.token }}' }
-        run: gh workflow run refresh-and-deploy.yml --ref main || echo "Deploy will happen at the next scheduled refresh"
+        run: gh workflow run refresh-and-deploy.yml --ref main || echo "The site will pick the films up at its next scheduled refresh"

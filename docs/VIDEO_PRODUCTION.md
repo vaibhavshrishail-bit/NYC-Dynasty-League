@@ -92,3 +92,12 @@ Commands: `plan`, `stills [t ...]`, `render`, or `audio` + `part i k` + `finish 
 - Uses `score2` on the film's own cut times.
 
 **Weekly re-render**: `.github/workflows/render-films.yml` runs `build_cinematics.py auto2` and, when `documentary_second_edition` is true in `src/config/films.json`, `build_documentary2.py render`.
+
+## Where the films live (from Week 10)
+
+- Second-edition films are **not committed to `main`**. The weekly workflow (`render-films.yml`) renders each film in its own parallel job, then publishes all of them to the **`films` branch as one commit that is replaced every week**. This keeps the repository from growing by roughly 200 MB of video history a week.
+- The deploy workflow lays the `films` branch over `site/` before testing and before publishing.
+- `site/cinematics/editions.json` (written by the workflow, on the `films` branch) lists which second editions exist. Pages read it through `loadEditions()` and fall back to the first editions when a film or the list is missing.
+- If one film fails to render in a given week, last week's copy is kept.
+- To add or remove a film from the weekly run, edit `src/config/films.json`.
+- To render by hand: `python3 scripts/build_cinematics.py render2 <slug>` or `python3 scripts/build_documentary2.py render`; the output is git-ignored locally.

@@ -28,6 +28,9 @@ jobs:
         run: node scripts/build-weekly.mjs
       - name: Check the playoff model before publishing
         run: node scripts/test-playoff-model.mjs
+      - name: Lay the weekly films over the site (from the films branch, if it exists)
+        run: |
+          if git fetch --depth=1 origin films 2>/dev/null; then git archive FETCH_HEAD | tar -x; ls site/cinematics | grep -c -- '-v2.mp4' || true; else echo "no films branch yet"; fi
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - name: Install the test browser
@@ -49,6 +52,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { ref: main }
+      - name: Lay the weekly films over the site (from the films branch, if it exists)
+        run: |
+          if git fetch --depth=1 origin films 2>/dev/null; then git archive FETCH_HEAD | tar -x; ls site/cinematics | grep -c -- '-v2.mp4' || true; else echo "no films branch yet"; fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }

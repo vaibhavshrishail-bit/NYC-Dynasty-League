@@ -51,6 +51,7 @@ loadAll().then(([c,L])=>{
  <footer>${esc(stamp(c))}</footer>
 </div>`;
   themeVars(document.getElementById('hero'),th);document.querySelectorAll('.pl,.weeks').forEach((e)=>themeVars(e,th));
-  document.getElementById('play').onclick=()=>{const box=document.getElementById('cine'),v=document.getElementById('v');box.style.display='block';if(!v.src)v.src=`cinematics/${f.slug}.mp4`;v.currentTime=0;v.play().catch(()=>{});box.scrollIntoView({behavior:'smooth',block:'center'})};
+  loadEditions().then((ed)=>{if(ed.franchise_second_edition.includes(f.slug)){window._film=`cinematics/${f.slug}-v2.mp4`;document.getElementById('v').poster=`cinematics/${f.slug}-v2.jpg`}});
+  document.getElementById('play').onclick=()=>{const box=document.getElementById('cine'),v=document.getElementById('v');box.style.display='block';if(!v.src)v.src=window._film||`cinematics/${f.slug}.mp4`;v.currentTime=0;v.play().catch(()=>{});box.scrollIntoView({behavior:'smooth',block:'center'})};
 }).catch(()=>{document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});
 </script></body></html>
