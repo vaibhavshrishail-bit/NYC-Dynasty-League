@@ -86,4 +86,15 @@ t('NFL registry: 32 teams, each with a name and two colours, no logo files shipp
 t('timeline windows add up to the lineup projections and are in kickoff order', async () => {
   const WKJ = JSON.parse(await readFile(new URL('../site/data/weekly.json', import.meta.url))); for (const g of WKJ.preview.games) { const W = g.timeline.windows; for (let i = 1; i < W.length; i++) assert.ok(W[i - 1].start <= W[i].start);
     for (const k of ['a', 'b']) { const sum = W.reduce((a, w) => a + w[k].projected, 0), lu = g['lineup_' + k].filter((p) => !p.empty && p.opp && p.opp !== 'BYE').reduce((a, p) => a + (p.projected || 0), 0); assert.ok(Math.abs(sum - lu) < 0.2, `${sum} vs ${lu}`); } } });
+t('preseason expectation: no franchise starts at 0% or 100%, the odds sum to six playoff spots, and the prior has no weight from Week 6', async () => {
+  const H = JSON.parse(await readFile(new URL('../site/data/history.json', import.meta.url))), LJ = JSON.parse(await readFile(new URL('../site/data/league.json', import.meta.url)));
+  assert.ok(H.preseason, 'history.json has a preseason snapshot'); const o = Object.values(H.preseason.odds).map((x) => x.playoff);
+  assert.equal(o.length, 12); for (const p of o) assert.ok(p > 0.02 && p < 0.98, `preseason odds ${p}`); assert.ok(Math.abs(o.reduce((a, b) => a + b, 0) - 6) < 0.05);
+  const pw = new Function(await readFile(new URL('../site/assets/sim.js', import.meta.url), 'utf8') + '; return priorWeight;')(); assert.equal(pw(0), 1); assert.equal(pw(6), 0); assert.equal(pw(12), 0); assert.ok(pw(3) > 0 && pw(3) < 1);
+  if (LJ.through_week >= 6) for (const t of Object.values(LJ.teams)) assert.equal(t.prior.w, 0); });
+t('weekly awards: about ten per week, each tied to named players, no player wins two solo awards in a week', async () => {
+  const WKJ = JSON.parse(await readFile(new URL('../site/data/weekly.json', import.meta.url)));
+  for (const [w, a] of Object.entries(WKJ.awards)) { assert.ok(a.list.length >= 9 && a.list.length <= 12, `week ${w}: ${a.list.length} awards`); const solo = a.list.filter((x) => x.players.length === 1 && !['te_mafia'].includes(x.key)).map((x) => x.players[0].player_id); assert.equal(new Set(solo).size, solo.length);
+    for (const x of a.list) { assert.ok(x.players.length >= 1 && x.players.every((p) => p.name && p.points >= 0)); assert.ok(Math.abs(x.players.reduce((s, p) => s + p.points, 0) - x.points) < 0.05, `${x.key} points add up`); } }
+  assert.equal(WKJ.season_story.length, WKJ.through_week); for (const e of WKJ.season_story) assert.ok(e.head && e.text && e.rosters.length); });
 console.log(`${n} checks passed`);

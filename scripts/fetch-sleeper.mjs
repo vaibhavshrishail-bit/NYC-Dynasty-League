@@ -47,6 +47,10 @@ while (id && id !== '0') {
   await save(dir + '/traded_picks', traded); await save(dir + '/drafts', drafts);
   await save(dir + '/draft_picks', picks); await save(dir + '/matchups', matchups);
   if (current) await save(dir + '/transactions', transactions);
+  else { // finished seasons: trades only, fetched once (they never change) so the timeline and the trade ledger can show every season
+    const f = `${OUT}/${dir}/transactions.json`; let old = null; try { old = JSON.parse(await (await import('node:fs/promises')).readFile(f, 'utf8')); } catch {}
+    if (!old) { const tr = {}; for (let w = 1; w <= 18; w++) { const t = await get(`/league/${id}/transactions/${w}`); const only = (t || []).filter((x) => x.type === 'trade' && x.status === 'complete'); if (only.length) tr[w] = only; } await save(dir + '/transactions', tr); old = tr; }
+    for (const list of Object.values(old)) for (const t of list) for (const pid of Object.keys(t.adds || {})) rostered.add(pid); }
   for (const r of rosters || []) for (const p of r.players || []) rostered.add(p);
   for (const w of Object.values(matchups)) for (const m of w) for (const p of m.players || []) rostered.add(p);
   for (const dp of Object.values(picks)) for (const p of dp || []) rostered.add(p.player_id);

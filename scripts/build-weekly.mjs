@@ -7,7 +7,7 @@ import { kickoffWindow } from './kickoff-windows.mjs';
 const J = async (p) => JSON.parse(await readFile(p, 'utf8'));
 const D = 'site/data/sleeper', C = await J('site/data/canonical.json'), L = await J('site/data/league.json'), S = `${D}/seasons/${C.season}`;
 const [matchups, players, lg, riv, sched] = await Promise.all([J(`${S}/matchups.json`), J(`${D}/players.json`), J(`${S}/league.json`), J('src/config/rivalries.json'), J(`${D}/nfl_schedule.json`).catch(() => [])]);
-const sim = new Function(await readFile('site/assets/sim.js', 'utf8') + '; return { simulate, seedTeams, modelOf, winChance };')();
+const sim = new Function(await readFile('site/assets/sim.js', 'utf8') + '; return { simulate, seedTeams, modelOf, winChance, priorWeight };')();
 const F = Object.fromEntries(C.franchises.map((f) => [f.roster_id, f])), ids = C.franchises.map((f) => f.roster_id), W = C.through_week, cur = C.current_week, regEnd = C.playoff_week_start - 1;
 const r1 = (x) => Math.round(x * 10) / 10, r2 = (x) => Math.round(x * 100) / 100, mean = (a) => a.reduce((x, y) => x + y, 0) / (a.length || 1), sdv = (a) => { const m = mean(a); return Math.sqrt(mean(a.map((x) => (x - m) ** 2))); };
 const POSMAP = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' }, pos = (p) => { const x = p?.position || p?.fantasy_positions?.[0] || '?'; return POSMAP[x] || x; };
@@ -29,6 +29,32 @@ for (let w = 1; w <= W; w++) { const ms = matchups[w] || [], g = {}; for (const 
   awards[w] = { main_character: mc && { ...mc, swing: r2(mc.swing), decisive: mc.swing > 0 }, heartbreaker: hb && { roster_id: hb.lose.roster_id, points: hb.lose.points, opp: hb.win.roster_id, opp_points: hb.win.points, week_rank: rank.findIndex((m) => m.roster_id === hb.lose.roster_id) + 1 },
     collapse: col && col.short > 0 ? col : null, chaos: wk?.upset || null, menace: wk?.top_idp || null, steamroller: blow && { roster_id: blow.win.roster_id, opp: blow.lose.roster_id, points: blow.win.points, opp_points: blow.lose.points, margin: r2(blow.win.points - blow.lose.points) } }; }
 
+// ---------- player awards (about players and position groups, never managers) ----------
+// Every award is a ranking of Sleeper points for that week. A player can win only one solo award per week; the next best takes the other.
+for (let w = 1; w <= W; w++) { const ms = matchups[w] || [], g = {}; for (const m of ms) if (m.matchup_id) (g[m.matchup_id] ||= []).push(m);
+  const res = {}; for (const [a, b] of Object.values(g).filter((x) => x.length === 2)) { res[a.roster_id] = { won: a.points > b.points, opp: b.roster_id, margin: r2(a.points - b.points) }; res[b.roster_id] = { won: b.points > a.points, opp: a.roster_id, margin: r2(b.points - a.points) }; }
+  const P = (pid, pts, rid) => ({ player_id: pid, name: nm(pid), position: pos(players[pid]), nfl_team: players[pid]?.team || 'FA', points: r2(pts ?? 0), roster_id: rid });
+  const starters = ms.flatMap((m) => (m.starters || []).map((p, i) => P(p, m.starters_points?.[i], m.roster_id)).filter((x) => x.player_id !== '0'));
+  const bench = ms.flatMap((m) => (m.players || []).filter((p) => !(m.starters || []).includes(p)).map((p) => P(p, m.players_points?.[p], m.roster_id)));
+  const used = new Set(), list = [], f2 = (x) => x.toFixed(2), by = (a) => [...a].sort((x, y) => y.points - x.points);
+  const solo = (key, label, pool, text) => { const srt = by(pool), p = srt.find((x) => !used.has(x.player_id) && x.points > 0); if (!p) return; used.add(p.player_id); const ahead = srt[0].player_id !== p.player_id ? srt[0] : null; list.push({ key, label, big: p.name, points: p.points, roster_id: p.roster_id, players: [p], text: text(p, ahead ? `behind only ${ahead.name}, who takes another award this week` : null) }); };
+  const unit = (key, label, test, word, min = 2) => { const c = ms.map((m) => { const pl = by(starters.filter((x) => x.roster_id === m.roster_id && test(x))); return { roster_id: m.roster_id, pl, points: r2(pl.reduce((a, x) => a + x.points, 0)) }; }).filter((x) => x.pl.length >= min).sort((x, y) => y.points - x.points)[0]; if (!c) return;
+    list.push({ key, label, big: c.pl.slice(0, 3).map((x) => x.name.split(' ').slice(1).join(' ') || x.name).join(' · '), points: c.points, roster_id: c.roster_id, players: c.pl, text: c.pl.length === 1 ? `${c.pl[0].name} put up ${f2(c.points)} for ${mgr(c.roster_id)}, the most any lineup got from its ${word}.` : `${mgr(c.roster_id)}'s ${word} combined for ${f2(c.points)}, the best group in the league: ${c.pl.map((x) => `${x.name} ${f2(x.points)}`).join(', ')}.` }); };
+  const side = (p) => `${mgr(p.roster_id)}${res[p.roster_id] ? (res[p.roster_id].won ? `, who won by ${f2(res[p.roster_id].margin)}` : `, who lost by ${f2(-res[p.roster_id].margin)}`) : ''}`;
+  const mc0 = awards[w].main_character;
+  solo('mvp', 'WEEK MVP', starters, (p) => `${f2(p.points)} points at ${p.position}, the highest score by any starter in the league, for ${side(p)}.`);
+  if (mc0) solo('main_character', 'THE MAIN CHARACTER', starters.filter((x) => res[x.roster_id]?.won && x.points > res[x.roster_id].margin), (p) => `${f2(p.points)} for ${mgr(p.roster_id)} in a game decided by ${f2(res[p.roster_id].margin)}: take those points away and it is a loss.`);
+  solo('menace', 'THE DEFENSIVE MENACE', starters.filter((x) => IDP.has(x.position)), (p, b) => `${f2(p.points)} from the ${p.position} spot, ${b ? `the best defensive score of the week ${b}` : 'the best defensive score of the week'}, for ${side(p)}.`);
+  unit('idp_unit', 'THE IDP UNIT', (x) => IDP.has(x.position), 'defensive starters', 3);
+  unit('receiver_room', 'THE RECEIVER ROOM', (x) => x.position === 'WR', 'wide receivers');
+  unit('backfield', 'THE BACKFIELD', (x) => x.position === 'RB', 'running backs');
+  unit('te_mafia', 'TE MAFIA', (x) => x.position === 'TE', 'tight ends', 1);
+  solo('field_general', 'THE FIELD GENERAL', starters.filter((x) => x.position === 'QB'), (p, b) => `${f2(p.points)}, the top quarterback score of the week${b ? ' ' + b : ''}, for ${side(p)}.`);
+  solo('boot', 'THE BOOT', starters.filter((x) => x.position === 'K'), (p) => `${f2(p.points)} from the kicker, the most by any starting kicker this week, for ${side(p)}.`);
+  solo('wasted', 'THE WASTED MASTERPIECE', starters.filter((x) => res[x.roster_id] && !res[x.roster_id].won), (p, b) => `${f2(p.points)} in a losing effort${b ? ` (${b})` : ''}: ${mgr(p.roster_id)} still fell to ${mgr(res[p.roster_id].opp)} by ${f2(-res[p.roster_id].margin)}.`);
+  solo('bench_mob', 'THE BENCH MOB', bench, (p) => `${f2(p.points)} points that did not count: he was not in ${mgr(p.roster_id)}'s starting lineup.`);
+  awards[w].list = list; }
+
 // ---------- season highlights (always recomputed from completed weeks, so they move when results do) ----------
 const wkList = Object.keys(awards).map(Number), pick = (f, get) => { const c = wkList.map((w) => ({ week: w, ...get(w) })).filter((x) => x.v != null); return c.length ? best(c, f) : null; };
 let streak = null; for (const f of C.franchises) { let n = 0, s = 0; for (const r of f.results) { if (r.result === 'W') { if (!n) s = r.week; n++; if (!streak || n > streak.length) streak = { roster_id: f.roster_id, length: n, from: s, to: r.week }; } else n = 0; } }
@@ -37,21 +63,53 @@ const season = { biggest_upset: pick((x) => x.v, (w) => ({ v: awards[w].chaos?.g
   best_player: pick((x) => x.v, (w) => ({ v: L.weeks[w].top_player.points, ...L.weeks[w].top_player })), best_defender: pick((x) => x.v, (w) => ({ v: L.weeks[w].top_idp.points, ...L.weeks[w].top_idp })),
   heartbreak: pick((x) => x.v, (w) => ({ v: awards[w].heartbreaker?.points, ...awards[w].heartbreaker })), longest_win_streak: streak };
 
+// ---------- the season so far: one headline moment per completed week, plus season leaders ----------
+const story = []; { let hiSoFar = 0, tot = {};
+  for (const w of wkList.sort((a, b) => a - b)) { const d = L.weeks[w], a = awards[w], cl = d.closest, cg = Math.abs(cl.pa - cl.pb), up = a.chaos, hi = d.high, bl = a.steamroller, mvp = a.list.find((x) => x.key === 'mvp'), newHigh = hi.pf > hiSoFar && w > 1;
+    const cw = cl.pa > cl.pb ? cl.a : cl.b, clo = cl.pa > cl.pb ? cl.b : cl.a;
+    const ev = cg < 3 ? { kind: 'thriller', head: `DECIDED BY ${cg.toFixed(2)}`, text: `${mgr(cw)} edged ${mgr(clo)} ${Math.max(cl.pa, cl.pb).toFixed(2)}–${Math.min(cl.pa, cl.pb).toFixed(2)}.`, rosters: [cw, clo] }
+      : up && up.gap >= 8 ? { kind: 'upset', head: `${U(mgr(up.winner))} STUNS ${U(mgr(up.loser))}`, text: `${mgr(up.winner)} came in averaging ${up.winner_ppg_before} a week to ${mgr(up.loser)}'s ${up.loser_ppg_before}, and won ${up.winner_pts.toFixed(2)}–${up.loser_pts.toFixed(2)}.`, rosters: [up.winner, up.loser] }
+      : newHigh ? { kind: 'record', head: `${hi.pf.toFixed(2)}: A NEW SEASON HIGH`, text: `${mgr(hi.roster_id)} posted the biggest score of the season to that point.`, rosters: [hi.roster_id] }
+      : bl && bl.margin >= 40 ? { kind: 'rout', head: `${U(mgr(bl.roster_id))} BY ${bl.margin.toFixed(2)}`, text: `${mgr(bl.roster_id)} beat ${mgr(bl.opp)} ${bl.points.toFixed(2)}–${bl.opp_points.toFixed(2)}, the widest margin of the week.`, rosters: [bl.roster_id, bl.opp] }
+      : up ? { kind: 'upset', head: `${U(mgr(up.winner))} OVER ${U(mgr(up.loser))}`, text: `The lower-scoring team coming in won ${up.winner_pts.toFixed(2)}–${up.loser_pts.toFixed(2)}.`, rosters: [up.winner, up.loser] }
+      : { kind: 'high', head: `${U(mgr(hi.roster_id))} TOPS THE WEEK`, text: `${hi.pf.toFixed(2)} was the high score of Week ${w}.`, rosters: [hi.roster_id] };
+    hiSoFar = Math.max(hiSoFar, hi.pf);
+    story.push({ week: w, ...ev, high: hi, closest: { winner: cw, loser: clo, margin: r2(cg) }, mvp: mvp && { name: mvp.big, points: mvp.points, roster_id: mvp.roster_id, nfl_team: mvp.players[0].nfl_team, position: mvp.players[0].position } });
+    for (const m of matchups[w] || []) (m.starters || []).forEach((p, i) => { if (p !== '0') { const t = (tot[p] ||= { player_id: p, name: nm(p), position: pos(players[p]), nfl_team: players[p]?.team || 'FA', points: 0, starts: 0, roster_id: m.roster_id }); t.points += m.starters_points?.[i] ?? 0; t.starts++; t.roster_id = m.roster_id; } }); }
+  const lead = Object.values(tot).map((t) => ({ ...t, points: r2(t.points) })).sort((a, b) => b.points - a.points);
+  season.top_starters = lead.slice(0, 5); season.top_defender_season = lead.find((t) => IDP.has(t.position)) || null;
+  const cnt = {}; for (const w of wkList) for (const a of awards[w].list) if (a.players.length === 1) { const p = a.players[0]; (cnt[p.player_id] ||= { name: p.name, nfl_team: p.nfl_team, roster_id: p.roster_id, n: 0 }).n++; }
+  season.most_awards = Object.values(cnt).sort((a, b) => b.n - a.n)[0] || null;
+  const hs = {}; for (const w of wkList) hs[L.weeks[w].high.roster_id] = (hs[L.weeks[w].high.roster_id] || 0) + 1; const hb = Object.entries(hs).sort((a, b) => b[1] - a[1])[0]; season.most_weekly_highs = hb ? { roster_id: +hb[0], n: hb[1] } : null; }
+
 // ---------- history snapshots (append-only) ----------
 const hist = await J('site/data/history.json').catch(() => ({ _note: 'One snapshot per completed week. "reconstructed" weeks were calculated after the fact with the current model from results through that week; "recorded" weeks were saved when that week finished and are never recalculated.', weeks: {} }));
 const firstBuild = Object.keys(hist.weeks).length === 0;
-for (let w = 1; w <= W; w++) { const prevSnap = hist.weeks[w]; if (prevSnap && w < W) { prevSnap.status = 'locked'; continue; } // only the latest completed week stays open to stat corrections
-  const rows = ids.map((id) => { const rs = F[id].results.filter((r) => r.week <= w), sc = rs.map((r) => r.pf); return { roster_id: id, wins: rs.filter((r) => r.result === 'W').length, losses: rs.filter((r) => r.result === 'L').length, pf: r2(sc.reduce((a, b) => a + b, 0)), ppg: mean(sc), last3: mean(sc.slice(-3)), sd: sdv(sc) }; });
+const PRE = L.preseason, MODEL = 2; // model 2: early weeks are blended with the preseason expectation
+if (PRE) { const rows = ids.map((id) => ({ roster_id: id, wins: 0, losses: 0, pf: 0, ppg: PRE.mu[id], last3: PRE.mu[id], sd: 25, prior: { mu: PRE.mu[id], w: 1 } })), schedule = {};
+  for (let k = 1; k <= regEnd; k++) { const g = {}; for (const m of matchups[k] || []) if (m.matchup_id) (g[m.matchup_id] ||= []).push(m.roster_id); const pr = Object.values(g).filter((x) => x.length === 2).map((x) => x.sort((a, b) => a - b)); if (pr.length) schedule[k] = pr; }
+  const o = sim.simulate({ franchises: rows, playoff_teams: C.playoff_teams }, { teams: Object.fromEntries(rows.map((r) => [r.roster_id, r])), league_sd: 25, schedule }, {}, 6000);
+  hist.preseason = { basis_season: PRE.basis_season, note: PRE.note, expected_ppg: PRE.mu, power: [...ids].sort((a, b) => PRE.mu[b] - PRE.mu[a]), odds: Object.fromEntries(ids.map((id) => [id, { playoff: r2(o[id].playoff), top5: r2(o[id].top5), sixth: r2(o[id].sixth), champ: r2(o[id].champ) }])) }; }
+for (let w = 1; w <= W; w++) { const prevSnap0 = hist.weeks[w], stale = PRE && prevSnap0 && (prevSnap0.model !== MODEL || prevSnap0.basis !== PRE.basis_season) && sim.priorWeight(w) > 0 && prevSnap0.source === 'reconstructed'; const prevSnap = stale ? null : prevSnap0; if (prevSnap && w < W) { prevSnap.status = 'locked'; continue; } // only the latest completed week stays open to stat corrections
+  const rows = ids.map((id) => { const rs = F[id].results.filter((r) => r.week <= w), sc = rs.map((r) => r.pf); return { roster_id: id, wins: rs.filter((r) => r.result === 'W').length, losses: rs.filter((r) => r.result === 'L').length, pf: r2(sc.reduce((a, b) => a + b, 0)), ppg: mean(sc), last3: mean(sc.slice(-3)), sd: sdv(sc), ...(PRE ? { prior: { mu: PRE.mu[id], w: sim.priorWeight(w) } } : {}) }; });
   const schedule = {}; for (let k = w + 1; k <= regEnd; k++) { const g = {}; for (const m of matchups[k] || []) if (m.matchup_id) (g[m.matchup_id] ||= []).push(m.roster_id); const pr = Object.values(g).filter((x) => x.length === 2).map((x) => x.sort((a, b) => a - b)); if (pr.length) schedule[k] = pr; }
   const Cw = { franchises: rows, playoff_teams: C.playoff_teams }, Lw = { teams: Object.fromEntries(rows.map((r) => [r.roster_id, r])), league_sd: mean(rows.map((r) => r.sd)) || 25, schedule };
   const o = sim.simulate(Cw, Lw, {}, 6000), ap = (id) => { let x = 0, y = 0; for (let k = 1; k <= w; k++) { const me = matchups[k].find((m) => m.roster_id === id).points; for (const m of matchups[k]) if (m.roster_id !== id) me > m.points ? x++ : me < m.points && y++; } return x / ((x + y) || 1); };
   const mp = Math.max(...rows.map((r) => r.ppg)), ml = Math.max(...rows.map((r) => r.last3)), ps = (r) => 100 * (0.4 * ap(r.roster_id) + 0.35 * r.ppg / mp + 0.25 * r.last3 / ml);
-  const snap = { source: prevSnap ? prevSnap.source : firstBuild && w < W ? 'reconstructed' : w === W && !firstBuild ? 'recorded' : 'reconstructed', saved_at: prevSnap ? prevSnap.saved_at : new Date().toISOString(), status: w === W ? 'open' : 'locked', seeds: sim.seedTeams(rows.map((r) => ({ id: r.roster_id, w: r.wins, pf: r.pf })), C.playoff_teams),
+  const snap = { model: MODEL, ...(PRE && sim.priorWeight(w) > 0 ? { basis: PRE.basis_season } : {}), source: prevSnap ? prevSnap.source : stale ? 'reconstructed' : firstBuild && w < W ? 'reconstructed' : w === W && !firstBuild ? 'recorded' : 'reconstructed', saved_at: prevSnap ? prevSnap.saved_at : new Date().toISOString(), status: w === W ? 'open' : 'locked', seeds: sim.seedTeams(rows.map((r) => ({ id: r.roster_id, w: r.wins, pf: r.pf })), C.playoff_teams),
     records: Object.fromEntries(rows.map((r) => [r.roster_id, { w: r.wins, l: r.losses, pf: r.pf }])), power: [...rows].sort((a, b) => ps(b) - ps(a)).map((r) => r.roster_id),
     odds: Object.fromEntries(ids.map((id) => [id, { playoff: r2(o[id].playoff), top5: r2(o[id].top5), sixth: r2(o[id].sixth), champ: r2(o[id].champ) }])) };
   const same = prevSnap && JSON.stringify(prevSnap.records) === JSON.stringify(snap.records); // unchanged results: keep the saved snapshot exactly
-  if (same) { prevSnap.status = snap.status; } else { if (prevSnap) snap.corrected_at = new Date().toISOString(); hist.weeks[w] = snap; } }
+  if (same) { prevSnap.status = snap.status; prevSnap.model ??= MODEL; } else { if (prevSnap) snap.corrected_at = new Date().toISOString(); hist.weeks[w] = snap; } }
 await writeFile('site/data/history.json', JSON.stringify(hist));
+// The game that moved the playoff race most each week: the biggest change in one team's playoff chance from the week before (preseason for Week 1).
+const pcw = (x) => (x > 0.99 ? '>99%' : x < 0.01 ? '<1%' : Math.round(x * 100) + '%');
+const swingOf = (w) => { const now = hist.weeks[w], bef = w > 1 ? hist.weeks[w - 1] : hist.preseason; if (!now || !bef) return null; let b = null;
+  for (const gm of L.weeks[w].games) for (const [me, opp, mp, op] of [[gm.a, gm.b, gm.pa, gm.pb], [gm.b, gm.a, gm.pb, gm.pa]]) { const d = now.odds[me].playoff - bef.odds[me].playoff; if (!b || Math.abs(d) > Math.abs(b.delta)) b = { roster_id: me, opp, won: mp > op, pf: mp, pa: op, from: bef.odds[me].playoff, to: now.odds[me].playoff, delta: r2(d) }; }
+  if (!b || Math.abs(b.delta) < 0.1) return null; const wn = b.won ? b.roster_id : b.opp, ls = b.won ? b.opp : b.roster_id;
+  return { ...b, head: `${U(F[wn].team_name)} ${b.won ? 'BEAT' : 'UPSET'} ${U(F[ls].team_name)}`.replace(/ UPSET /, F[ls].wins > F[wn].wins ? ' UPSET ' : ' BEAT '), text: `${mgr(wn)} beat ${mgr(ls)} ${Math.max(b.pf, b.pa).toFixed(2)}–${Math.min(b.pf, b.pa).toFixed(2)}, and ${mgr(b.roster_id)}'s playoff chance went from ${pcw(b.from)} to ${pcw(b.to)}: the biggest move in the race that week.` }; };
+for (const e of story) { const sw = swingOf(e.week); if (sw) { e.swing = sw; if (Math.abs(sw.delta) >= 0.25) Object.assign(e, { kind: 'swing', head: sw.head, text: sw.text, rosters: [sw.won ? sw.roster_id : sw.opp, sw.won ? sw.opp : sw.roster_id] }); } }
+season.biggest_swing = story.filter((e) => e.swing).map((e) => ({ week: e.week, ...e.swing })).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0] || null;
 
 // ---------- this week's preview (and live scores while it is being played) ----------
 const prj = await J(`${D}/projections/${cur}.json`).catch(() => null), sc = lg.scoring_settings;
@@ -153,6 +211,6 @@ const banner = (() => { if (!games.length) return null; const top = C.standings.
 // last week's commentary: plain sentences from the awards
 const aw = awards[W], lw = L.weeks[W], comm = aw ? [aw.chaos ? `The upset of Week ${W}: ${mgr(aw.chaos.winner)} beat ${mgr(aw.chaos.loser)} ${aw.chaos.winner_pts.toFixed(2)}–${aw.chaos.loser_pts.toFixed(2)} despite averaging ${aw.chaos.winner_ppg_before} a week coming in, against ${aw.chaos.loser_ppg_before}.` : `No upsets in Week ${W}: every winner was the higher-scoring team coming in.`,
   `${mgr(lw.high.roster_id)} put up the top score, ${lw.high.pf.toFixed(2)}.`, aw.heartbreaker ? `${mgr(aw.heartbreaker.roster_id)} scored ${aw.heartbreaker.points.toFixed(2)}, the ${['', 'best', 'second-best', 'third-best', 'fourth-best', 'fifth-best', 'sixth-best'][aw.heartbreaker.week_rank] || aw.heartbreaker.week_rank + 'th-best'} total of the week, and still lost to ${mgr(aw.heartbreaker.opp)}.` : ''].filter(Boolean).join(' ') : '';
-await writeFile('site/data/weekly.json', JSON.stringify({ generated_at: C.generated_at, season: C.season, through_week: W, current_week: cur, in_progress: !!C.week_in_progress, projections: !!prj, slots, awards, season_highlights: season,
+await writeFile('site/data/weekly.json', JSON.stringify({ generated_at: C.generated_at, season: C.season, through_week: W, current_week: cur, in_progress: !!C.week_in_progress, projections: !!prj, slots, awards, season_highlights: season, season_story: story.map((e) => ({ ...e, top_seed: hist.weeks[e.week]?.seeds[0] ?? null, top_seed_record: hist.weeks[e.week] ? `${hist.weeks[e.week].records[hist.weeks[e.week].seeds[0]].w}–${hist.weeks[e.week].records[hist.weeks[e.week].seeds[0]].l}` : null })),
   preview: { week: cur, games, banner, slate, byes: byeTeams, commentary: comm, note: 'Projected points are Sleeper\'s player projections scored with this league\'s settings, for the lineups currently set. Win chances are a model estimate. Nothing here is lineup advice.' } }));
 console.log(`weekly.json: week ${cur} preview with ${games.length} games (${prj ? 'projections' : 'model only'}), awards for ${wkList.length} weeks; history.json has ${Object.keys(hist.weeks).length} weeks`);

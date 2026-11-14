@@ -3,7 +3,7 @@
 // Timeline (45s): 0-6 intro · 6-12 season storyline · 12-36 player showcase · 36-41.2 roll call · 41.2-45 crest
 // Second edition (CFG.v2): four acts cut on the music's beat grid. v2 = {beat, a2:[card starts.., end], cards:[{k,big,sub}], ps:[player starts.., end], c0, l0, payoff}
 const V2=CFG.v2||null;
-const W=1920,H=1080,DUR=45,FPS=30,NP_=CFG.players.length,P0=V2?V2.ps[0]:12,PD=24/NP_,C0=V2?V2.c0:36,L0=V2?V2.l0:41.2,A2=V2?V2.a2[0]:6;
+const W=1920,H=1080,DUR=V2&&V2.dur?V2.dur:45,FPS=30,NP_=CFG.players.length,P0=V2?V2.ps[0]:12,PD=24/NP_,C0=V2?V2.c0:36,L0=V2?V2.l0:41.2,A2=V2?V2.a2[0]:6;
 const pStart=i=>V2?V2.ps[i]:P0+i*PD,pDur=i=>V2?V2.ps[i+1]-V2.ps[i]:PD;
 const SERIF="'Cinzel',serif",SANS="'Barlow Condensed',sans-serif",TECH="'Orbitron',sans-serif",BOLD="'Bebas Neue',sans-serif";
 const cl=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
@@ -209,7 +209,8 @@ function sLogo(ctx,t){
     ctx.font=f.replace('%',fs);ctx.letterSpacing=ls*fs/104+'px';ctx.textAlign='center';ctx.fillStyle=metal(ctx,830-fs*.8,830+fs*.45);ctx.fillText(CFG.team,W/2+ls*fs/208,830);ctx.restore()}
   const sp=seg(st,1.7,2.3);if(sp>0){ctx.save();ctx.globalAlpha=sp;const lw=eo(sp)*260;ctx.fillStyle=T.mid;ctx.fillRect(W/2-lw-460,878,lw,2);ctx.fillRect(W/2+460,878,lw,2);
     const pay=V2&&V2.payoff&&st>=3.0;if(V2&&V2.payoff)ctx.globalAlpha=sp*(st<2.8?1:st<3.0?(3.0-st)/.2:Math.min(1,(st-3.0)/.35));   // second edition: the byline gives way to the stakes
-    if(pay)text(ctx,V2.payoff.big,W/2,892,`600 36px ${SANS}`,T.hi,8);else text(ctx,CFG.sub,W/2,888,`600 28px ${SANS}`,T.txt,9);ctx.restore()}
+    if(pay)text(ctx,V2.payoff.big,W/2,892,`600 36px ${SANS}`,T.hi,8);else text(ctx,CFG.sub,W/2,888,`600 28px ${SANS}`,T.txt,9);
+    if(V2&&V2.credit&&st>=3.0){ctx.globalAlpha=Math.min(1,(st-3.0)/.35)*.8;text(ctx,V2.credit,W/2,932,`600 20px ${SANS}`,T.txt,3)}ctx.restore()}
   ctx.restore();T.fx(ctx,t,amb);
   const wf=st<.1?1:Math.exp(-(st-.1)*4);if(wf>.01){ctx.fillStyle=`rgba(${T.wipe||'255,244,222'},${wf*.92})`;ctx.fillRect(0,0,W,H)}
   const fo=seg(t,DUR-.7,DUR-.05);if(fo>0){ctx.fillStyle=`rgba(0,0,0,${fo})`;ctx.fillRect(0,0,W,H)}

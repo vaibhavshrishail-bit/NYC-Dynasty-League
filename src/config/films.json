@@ -1,0 +1,6 @@
+{
+ "second_edition": [
+  "vaibhav"
+ ],
+ "_note": "Second-edition films re-rendered automatically each week by .github/workflows/render-films.yml. Add a franchise slug here only after its film has been approved."
+}

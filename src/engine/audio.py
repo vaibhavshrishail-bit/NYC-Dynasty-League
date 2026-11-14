@@ -82,7 +82,7 @@ STY['temple']=STY['range']
 def beat(theme):return 60/STY[theme]['bpm']
 def score(path,theme,n=10,v2=None):
     """v2 (second edition) = dict(a2=[card starts.., end], ps=[player starts.., end], c0, l0): every cue lands on those cut times, which the build script snaps to this style's beat grid."""
-    global rs,P0,C0,L0;P0,C0,L0=(v2['ps'][0],v2['c0'],v2['l0']) if v2 else (12.0,36.0,41.2);A2=v2['a2'][0] if v2 else 6.0
+    global rs,P0,C0,L0,D,N;D=float(v2['dur']) if v2 and v2.get('dur') else 45.0;N=int(SR*D);P0,C0,L0=(v2['ps'][0],v2['c0'],v2['l0']) if v2 else (12.0,36.0,41.2);A2=v2['a2'][0] if v2 else 6.0
     rs=np.random.RandomState(7+sum(map(ord,theme)));s=STY[theme];PD=24.0/n;step=60/s['bpm']/4;sw=s.get('swing',0)*step*2;kit=KITS[s['kit']]
     bus={k:[np.zeros(N),np.zeros(N)] for k in('drum','bass','chord','lead','fx')}
     def add(b,sig,at,pan=0.0,g=1.0):
@@ -142,7 +142,7 @@ def score(path,theme,n=10,v2=None):
     ir=rs.randn(int(1.6*SR))*np.exp(-np.arange(int(1.6*SR))/SR/.4);ir=lp(ir,5000)
     def rv(x):w=sg.fftconvolve(x,ir)[:N];return x+w/np.max(np.abs(w))*np.max(np.abs(x))*.16
     L=rv(L);R=rv(R);pk=max(np.max(np.abs(L)),np.max(np.abs(R)));L=np.tanh(L/pk*1.8)*.89;R=np.tanh(R/pk*1.8)*.89
-    f=np.interp(np.arange(N)/SR,[0,.3,44.3,45],[0,1,1,0]);L*=f;R*=f
+    f=np.interp(np.arange(N)/SR,[0,.3,D-.7,D],[0,1,1,0]);L*=f;R*=f
     w=wave.open(path,'wb');w.setnchannels(2);w.setsampwidth(2);w.setframerate(SR);w.writeframes((np.stack([L,R],1)*32767).astype('<i2').tobytes());w.close()
 if __name__=='__main__':
     import sys,os

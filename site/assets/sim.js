@@ -8,15 +8,19 @@ function seedTeams(rows, nPlayoff) { // rows: [{id,w,pf}] -> ids in seed order 1
   const rec = [...rows].sort((a, b) => b.w - a.w || b.pf - a.pf), top = rec.slice(0, nPlayoff - 1), rest = rec.slice(nPlayoff - 1);
   const wild = [...rest].sort((a, b) => b.pf - a.pf)[0]; return [...top, wild, ...rest.filter((r) => r !== wild)].map((r) => r.id);
 }
-function modelOf(L) { const m = {}; for (const [id, t] of Object.entries(L.teams)) m[id] = { mu: 0.7 * t.ppg + 0.3 * t.last3, sd: Math.max(18, 0.5 * t.sd + 0.5 * L.league_sd) }; return m; }
+// Early in a season a team's own scoring is too thin to trust, so it is blended with a preseason expectation (t.prior = { mu, w }).
+// w is 1 before Week 1 and falls to 0 after six games (priorWeight), so from Week 6 on the model is this season's results only.
+function priorWeight(games) { return Math.max(0, (6 - games) / 6); }
+function modelOf(L) { const m = {}; for (const [id, t] of Object.entries(L.teams)) { const obs = 0.7 * t.ppg + 0.3 * t.last3, w = t.prior ? t.prior.w : 0;
+  m[id] = { mu: w >= 1 || !isFinite(obs) ? t.prior.mu : w > 0 ? (1 - w) * obs + w * t.prior.mu : obs, sd: Math.max(18, 0.5 * (isFinite(t.sd) && t.sd > 0 ? t.sd : L.league_sd) + 0.5 * L.league_sd), u: 8 * w }; } return m; } // u: how unsure the model is about the team's true level (points per game) while the preseason expectation still carries weight
 function simulate(C, L, forced = {}, n = 8000) {
   const R = rng32(20260 + Object.keys(forced).length * 7919 + Object.values(forced).reduce((a, b) => a + b, 0)), M = modelOf(L), ids = C.franchises.map((f) => f.roster_id), NP = C.playoff_teams;
-  const norm = () => { let u = 0; while (!u) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); }, draw = (id) => M[id].mu + M[id].sd * norm();
+  const norm = () => { let u = 0; while (!u) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); }, off = {}, draw = (id) => M[id].mu + off[id] + M[id].sd * norm();
   const base = Object.fromEntries(C.franchises.map((f) => [f.roster_id, { w: f.wins, pf: f.pf }])), games = Object.entries(L.schedule).flatMap(([w, prs]) => prs.map(([a, b]) => ({ w, a, b, key: `${w}:${a}-${b}` })));
   const out = Object.fromEntries(ids.map((id) => [id, { playoff: 0, top5: 0, sixth: 0, bye: 0, champ: 0, seed: Array(12).fill(0), slot: Array(6).fill(0), wins: 0 }]));
   const play = (a, b) => (draw(a) > draw(b) ? a : b);
   for (let i = 0; i < n; i++) {
-    const st = {}; for (const id of ids) st[id] = { id, w: base[id].w, pf: base[id].pf };
+    const st = {}; for (const id of ids) { st[id] = { id, w: base[id].w, pf: base[id].pf }; off[id] = M[id].u ? M[id].u * norm() : 0; }
     for (const g of games) { let sa = draw(g.a), sb = draw(g.b); const f = forced[g.key]; if (f && ((f === g.a) !== (sa > sb))) [sa, sb] = [sb, sa]; st[g.a].pf += sa; st[g.b].pf += sb; (sa > sb ? st[g.a] : st[g.b]).w++; }
     const s = seedTeams(Object.values(st), NP);
     s.forEach((id, k) => { const o = out[id]; o.seed[k]++; o.wins += st[id].w; if (k < NP) o.playoff++; if (k < NP - 1) o.top5++; if (k === NP - 1) o.sixth++; if (k < 2) o.bye++; if (k >= NP) o.slot[11 - k]++; });
@@ -47,7 +51,7 @@ function topFiveNote(tw, id) { const r = tw.found[id], n = tw.now[id], o = [];
   if (r.clinchLose) o.push(r.clinchLose === r.nLose ? 'Clinches a top-five seed even with a loss.' : 'Could clinch a top-five seed even with a loss, with help.');
   if (r.nLose && r.outLose === r.nLose) o.push('A loss ends its top-five chances.'); else if (r.outLose) o.push('A loss could end its top-five chances, depending on other results.');
   if (r.outWin) o.push('Could fall out of top-five reach even with a win.'); return o.join(' '); }
-function winChance(L, a, b) { const M = modelOf(L), z = (M[a].mu - M[b].mu) / Math.sqrt(M[a].sd ** 2 + M[b].sd ** 2), t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2);
+function winChance(L, a, b) { const M = modelOf(L), z = (M[a].mu - M[b].mu) / Math.sqrt(M[a].sd ** 2 + M[b].sd ** 2 + M[a].u ** 2 + M[b].u ** 2), t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2);
   const p = 1 - d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z >= 0 ? p : 1 - p; }
 
 // ---- Certainty: what is PROVEN, as opposed to simulated. Returns { [roster_id]: { playoff, top5 } } with 'certain', 'impossible' or null. ----

@@ -1,0 +1,54 @@
+# Re-renders the approved second-edition franchise films from fresh Sleeper data once a week, so the films keep up with the site.
+# Which films: src/config/films.json ("second_edition"). The originals (<slug>.mp4) and the documentary are never touched.
+name: Render films
+on:
+  schedule:
+    - cron: '40 11 * * 3'   # Wednesdays, after Monday night and most stat corrections
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: render-films
+  cancel-in-progress: false
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Tools
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install -q numpy scipy playwright
+          python -m playwright install --with-deps chromium
+      - name: Fresh league data
+        run: |
+          node scripts/fetch-sleeper.mjs
+          node scripts/build-canonical.mjs
+          node scripts/build-league.mjs
+          node scripts/build-weekly.mjs
+      - name: Render approved second editions
+        run: python scripts/build_cinematics.py auto2
+      - name: Check the output is a playable film
+        run: |
+          for f in site/cinematics/*-v2.mp4; do
+            d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$f"); echo "$f ${d}s"
+            python3 -c "import sys; d=float('$d'); sys.exit(0 if 40 < d < 70 else 1)"
+          done
+      - name: Commit films
+        run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/cinematics/*-v2.mp4 site/cinematics/*-v2.jpg
+          if git diff --cached --quiet; then echo "No film changes"; exit 0; fi
+          git stash -q --include-untracked --keep-index || true
+          git commit -q -m "Re-render second-edition films from current data"
+          git pull -q --rebase --autostash origin main
+          git push -q origin HEAD:main
+      - name: Publish
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: gh workflow run refresh-and-deploy.yml --ref main || echo "Deploy will happen at the next scheduled refresh"
