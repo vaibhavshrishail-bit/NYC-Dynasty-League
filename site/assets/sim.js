@@ -49,3 +49,13 @@ function topFiveNote(tw, id) { const r = tw.found[id], n = tw.now[id], o = [];
   if (r.outWin) o.push('Could fall out of top-five reach even with a win.'); return o.join(' '); }
 function winChance(L, a, b) { const M = modelOf(L), z = (M[a].mu - M[b].mu) / Math.sqrt(M[a].sd ** 2 + M[b].sd ** 2), t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2);
   const p = 1 - d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z >= 0 ? p : 1 - p; }
+
+// ---- Certainty: what is PROVEN, as opposed to simulated. Returns { [roster_id]: { playoff, top5 } } with 'certain', 'impossible' or null. ----
+// Proven in: a top-five seed is clinched by arithmetic (exact()). Proven in or out: the regular season is complete, so the six are known.
+// Never proven out earlier, because the sixth seed goes to the highest scorer and points are unbounded until the last regular-season week ends.
+function certainty(C, L) {
+  const out = {}, done = !Object.keys(L.schedule || {}).length || C.through_week >= L.regular_season_end, ex = done ? null : exact(C, L);
+  C.standings.forEach((id, i) => { out[id] = done ? { playoff: i < C.playoff_teams ? 'certain' : 'impossible', top5: i < C.playoff_teams - 1 ? 'certain' : 'impossible', final: true }
+    : { playoff: ex[id].clinched_top5 ? 'certain' : null, top5: ex[id].clinched_top5 ? 'certain' : null, final: false }; });
+  return out;
+}

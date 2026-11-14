@@ -1,6 +1,6 @@
 // Pulls NYC Dynasty League data from Sleeper's public read-only API into static JSON.
 // Runs in GitHub Actions (Node 20+, no dependencies). Read-only: never writes to Sleeper.
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 const LEAGUE_ID = process.env.SLEEPER_LEAGUE_ID || '1312585067658223616';
 const OUT = process.env.OUT_DIR || 'site/data/sleeper';
 const API = 'https://api.sleeper.app/v1';
@@ -58,6 +58,17 @@ for (const host of ['https://api.sleeper.app', 'https://api.sleeper.com']) {
   try { const r = await fetch(`${host}/schedule/nfl/regular/${state.season}`); if (!r.ok) continue; const g = await r.json();
     if (Array.isArray(g) && g.length > 100) { await save('nfl_schedule', g); console.log('NFL schedule saved', g.length); break; } } catch {}
 }
+// Kickoff times for this week and next (ESPN's public scoreboard feed). Optional: if it is unreachable or its shape changes,
+// nothing is written and the site falls back to showing game days without times. Times are stored in UTC; pages show Eastern Time.
+try {
+  const fix = { WSH: 'WAS', LA: 'LAR', JAC: 'JAX' }, prevK = await readFile(`${OUT}/nfl_kickoffs.json`, 'utf8').then(JSON.parse).catch(() => ({})), outK = { ...prevK };
+  for (const w of [state.week, state.week + 1]) { if (state.season_type !== 'regular' || w > 18) continue;
+    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week=${w}&dates=${state.season}`); if (!r.ok) continue; const j = await r.json();
+    const gs = (j.events || []).map((e) => { const cp = e.competitions?.[0], t = (ha) => { const x = cp?.competitors?.find((q) => q.homeAway === ha)?.team?.abbreviation; return x ? (fix[x] || x) : null; }, when = new Date(e.date);
+      return t('home') && t('away') && !isNaN(when) ? { home: t('home'), away: t('away'), kickoff: when.toISOString(), state: cp?.status?.type?.state || null } : null; }).filter(Boolean);
+    if (gs.length >= 8) outK[w] = gs; }
+  if (Object.keys(outK).length) { await save('nfl_kickoffs', outK); console.log('Kickoff times saved for weeks', Object.keys(outK).join(', ')); }
+} catch (e) { console.log('Kickoff times not available:', e.message); }
 // Weekly player projections (unofficial endpoint, optional). Raw stat lines; the site applies this league's own scoring to them.
 // One file per week, refreshed only while that week is current, so earlier weeks keep what was known at the time.
 if (state.season_type === 'regular') for (const host of ['https://api.sleeper.app', 'https://api.sleeper.com']) {

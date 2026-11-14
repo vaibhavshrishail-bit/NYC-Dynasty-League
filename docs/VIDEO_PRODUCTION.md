@@ -53,3 +53,12 @@ Rosters and standings move weekly, so films date. Re-render after trades, at mil
 
 ## Changing a look
 Edit the theme in `src/engine/themes.js`, run `stills` for that slug, look at the frames, then `render`. Then run `sh scripts/export-themes.sh` so the website crests match.
+
+## Next edition plan (not started; written 14 Nov 2026)
+The twelve films and the Week 9 documentary are unchanged. The existing files stay as the archival originals; any new cut should be saved beside them as `<slug>-v2.mp4` and switched on per franchise in `site/cinematics/manifest.json` only after review.
+
+Deficiencies to fix, in order: (1) every film uses the same 45-second timeline, so they feel alike; (2) the player section is a steady slideshow with no build; (3) music is generated per theme but is not cut to the picture; (4) no rivals, streaks or stakes appear, only identity and players.
+
+Proposed structure for the reference film (one franchise first): Act 1 identity (0–8s: crest reveal, one line from `storyline`); Act 2 conflict (8–20s: the rival from `src/config/rivalries.json` with the real series record, the season's worst loss); Act 3 escalation (20–38s: players in descending points-per-start with cuts that shorten from 2.4s to 1.2s, jersey and team badge each); Act 4 payoff (38–45s: playoff chance from the simulation at render time, crest, record). Audio: derive cut times from the track's beat grid in `src/engine/audio.py` (it already knows tempo per theme) and export them to the timeline so picture changes land on beats; add a riser into Act 3 and a hard stop before the final crest.
+
+Render cost is about 10–15 minutes per film on two cores, in the foreground. Nobody has listened to the generated music; a human should before a second edition is published.

@@ -158,3 +158,39 @@ The publish workflow runs `tests/site_test.py --ci` after the data build and the
 4. Franchise films and the documentary are static files; they stay until someone re-renders them (see `VIDEO_PRODUCTION.md`).
 
 **Still open.** Player imagery remains jersey graphics. Chart screen-reader support is labels and keyboard only. `universe.html` and `rivalry.html` charts use franchise accent colours on navy panels rather than light surfaces. Scheduled refreshes are configured every six hours but GitHub has been running them about twice a day.
+
+## Visual, accuracy and matchup upgrade (14 Nov 2026)
+Checkpoint before this work: branch `checkpoint-pre-visual-upgrade`.
+
+**Probability display (one system).** `pct(x, cert)` and `p1(x, cert)` in `site/assets/app.js` are the only formatters. A simulated value can never print as `0%` or `100%`: zero hits in 8,000 simulations is `<1%`, every hit is `>99%`. `0%` / `100%` print only when the caller passes proof from `certainty(C, L)` in `site/assets/sim.js`: a top-five seed clinched by arithmetic, or the regular season being complete. Nobody is ever shown as eliminated while regular-season games remain, because the sixth seed is decided on points. The build script has its own `p1` for headline text. History stores raw numbers only; reconstructed weeks stay labelled.
+
+**NFL team identity.** `NFL` registry in `app.js` (32 teams: name, abbreviation, primary and secondary colour, `logo`). `nflBadge(abbr)` draws an original badge (abbreviation on team colours); `playerToken()` and `jerseySVG()` show a jersey with the player's real number. **No NFL logo files, mascot art or player photographs are in the repository.** Finding: none of the candidate sources (league and team sites, ESPN/Sleeper image CDNs, logo repositories) grants a licence to redistribute team marks or player photos on a public site, so the site uses original graphics. If the league obtains permission, add `site/assets/nfl/<ABBR>.svg` and set `NFL_LOGOS.<ABBR> = true`; every badge on the site switches to the logo with automatic fallback. Team shown for a player is the current team from Sleeper; badges are therefore only used on current-week lineups, the latest week's awards and current rosters, not on older weeks.
+
+**When it swings.** `scripts/fetch-sleeper.mjs` saves `site/data/sleeper/nfl_kickoffs.json` (this week and next) from ESPN's public scoreboard feed. `scripts/kickoff-windows.mjs` classifies each kickoff in Eastern Time (Thursday night, Sunday morning/international, 1:00, late afternoon, Sunday night, Monday night, Thanksgiving, Friday, Saturday). `build-weekly.mjs` writes `game.timeline` (`has_times`, windows with each side's players, projections and actual points). `site/assets/matchup.js` draws the interactive timeline and the poster. If the feed is unavailable the timeline groups by game day and says so. The feed is unofficial; if ESPN changes it, nothing breaks, the times just disappear.
+
+**Poster.** `posterTall()` in `matchup.js` draws a 2520 × 5400 PNG: crests, headline, projected score, win chance, three featured players a side with jersey, team badge and position, why it matters, the kickoff-window chart, series, how each side wins. "View and download poster" opens it in the lightbox first.
+
+**Lightbox.** `openLightbox()` in `app.js`; any `<a data-lb="title">` opens its image whole, fitted to the screen width, scrollable, with a visible Close button and Esc. Used for posters and the newsletter library.
+
+**Draft board.** Section `#draft` in `playoffs.html` (`drawG`). One card per first-round pick: most likely slot, confidence, original franchise, current holder, a 12-cell probability strip. Tap for detail (today's slot, simulated landing spots, range, all picks that holder owns). Recalculates under any scenario. Ownership is from Sleeper's traded-picks record; how picks moved is not stored.
+
+**Dynasty Universe.** The rivalry web has four layers (`layer` in `rivalry.html`): every game, playoff games, this season's trades, draft picks owed. Layer → franchise → rival → the full head-to-head file. Phones get the same layers as a list.
+
+**Tests.** `node scripts/test-playoff-model.mjs` now has 24 checks (adds probability display, certainty, kickoff windows, registry, timeline totals). `tests/site_test.py` adds kickoff-window selection, poster open/close, lightbox fit, draft-board drill-down and the network layers.
+
+**What is automated and what is not.**
+| Feature | Automated by the GitHub workflow | Notes |
+|---|---|---|
+| Scores, matchups, standings, rosters, records | Yes | Sleeper, every scheduled run |
+| Projections | Yes | Unofficial Sleeper endpoint; falls back to the model |
+| Playoff odds, scenarios, draft board | Yes | Calculated in the browser from the refreshed data |
+| Weekly preview text, headlines, tags, awards, season highlights | Yes | `build-weekly.mjs` |
+| Historical snapshots | Yes | Latest week open to corrections, earlier weeks locked |
+| Rivalry records, network layers | Yes | Trades layer covers the current season only |
+| Kickoff-window timeline | Yes, if the ESPN feed responds | Falls back to game days |
+| Matchup posters | Yes | Drawn in the visitor's browser on demand; nothing to generate weekly |
+| Franchise films and the documentary | **No** | Static files; re-rendering is a manual job (see VIDEO_PRODUCTION.md) |
+| Newsletter library | **No** | Copied once from Nihar's archive |
+| Season rollover to 2027 | **Manual, documented** | See the sitewide sprint section above |
+
+**Not done in this cycle.** The cinematic video rebuild (see VIDEO_PRODUCTION.md, "Next edition plan"). NFL logos, mascots and player photographs (see the finding above). A separate mobile-size poster export.

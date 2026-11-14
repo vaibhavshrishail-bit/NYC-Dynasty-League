@@ -29,7 +29,11 @@ const AWICON = { main_character: 'M20 4l4.9 10 11.1 1.6-8 7.8 1.9 11L20 29.2 10.
   steamroller: 'M4 28a8 8 0 1 0 16 0 8 8 0 1 0-16 0M20 28h16M24 20h10v8M12 20V10h14', menace: 'M20 3l14 6v9c0 9-6 15-14 18C12 33 6 27 6 18V9zM13 19l5 5 9-10', collapse: 'M4 8l10 10 6-6 16 18M36 20v10H26', juggernaut: 'M5 30h30M6 30L4 12l9 8 7-12 7 12 9-8-2 18' };
 const awardCard = (key, label, big, text) => `<div class="${key}"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="${AWICON[key] || ''}"/></svg><span>${label}</span><b>${big}</b><p>${text}</p></div>`;
 const myTeam = { get() { try { return localStorage.getItem('nyc.team'); } catch { return null; } }, set(v) { try { v ? localStorage.setItem('nyc.team', v) : localStorage.removeItem('nyc.team'); } catch {} } };
-const pct = (x) => (x >= 0.995 ? '>99%' : x > 0 && x < 0.005 ? '<1%' : Math.round(x * 100) + '%');
+// ---- Probability display: the one formatter for the whole site ----
+// A simulated value NEVER prints as 0% or 100%. Those two appear only when the caller passes proof ('impossible' / 'certain')
+// from certainty() in sim.js. Zero hits in 8,000 simulations is "<1%", not "0%".
+const pct = (x, cert) => (cert === 'certain' ? '100%' : cert === 'impossible' ? '0%' : x >= 0.995 ? '>99%' : x < 0.005 ? '<1%' : Math.round(x * 100) + '%');
+const p1 = (x, cert) => (cert === 'certain' ? '100' : cert === 'impossible' ? '0' : x >= 0.9995 ? '>99.9' : x < 0.0005 ? '<0.1' : (x * 100).toFixed(1)); // one-decimal variant, without the % sign
 const typeLabel = { regular: 'Regular season', playoff: 'Playoffs', championship: 'Championship', placement: 'Placement game', toilet: 'Toilet Bowl bracket', consolation: 'Consolation' };
 async function loadAll(base = '') { const [c, l] = await Promise.all([loadLeague(base), fetch(base + 'data/league.json', { cache: 'no-cache' }).then((r) => r.json())]); return [c, l]; }
 // ---- jerseys: generic shape in NFL team colours (same table as src/engine/core.js; keep the two in step). No logos or uniform artwork. ----
@@ -61,8 +65,31 @@ function labelTables() { document.querySelectorAll('.tw table,.tw2 table').forEa
 let _lt; new MutationObserver(() => { clearTimeout(_lt); _lt = setTimeout(labelTables, 20); }).observe(document.documentElement, { childList: true, subtree: true });
 // ---- keepPlace: re-rendering a page must not move what the reader just touched ----
 let _anc = null;
-const _selOf = (el) => { if (el.id) return '#' + CSS.escape(el.id); const box = el.closest('[id]'), pre = box ? '#' + CSS.escape(box.id) + ' ' : ''; for (const a of ['data-id', 'data-br', 'data-k', 'data-tab', 'data-un', 'data-w', 'data-f', 'data-me']) if (el.hasAttribute(a)) return pre + el.tagName.toLowerCase() + (a === 'data-k' ? `[data-k="${el.getAttribute('data-k')}"][data-w="${el.getAttribute('data-w')}"]` : `[${a}="${el.getAttribute(a)}"]`); return box ? '#' + CSS.escape(box.id) : null; };
+const _selOf = (el) => { if (el.id) return '#' + CSS.escape(el.id); const box = el.closest('[id]'), pre = box ? '#' + CSS.escape(box.id) + ' ' : ''; for (const a of ['data-id', 'data-br', 'data-k', 'data-tab', 'data-un', 'data-w', 'data-f', 'data-me', 'data-pick', 'data-tw', 'data-rv', 'data-layer']) if (el.hasAttribute(a)) return pre + el.tagName.toLowerCase() + (a === 'data-k' ? `[data-k="${el.getAttribute('data-k')}"][data-w="${el.getAttribute('data-w')}"]` : `[${a}="${el.getAttribute(a)}"]`); return box ? '#' + CSS.escape(box.id) : null; };
 const _mark = (e) => { const el = e.target.closest && e.target.closest('button,select,summary,a,[role=button],[data-id],[data-w],[data-br]'); if (!el) return; const box = el.parentElement && el.parentElement.closest('[id]'); _anc = { sel: _selOf(el), top: el.getBoundingClientRect().top, box: box && box.id ? '#' + CSS.escape(box.id) : null, boxTop: box ? box.getBoundingClientRect().top : 0 }; };
 addEventListener('pointerdown', _mark, true); addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') _mark(e); }, true); addEventListener('change', _mark, true);
-function keepPlace(fn) { const a = _anc; fn(); if (!a) return; let el = a.sel && document.querySelector(a.sel), was = a.top; if (!el || !el.getClientRects().length) { el = a.box && document.querySelector(a.box); was = a.boxTop; } if (!el) return;
+function keepPlace(fn) { const a = _anc; fn(); if (!a) return; let el = a.sel && document.querySelector(a.sel), was = a.sel === a.box ? a.boxTop : a.top; if (!el || !el.getClientRects().length) { el = a.box && document.querySelector(a.box); was = a.boxTop; } if (!el) return;
   const d = el.getBoundingClientRect().top - was; if (Math.abs(d) > 1) scrollBy({ top: d, behavior: 'instant' }); _anc.top = was; }
+
+// ================= NFL TEAM IDENTITY REGISTRY (single source of truth) =================
+// Colours come from NFLC above. `logo` is null for every team: this site does not ship NFL logo files, because no source
+// grants a licence to redistribute them on a public page. If the league obtains permission, put a file at assets/nfl/<ABBR>.svg
+// and set NFL_LOGOS[ABBR] = true (or list it in NFL_LOGOS below); nflBadge() will then show it and fall back to the badge if it fails to load.
+const NFL_NAMES = { ARI: 'Arizona Cardinals', ATL: 'Atlanta Falcons', BAL: 'Baltimore Ravens', BUF: 'Buffalo Bills', CAR: 'Carolina Panthers', CHI: 'Chicago Bears', CIN: 'Cincinnati Bengals', CLE: 'Cleveland Browns', DAL: 'Dallas Cowboys', DEN: 'Denver Broncos', DET: 'Detroit Lions', GB: 'Green Bay Packers', HOU: 'Houston Texans', IND: 'Indianapolis Colts', JAX: 'Jacksonville Jaguars', KC: 'Kansas City Chiefs', LAC: 'Los Angeles Chargers', LAR: 'Los Angeles Rams', LV: 'Las Vegas Raiders', MIA: 'Miami Dolphins', MIN: 'Minnesota Vikings', NE: 'New England Patriots', NO: 'New Orleans Saints', NYG: 'New York Giants', NYJ: 'New York Jets', PHI: 'Philadelphia Eagles', PIT: 'Pittsburgh Steelers', SEA: 'Seattle Seahawks', SF: 'San Francisco 49ers', TB: 'Tampa Bay Buccaneers', TEN: 'Tennessee Titans', WAS: 'Washington Commanders' };
+const NFL_LOGOS = {}; // ABBR: true once a permitted logo file exists at assets/nfl/<ABBR>.svg
+const NFL = Object.fromEntries(Object.keys(NFL_NAMES).map((a) => [a, { abbr: a, name: NFL_NAMES[a], primary: (NFLC[a] || NFLC.FA)[0], secondary: (NFLC[a] || NFLC.FA)[1], text: (NFLC[a] || NFLC.FA)[2] || '#fff', logo: NFL_LOGOS[a] ? `assets/nfl/${a}.svg` : null }]));
+const nflTeam = (abbr) => NFL[abbr] || { abbr: abbr || 'FA', name: abbr && abbr !== 'FA' ? abbr : 'Free agent', primary: NFLC.FA[0], secondary: NFLC.FA[1], text: '#fff', logo: null };
+// Original team badge: abbreviation on the team's colours. Not an NFL logo.
+function nflBadge(abbr, cls = '') { const t = nflTeam(abbr), b = `<span class="nb ${cls}" style="--p:${t.primary};--s:${t.secondary};--t:${t.text}" title="${esc(t.name)}" role="img" aria-label="${esc(t.name)}">${esc(t.abbr)}</span>`;
+  return t.logo ? `<img class="nbl ${cls}" src="${t.logo}" alt="${esc(t.name)}" title="${esc(t.name)}" onerror="this.outerHTML=this.dataset.fb" data-fb='${b.replace(/'/g, '&#39;')}'>` : b; }
+const POSG = { QB: 'M8 30 L20 8 L32 30 M14 20 H26', RB: 'M6 28 C14 10 26 10 34 28 M12 28 H28', WR: 'M6 12 H34 M20 12 V32 M12 32 H28', TE: 'M8 10 H32 M20 10 V32', K: 'M10 32 L20 8 L30 32 M14 22 H26', DL: 'M6 30 H34 M10 30 V14 H30 V30', LB: 'M8 30 V10 M8 30 H30 M20 30 V16', DB: 'M10 10 H24 C34 10 34 30 24 30 H10 Z', DEF: 'M20 6 L34 12 V22 C34 30 20 36 20 36 C20 36 6 30 6 22 V12 Z' };
+// A player token: jersey in team colours with the real number, team badge and position. Used wherever a player is featured.
+function playerToken(p, opts = {}) { return `<span class="ptok ${opts.cls || ''}"><span class="pj">${jerseySVG(p)}</span><span class="pi"><b>${esc(p.name)}</b><small>${nflBadge(p.nfl_team)} ${esc(p.position || '')}${opts.extra ? ' · ' + opts.extra : ''}</small></span></span>`; }
+
+// ================= Lightbox: any image opens whole, fits the screen, scrolls if tall, closes with a visible button or Esc =================
+function openLightbox(src, title, downloadName) { closeLightbox(); const d = document.createElement('div'); d.id = 'lb'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', title || 'Image');
+  d.innerHTML = `<div class="lbbar"><span>${esc(title || '')}</span><span>${downloadName ? `<a class="b2" href="${src}" download="${esc(downloadName)}">Download</a>` : `<a class="b2" href="${src}" target="_blank" rel="noopener">Open original size</a>`}<button class="b2 on" id="lbx" aria-label="Close">Close ✕</button></span></div><div class="lbbody"><img src="${src}" alt="${esc(title || '')}"></div>`;
+  document.body.appendChild(d); document.documentElement.style.overflow = 'hidden'; d.querySelector('#lbx').onclick = closeLightbox; d.onclick = (e) => { if (e.target === d || e.target.classList.contains('lbbody')) closeLightbox(); }; d.querySelector('#lbx').focus(); }
+function closeLightbox() { const d = document.getElementById('lb'); if (d) { d.remove(); document.documentElement.style.overflow = ''; } }
+addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[data-lb]'); if (a) { e.preventDefault(); openLightbox(a.getAttribute('href'), a.dataset.lb); } });

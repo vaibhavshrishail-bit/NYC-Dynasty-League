@@ -3,6 +3,7 @@
 // history.json: the latest completed week stays 'open' and is rewritten if its results change (stat corrections); once the next week completes it is 'locked' and never recalculated.
 // No AI. Every sentence below is a template filled from Sleeper numbers.
 import { readFile, writeFile } from 'node:fs/promises';
+import { kickoffWindow } from './kickoff-windows.mjs';
 const J = async (p) => JSON.parse(await readFile(p, 'utf8'));
 const D = 'site/data/sleeper', C = await J('site/data/canonical.json'), L = await J('site/data/league.json'), S = `${D}/seasons/${C.season}`;
 const [matchups, players, lg, riv, sched] = await Promise.all([J(`${S}/matchups.json`), J(`${D}/players.json`), J(`${S}/league.json`), J('src/config/rivalries.json'), J(`${D}/nfl_schedule.json`).catch(() => [])]);
@@ -60,12 +61,25 @@ const model = sim.modelOf(L), phi = (z) => { const t = 1 / (1 + 0.2316419 * Math
 const lineup = (id) => { const m = (matchups[cur] || []).find((x) => x.roster_id === id); return (m?.starters || []).map((p, i) => { const pl = players[p], g = pl && gameOf(pl.team), d = g ? new Date(g.date + 'T12:00:00Z') : null;
   return { slot: slots[i] || 'FLEX', player_id: p, empty: p === '0' || !pl, name: pl ? nm(p) : 'Empty slot', last_name: pl?.last_name || '', number: pl?.number ?? null, position: pos(pl), nfl_team: pl?.team || 'FA', status: pl?.injury_status || null,
     opp: !pl ? '' : g ? (g.home === pl.team ? 'vs ' + g.away : 'at ' + g.home) : 'BYE', day: d ? DAY[d.getUTCDay()] : null, date: g?.date || null, projected: g ? proj(p) : 0, live: m.starters_points?.[i] ?? null }; }); };
+// ---- When it swings: real kickoff windows (Eastern Time). Needs nfl_kickoffs.json; without it the timeline falls back to game days and says so. ----
+const KO = await J(process.env.KICKOFFS_FILE || `${D}/nfl_kickoffs.json`).catch(() => null), koList = KO?.[cur] || null;
+const windowOf = (team) => { const sg = gameOf(team); if (!sg) return null; const k = koList?.find((x) => x.home === team || x.away === team);
+  if (!k) return { key: 'D-' + sg.date, label: ({ THU: 'Thursday', FRI: 'Friday', SAT: 'Saturday', SUN: 'Sunday', MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday' })[DAY[new Date(sg.date + 'T12:00:00Z').getUTCDay()]], short: DAY[new Date(sg.date + 'T12:00:00Z').getUTCDay()], start: sg.date + 'T23:59:00Z', time: null, status: sg.status };
+  const e = kickoffWindow(k.kickoff); return { key: e.key, label: e.label, short: e.short, start: k.kickoff, time: e.time, md: e.md, status: sg.status }; };
+const timelineOf = (la, lb) => { const W = {}; for (const [side, l] of [['a', la], ['b', lb]]) for (const p of l) { if (p.empty || p.opp === 'BYE' || !p.opp) continue; const w = windowOf(p.nfl_team); if (!w) continue;
+    const x = (W[w.key] ||= { key: w.key, label: w.label, short: w.short, start: w.start, md: w.md || null, times: new Set(), statuses: new Set(), a: { projected: 0, actual: 0, players: [] }, b: { projected: 0, actual: 0, players: [] } });
+    if (w.start < x.start) x.start = w.start; if (w.time) x.times.add(w.time); x.statuses.add(w.status); x[side].projected += p.projected || 0; x[side].actual += p.live || 0;
+    x[side].players.push({ name: p.name, position: p.position, nfl_team: p.nfl_team, number: p.number, opp: p.opp, projected: p.projected, live: p.live, kickoff: w.time }); }
+  const ws = Object.values(W).sort((x, y) => (x.start < y.start ? -1 : 1)).map((x) => ({ ...x, times: [...x.times], state: [...x.statuses].every((s) => s === 'complete') ? 'final' : [...x.statuses].some((s) => s === 'complete' || s === 'in_game') ? 'live' : 'upcoming', statuses: undefined,
+    a: { ...x.a, projected: r2(x.a.projected), actual: r2(x.a.actual), players: x.a.players.sort((p, q) => (q.projected || 0) - (p.projected || 0)) }, b: { ...x.b, projected: r2(x.b.projected), actual: r2(x.b.actual), players: x.b.players.sort((p, q) => (q.projected || 0) - (p.projected || 0)) } }));
+  return { has_times: !!koList, windows: ws }; };
 // Editorial variety without randomness: the same week and matchup always pick the same phrasing, different matchups pick different ones.
 const vary = (list, ...seed) => list[Math.abs(seed.reduce((h, x) => (h * 31 + Number(x)) | 0, 7 + cur * 13)) % list.length];
 const baseOdds = sim.simulate(C, L, {}, 5000);
 const stakeOf = (a, b) => { const key = `${cur}:${a}-${b}`; if (!(L.schedule[cur] || []).some((p) => p[0] === a && p[1] === b)) return null;
   const wa = sim.simulate(C, L, { [key]: a }, 4000), wb = sim.simulate(C, L, { [key]: b }, 4000);
   return { a: { now: r2(baseOdds[a].playoff), win: r2(wa[a].playoff), lose: r2(wb[a].playoff) }, b: { now: r2(baseOdds[b].playoff), win: r2(wb[b].playoff), lose: r2(wa[b].playoff) } }; };
+const p1 = (x) => (x >= 0.9995 ? '>99.9' : x < 0.0005 ? '<0.1' : (x * 100).toFixed(1)); // never prints a simulated 0.0 or 100.0
 const pc = (x) => (x >= 0.995 ? 'over 99%' : x < 0.005 ? 'under 1%' : Math.round(x * 100) + '%');
 const tagOf = (a, b) => riv.rivalries.find((r) => r.weeks.includes(cur) && ((r.a === a && r.b === b) || (r.a === b && r.b === a)))?.tag || null;
 const games = [];
@@ -77,7 +91,7 @@ for (const [a, b] of (L.schedule[cur] || (matchups[cur] ? Object.values(Object.g
   const rating = fp < 0.57 ? 'Razor-thin' : lead && lead === dog && !firstMgr ? 'Upset watch' : fp < 0.75 ? 'Fair fight' : 'Blowout potential';
   let st = 0, sw = null; for (let i = g.length - 1; i >= 0; i--) { const w = g[i].x > g[i].y ? a : b; if (sw === null) sw = w; if (w !== sw) break; st++; }
   const stakes = stakeOf(a, b), swing = stakes ? { a: stakes.a.win - stakes.a.lose, b: stakes.b.win - stakes.b.lose } : { a: 0, b: 0 }, hot = swing.a >= swing.b ? a : b, hs = stakes ? (hot === a ? stakes.a : stakes.b) : null;
-  const favLine = vary([`${U(mgr(fav))} IS A ${(fp * 100).toFixed(1)}% FAVORITE BY ${gap.toFixed(2)}.`, `THE NUMBERS LEAN ${U(mgr(fav))} BY ${gap.toFixed(2)}.`, fp < 0.6 ? `CALL IT A COIN FLIP: ${U(mgr(fav))} BY ${gap.toFixed(2)}.` : `${U(mgr(dog))} NEEDS A ${Math.round((1 - fp) * 100)}% SHOT TO LAND.`, `${U(mgr(fav))} ${(fp * 100).toFixed(1)}%. ${U(mgr(dog))} ${((1 - fp) * 100).toFixed(1)}%.`], a, b), series = lead ? `${U(mgr(lead))} LEADS ${Math.max(wa, wb)}-${Math.min(wa, wb)}` : `THE SERIES IS LEVEL AT ${wa}-${wb}`;
+  const favLine = vary([`${U(mgr(fav))} IS A ${p1(fp)}% FAVORITE BY ${gap.toFixed(2)}.`, `THE NUMBERS LEAN ${U(mgr(fav))} BY ${gap.toFixed(2)}.`, fp < 0.6 ? `CALL IT A COIN FLIP: ${U(mgr(fav))} BY ${gap.toFixed(2)}.` : `${U(mgr(dog))} NEEDS A ${Math.round((1 - fp) * 100)}% SHOT TO LAND.`, `${U(mgr(fav))} ${p1(fp)}%. ${U(mgr(dog))} ${((1 - fp) * 100).toFixed(1)}%.`], a, b), series = lead ? `${U(mgr(lead))} LEADS ${Math.max(wa, wb)}-${Math.min(wa, wb)}` : `THE SERIES IS LEVEL AT ${wa}-${wb}`;
   const NUM = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE'], N = (n) => NUM[n] || String(n), rec = (id) => F[id].record.replace('–', '-');
   const trail = lead ? (lead === a ? b : a) : null, sweep = g.length >= 3 && !firstMgr && Math.min(wa, wb) === 0, lastGap = last ? Math.abs(last.x - last.y) : null;
   const slide = [a, b].find((id) => F[id].streak && F[id].streak.type === 'L' && F[id].streak.length >= 3), run = [a, b].find((id) => F[id].streak && F[id].streak.type === 'W' && F[id].streak.length >= 3);
@@ -100,10 +114,10 @@ for (const [a, b] of (L.schedule[cur] || (matchups[cur] ? Object.values(Object.g
   const two = [
     sweep && `${U(mgr(trail))} NEEDS A DIFFERENT ENDING.`,
     hs && Math.max(swing.a, swing.b) >= 0.2 && vary([`WIN AND ${U(mgr(hot))} IS AT ${pc(hs.win).toUpperCase()}. LOSE AND IT IS ${pc(hs.lose).toUpperCase()}.`, `A ${Math.round(Math.max(swing.a, swing.b) * 100)}-POINT PLAYOFF SWING FOR ${U(mgr(hot))}.`], a, b, 1),
-    rating === 'Upset watch' && `${U(mgr(fav))} IS A ${(fp * 100).toFixed(1)}% FAVORITE THIS TIME.`,
+    rating === 'Upset watch' && `${U(mgr(fav))} IS A ${p1(fp)}% FAVORITE THIS TIME.`,
     gap < 5 && vary([`JUST ${gap.toFixed(2)} PROJECTED POINTS BETWEEN THEM.`, `${U(mgr(fav))}'S PROJECTED EDGE: JUST ${gap.toFixed(2)}.`], a, b, 5),
     slide && !winless && `${U(mgr(slide))} LOOKS TO END A ${N(F[slide].streak.length)}-GAME SLIDE.`,
-    winless && vary([`SOMETHING HAS TO GIVE.`, `${U(mgr(fav))} IS A ${(fp * 100).toFixed(1)}% FAVORITE.`], a, b, 6),
+    winless && vary([`SOMETHING HAS TO GIVE.`, `${U(mgr(fav))} IS A ${p1(fp)}% FAVORITE.`], a, b, 6),
     shared && `${N(shared[1])} STARTERS SHARE ${shared[0]}.`,
     run && !perfect && `${U(mgr(run))} BRINGS ${N(F[run].streak.length)} STRAIGHT WINS.`,
     lead && st >= 2 && sw === trail && !one.includes('STRAIGHT') && `${U(mgr(trail))} WON THE LAST ${N(st)}.`,
@@ -115,7 +129,7 @@ for (const [a, b] of (L.schedule[cur] || (matchups[cur] ? Object.values(Object.g
   const form = (id) => { const f = F[id], lastR = f.results[f.results.length - 1]; return `${mgr(id)} ${f.streak && f.streak.length >= 2 ? `has ${f.streak.type === 'W' ? 'won' : 'lost'} ${f.streak.length} straight` : lastR ? `${lastR.result === 'W' ? 'won' : 'lost'} last week` : 'opens the season'}${lastR ? ` and scored ${lastR.pf.toFixed(2)} in Week ${lastR.week}` : ''}`; };
   const top = (l) => [...l].filter((x) => !x.empty).sort((x, y) => (y.projected || 0) - (x.projected || 0)), ta = top(la), tb = top(lb), q = (l) => l.filter((x) => x.status && /quest|doubt|out|ir/i.test(x.status)).map((x) => `${x.name} (${x.status})`);
   const story = [!g.length ? `${mgr(a)} and ${mgr(b)}'s franchises have never played each other.` : firstMgr ? `These two franchises have met ${g.length} times, but never with these two managers in charge.` : `${lead ? `${mgr(lead)} leads the series ${Math.max(wa, wb)}–${Math.min(wa, wb)}` : `The series is level at ${wa}–${wb}`}${st >= 2 ? `, and ${mgr(sw)} has taken the last ${st}` : ''}. ${mgr(last.x > last.y ? a : b)} won the most recent meeting ${Math.max(last.x, last.y).toFixed(2)}–${Math.min(last.x, last.y).toFixed(2)} in ${last.s}${last.type !== 'regular' ? ` (${last.type === 'championship' ? 'the championship game' : last.type === 'toilet' ? 'Toilet Bowl bracket' : last.type})` : ''}.`,
-    vary([`${form(a)}; ${form(b)}.`, `Form line: ${form(a)}, while ${form(b)}.`, `${form(b)}. ${form(a)}.`], a, b, 4), have ? `${ta[0].name} (${ta[0].projected.toFixed(2)}) and ${tb[0].name} (${tb[0].projected.toFixed(2)}) carry the highest projections on each side. ${mgr(fav)} is projected ${Math.max(pa, pb).toFixed(2)} to ${Math.min(pa, pb).toFixed(2)}, a ${(fp * 100).toFixed(1)}% favorite.` : `Player projections are not available, so the ${(fp * 100).toFixed(1)}% figure for ${mgr(fav)} comes from season and recent scoring.`,
+    vary([`${form(a)}; ${form(b)}.`, `Form line: ${form(a)}, while ${form(b)}.`, `${form(b)}. ${form(a)}.`], a, b, 4), have ? `${ta[0].name} (${ta[0].projected.toFixed(2)}) and ${tb[0].name} (${tb[0].projected.toFixed(2)}) carry the highest projections on each side. ${mgr(fav)} is projected ${Math.max(pa, pb).toFixed(2)} to ${Math.min(pa, pb).toFixed(2)}, a ${p1(fp)}% favorite.` : `Player projections are not available, so the ${p1(fp)}% figure for ${mgr(fav)} comes from season and recent scoring.`,
     [...q(la), ...q(lb)].length ? `On the injury report among the starters: ${[...q(la), ...q(lb)].slice(0, 4).join(', ')}${[...q(la), ...q(lb)].length > 4 ? ' and ' + ([...q(la), ...q(lb)].length - 4) + ' more' : ''}.` : ''].filter(Boolean).join(' ');
   const days = [...new Set([...la, ...lb].filter((x) => x.date).map((x) => x.date))].sort().map((d) => ({ date: d, day: DAY[new Date(d + 'T12:00:00Z').getUTCDay()] }));
   const win = (l) => days.map((d) => { const s = l.filter((x) => x.date === d.date); return { points: r2(s.reduce((t, x) => t + (x.projected || 0), 0)), slots: s.length }; }), wA = win(la), wB = win(lb);
@@ -125,7 +139,7 @@ for (const [a, b] of (L.schedule[cur] || (matchups[cur] ? Object.values(Object.g
     if (!g.length || firstMgr) o.push(`${mgr(me)} is ${F[me].record} and averages ${L.teams[me].ppg} a week.`); else if (sw === me && st >= 2) o.push(`${mgr(me)} has won the last ${st} meetings.`); else if (mine > theirs) o.push(`${mgr(me)} leads the series ${mine}–${theirs}.`); else if (mine === 0) o.push(`${mgr(me)} has not beaten ${mgr(opp)} in ${g.length} tries.`); else o.push(`${mgr(me)} last beat ${mgr(opp)} in ${[...g].reverse().find((m) => (me === a ? m.x > m.y : m.y > m.x)).s}.`);
     return o; };
   games.push({ a, b, stakes, why, projected: [pa, pb], win: [Math.round(p * 1000) / 1000, Math.round((1 - p) * 1000) / 1000], source: have ? 'projections' : 'model', rating, kicker, tag, headline: head, story, series: { a: wa, b: wb, games: g.length, first_for_managers: firstMgr }, history: g.map((m) => ({ season: m.s, week: m.w, type: m.type, a: m.x, b: m.y })),
-    windows: days.map((d, i) => ({ ...d, a: wA[i], b: wB[i] })), how_a: how(a, b, la, lb, wA, wB, wa, wb), how_b: how(b, a, lb, la, wB, wA, wb, wa), featured_a: ta.slice(0, 3), featured_b: tb.slice(0, 3), lineup_a: la, lineup_b: lb,
+    windows: days.map((d, i) => ({ ...d, a: wA[i], b: wB[i] })), how_a: how(a, b, la, lb, wA, wB, wa, wb), how_b: how(b, a, lb, la, wB, wA, wb, wa), timeline: timelineOf(la, lb), featured_a: ta.slice(0, 3), featured_b: tb.slice(0, 3), lineup_a: la, lineup_b: lb,
     live: C.week_in_progress ? [(matchups[cur].find((m) => m.roster_id === a) || {}).points ?? 0, (matchups[cur].find((m) => m.roster_id === b) || {}).points ?? 0] : null,
     interest: L.pulse.matchups.find((m) => m.a === a && m.b === b)?.score ?? 0 }); }
 games.sort((x, y) => (y.tag ? 1 : 0) - (x.tag ? 1 : 0) || y.interest - x.interest);

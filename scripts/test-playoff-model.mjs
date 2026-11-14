@@ -49,4 +49,41 @@ t('league structure: six playoff teams, playoffs weeks 15-17, identities match S
 t('records and points agree with the saved week-by-week results', () => {
   for (const f of C.franchises) { assert.equal(f.results.filter((r) => r.result === 'W').length, f.wins); assert.ok(Math.abs(f.results.reduce((a, r) => a + r.pf, 0) - f.pf) < 0.06); assert.equal(f.results.length, C.through_week); }
 });
+// ---- probability display and certainty ----
+const appjs = await readFile(new URL('../site/assets/app.js', import.meta.url), 'utf8');
+const pctSrc = appjs.match(/const pct = [^\n]+/)[0], p1Src = appjs.match(/const p1 = [^\n]+/)[0], F = new Function(pctSrc + '\n' + p1Src + '\nreturn { pct, p1 };')();
+const S2 = new Function(code + '; return { certainty };')();
+t('zero hits in the simulation prints "<1%", never "0%"', () => { assert.equal(F.pct(0), '<1%'); assert.equal(F.pct(0.0001), '<1%'); assert.equal(F.pct(0.0049), '<1%'); assert.equal(F.p1(0), '<0.1'); });
+t('all hits in the simulation prints ">99%", never "100%"', () => { assert.equal(F.pct(1), '>99%'); assert.equal(F.pct(0.9951), '>99%'); assert.equal(F.p1(1), '>99.9'); });
+t('values near the edges round honestly', () => { assert.equal(F.pct(0.005), '1%'); assert.equal(F.pct(0.0149), '1%'); assert.equal(F.pct(0.994), '99%'); assert.equal(F.pct(0.5), '50%'); assert.equal(F.p1(0.757), '75.7'); });
+t('"0%" and "100%" appear only with proof', () => { assert.equal(F.pct(0, 'impossible'), '0%'); assert.equal(F.pct(1, 'certain'), '100%'); assert.equal(F.pct(0.3, null), '30%');
+  for (let i = 0; i <= 1000; i++) { const v = F.pct(i / 1000); assert.ok(v !== '0%' && v !== '100%', v); } });
+t('no franchise is declared eliminated while regular-season games remain', () => { const ct = S2.certainty(C, L); if (Object.keys(L.schedule).length) for (const f of C.franchises) assert.notEqual(ct[f.roster_id].playoff, 'impossible'); });
+t('a mathematical clinch is reported as certain and matches the exact arithmetic', () => { const ct = S2.certainty(C, L), ex = S.exact(C, L); if (Object.keys(L.schedule).length) for (const f of C.franchises) assert.equal(ct[f.roster_id].playoff === 'certain', !!ex[f.roster_id].clinched_top5); });
+t('once the regular season is complete, exactly six are certain and six impossible', () => { const ct = S2.certainty(C, { ...L, schedule: {} }), v = Object.values(ct); assert.equal(v.filter((x) => x.playoff === 'certain').length, 6); assert.equal(v.filter((x) => x.playoff === 'impossible').length, 6); });
+t('a synthetic clinch: a team no five others can catch is certain; a winless team is still not eliminated', () => {
+  const fr = Array.from({ length: 12 }, (_, i) => ({ roster_id: i + 1, wins: i === 0 ? 12 : i === 11 ? 0 : 5, losses: 0, pf: 1000 - i, results: [] })), C2 = { ...C, franchises: fr, standings: fr.map((f) => f.roster_id), byRoster: Object.fromEntries(fr.map((f) => [f.roster_id, f])), through_week: 12 };
+  const L2 = { ...L, schedule: { 13: [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]], 14: [[1, 3], [2, 4], [5, 7], [6, 8], [9, 11], [10, 12]] } }, ct = S2.certainty(C2, L2);
+  assert.equal(ct[1].playoff, 'certain'); assert.equal(ct[12].playoff, null); });
+t('saved history never contains a formatted string, only raw probabilities', async () => { const H = JSON.parse(await readFile(new URL('../site/data/history.json', import.meta.url))); for (const w of Object.values(H.weeks)) for (const o of Object.values(w.odds)) { assert.equal(typeof o.playoff, 'number'); assert.ok(o.playoff >= 0 && o.playoff <= 1); assert.ok(['recorded', 'reconstructed'].includes(w.source)); } });
+t('a scenario recalculation keeps the same display rules', () => { const wk = Object.keys(L.schedule)[0]; if (!wk) return; const [a, b] = L.schedule[wk][0], o = S.simulate(C, L, { [`${wk}:${a}-${b}`]: a }, 2000); for (const x of Object.values(o)) { const v = F.pct(x.playoff); assert.ok(v !== '0%' && v !== '100%'); } });
+// ---- kickoff windows and the NFL team registry ----
+const { kickoffWindow } = await import('./kickoff-windows.mjs');
+t('kickoff windows: Thursday night, international morning, 1:00, 4:05 and 4:25, Sunday night, Monday night', () => {
+  const k = (iso) => kickoffWindow(iso).key;
+  assert.equal(k('2026-11-13T01:15:00Z'), 'THU-night'); assert.equal(k('2026-11-15T14:30:00Z'), 'SUN-early'); assert.equal(k('2026-11-15T18:00:00Z'), 'SUN-one');
+  assert.equal(k('2026-11-15T21:05:00Z'), 'SUN-late'); assert.equal(k('2026-11-15T21:25:00Z'), 'SUN-late'); assert.equal(k('2026-11-16T01:20:00Z'), 'SUN-night'); assert.equal(k('2026-11-17T01:15:00Z'), 'MON-night');
+  assert.equal(kickoffWindow('2026-11-15T21:25:00Z').time, '4:25 PM'); assert.equal(kickoffWindow('2026-11-15T14:30:00Z').time, '9:30 AM'); });
+t('kickoff windows: Thanksgiving triple-header, Black Friday, Saturday games, and the daylight-saving change', () => {
+  const k = (iso) => kickoffWindow(iso).key;
+  assert.equal(k('2026-11-26T17:30:00Z'), 'THU-early'); assert.equal(k('2026-11-26T21:30:00Z'), 'THU-afternoon'); assert.equal(k('2026-11-27T01:20:00Z'), 'THU-night');
+  assert.equal(k('2026-11-27T20:00:00Z'), 'FRI-afternoon'); assert.equal(k('2026-12-19T18:00:00Z'), 'SAT-early'); assert.equal(k('2026-12-20T01:15:00Z'), 'SAT-night');
+  assert.equal(kickoffWindow('2026-10-25T17:00:00Z').time, '1:00 PM'); assert.equal(kickoffWindow('2026-11-08T18:00:00Z').time, '1:00 PM'); assert.equal(kickoffWindow('not a date'), null); });
+t('NFL registry: 32 teams, each with a name and two colours, no logo files shipped, and every rostered player maps to a known team', async () => {
+  const reg = new Function(appjs.slice(appjs.indexOf('const NFLC ='), appjs.indexOf('};', appjs.indexOf('const NFLC =')) + 2) + '\n' + appjs.slice(appjs.indexOf('const NFL_NAMES'), appjs.indexOf('const nflTeam')) + '\nreturn { NFL, NFLC, NFL_LOGOS };')();
+  assert.equal(Object.keys(reg.NFL).length, 32); for (const t of Object.values(reg.NFL)) { assert.ok(t.name.length > 5 && /^#/.test(t.primary) && /^#/.test(t.secondary)); assert.equal(t.logo, null); }
+  const WKJ = JSON.parse(await readFile(new URL('../site/data/weekly.json', import.meta.url))); for (const g of WKJ.preview.games) for (const p of [...g.lineup_a, ...g.lineup_b]) if (!p.empty && p.nfl_team !== 'FA') assert.ok(reg.NFL[p.nfl_team], 'unknown team ' + p.nfl_team); });
+t('timeline windows add up to the lineup projections and are in kickoff order', async () => {
+  const WKJ = JSON.parse(await readFile(new URL('../site/data/weekly.json', import.meta.url))); for (const g of WKJ.preview.games) { const W = g.timeline.windows; for (let i = 1; i < W.length; i++) assert.ok(W[i - 1].start <= W[i].start);
+    for (const k of ['a', 'b']) { const sum = W.reduce((a, w) => a + w[k].projected, 0), lu = g['lineup_' + k].filter((p) => !p.empty && p.opp && p.opp !== 'BYE').reduce((a, p) => a + (p.projected || 0), 0); assert.ok(Math.abs(sum - lu) < 0.2, `${sum} vs ${lu}`); } } });
 console.log(`${n} checks passed`);
