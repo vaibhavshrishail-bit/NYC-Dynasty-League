@@ -205,7 +205,9 @@ const slate = [...new Set(sched.filter((g) => g.week === cur).map((g) => g.date)
 const byeTeams = L.nfl_byes ? Object.entries(L.nfl_byes).filter(([, w]) => w === cur).map(([t]) => t).sort() : [];
 // overview banner in the house style: two leading records, then what the week holds
 const banner = (() => { if (!games.length) return null; const top = C.standings.slice(0, 2).map((id) => F[id]), riv = games.filter((x) => x.tag).length, close = games.filter((x) => x.rating === 'Razor-thin').length, rc = (f) => f.record.replace('–', '-');
-  const h = top[0].losses === 0 && top[0].wins > 2 ? `${rc(top[0])} ${U(top[0].manager)}. ${rc(top[1])} ${U(top[1].manager)}. NEXT UP.` : cur >= L.regular_season_end - 2 ? `WEEK ${cur}. THE LINE IS RIGHT THERE.` : `WEEK ${cur} RAISES THE STAKES.`;
+  // "NEXT UP" must name the unbeaten team's real opponent this week, never simply the team in second place
+  const tg = games.find((x) => x.a === top[0].roster_id || x.b === top[0].roster_id), opp = tg ? F[tg.a === top[0].roster_id ? tg.b : tg.a] : null;
+  const h = top[0].losses === 0 && top[0].wins > 2 ? (opp ? `${rc(top[0])} ${U(top[0].manager)}. ${rc(opp)} ${U(opp.manager)} IS NEXT UP.` : `${rc(top[0])} ${U(top[0].manager)}. STILL UNBEATEN.`) : cur >= L.regular_season_end - 2 ? `WEEK ${cur}. THE LINE IS RIGHT THERE.` : `WEEK ${cur} RAISES THE STAKES.`;
   const bits = [riv ? `${riv} rivalry game${riv > 1 ? 's' : ''}` : null, close ? `${close} razor-thin projection${close > 1 ? 's' : ''}` : null, byeTeams.length ? `${byeTeams.length} NFL byes` : null].filter(Boolean);
   return [h, bits.length ? bits.join(' · ') + '.' : `${games.length} games.`]; })();
 // last week's commentary: plain sentences from the awards

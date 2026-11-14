@@ -97,4 +97,7 @@ t('weekly awards: about ten per week, each tied to named players, no player wins
   for (const [w, a] of Object.entries(WKJ.awards)) { assert.ok(a.list.length >= 9 && a.list.length <= 12, `week ${w}: ${a.list.length} awards`); const solo = a.list.filter((x) => x.players.length === 1 && !['te_mafia'].includes(x.key)).map((x) => x.players[0].player_id); assert.equal(new Set(solo).size, solo.length);
     for (const x of a.list) { assert.ok(x.players.length >= 1 && x.players.every((p) => p.name && p.points >= 0)); assert.ok(Math.abs(x.players.reduce((s, p) => s + p.points, 0) - x.points) < 0.05, `${x.key} points add up`); } }
   assert.equal(WKJ.season_story.length, WKJ.through_week); for (const e of WKJ.season_story) assert.ok(e.head && e.text && e.rosters.length); });
+t('hype banner: a "NEXT UP" line only names two teams that actually play each other this week', async () => {
+  const WKJ = JSON.parse(await readFile(new URL('../site/data/weekly.json', import.meta.url))), CJ = JSON.parse(await readFile(new URL('../site/data/canonical.json', import.meta.url))), b = WKJ.preview?.banner?.[0] || '';
+  if (/NEXT UP/.test(b)) { const named = CJ.franchises.filter((f) => b.includes(' ' + f.manager.toUpperCase())).map((f) => f.roster_id); assert.equal(named.length, 2, b); assert.ok(WKJ.preview.games.some((g) => named.includes(g.a) && named.includes(g.b)), b); } });
 console.log(`${n} checks passed`);
