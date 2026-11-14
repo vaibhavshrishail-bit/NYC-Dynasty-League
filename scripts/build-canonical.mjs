@@ -41,6 +41,14 @@ const SEASON_PTS = {}, RANK = {}; { const tot = {};
     RANKS.weeks[w] = snap; }
   const lastW = weeks[weeks.length - 1]; if (lastW != null) for (const [pid, [rk, pts]] of Object.entries(RANKS.weeks[lastW])) { RANK[pid] = rk; SEASON_PTS[pid] = pts; } RANKS.through_week = lastW == null ? 0 : Number(lastW); }
 await writeFile('site/data/ranks.json', JSON.stringify(RANKS));
+// ---- player file for the inspector and search: every player this league has touched, with a week-by-week log ----
+// w[i] is the player's fantasy points in completed week weeks[i] under league scoring; null means no record of a game that week (bye, inactive or not in the data).
+{ const own = {}; for (const r of rosters) for (const pid of r.players || []) own[pid] = { roster_id: r.roster_id, slot: (r.taxi || []).includes(pid) ? 'taxi' : (r.reserve || []).includes(pid) ? 'IR' : (r.starters || []).includes(pid) ? 'starter' : 'bench' };
+  const lastW = weeks[weeks.length - 1], out = {};
+  for (const [pid, p] of Object.entries(players)) { if (!p || !p.position) continue; const log = weeks.map((w) => (pid in leaguePts[w] ? (nflOK && !(pid in NFLP.weeks[w]) && !leaguePts[w][pid] ? null : r2c(leaguePts[w][pid])) : nflOK && pid in NFLP.weeks[w] ? NFLP.weeks[w][pid] : null));
+    const snap = lastW != null ? RANKS.weeks[lastW][pid] : null;
+    out[pid] = { n: p.full_name || `${p.first_name || ''} ${p.last_name || ''}`.trim(), pos: posOf(pid), elig: eligOf(pid), tm: p.team || null, num: p.number ?? null, st: p.injury_status || null, own: own[pid] || null, w: log, tot: snap ? snap[1] : null, rk: snap ? (snap[2] || { [snap[0].replace(/\d+$/, '')]: Number(snap[0].replace(/^\D+/, '')) }) : null, gp: log.filter((x) => x != null).length }; }
+  await writeFile('site/data/player_log.json', JSON.stringify({ season: Number(season), weeks: weeks.map(Number), through_week: lastW == null ? 0 : Number(lastW), basis: RANKS.basis, generated_at: new Date().toISOString(), players: out })); }
 const through = weeks.length ? weeks[weeks.length - 1] : 0;
 const POS = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' };
 const pos = (p) => { const x = p?.position || p?.fantasy_positions?.[0] || '?'; return POS[x] || x; };

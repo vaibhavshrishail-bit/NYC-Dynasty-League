@@ -4,6 +4,10 @@ on:
     branches: [main]
   schedule:
     - cron: '17 */6 * * *'   # every 6 hours
+    # Game windows (UTC; Eastern is UTC-5 in winter, UTC-4 before November): a full rebuild every 20 minutes so win chances,
+    # awards and standings follow the games. Between builds each page reads live scores from Sleeper in the browser.
+    - cron: '7,27,47 17-23 * * 0,4,6'   # Sunday, Thursday (incl. Thanksgiving) and Saturday afternoons and evenings
+    - cron: '7,27,47 0-5 * * 0,1,2,5'   # late games: Saturday, Sunday, Monday and Thursday nights
   workflow_dispatch:
 permissions:
   contents: write

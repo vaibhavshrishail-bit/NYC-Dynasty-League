@@ -15,7 +15,7 @@ CHROME = '/usr/bin/google-chrome' if os.path.exists('/usr/bin/google-chrome') el
 CHECK = r"""(opts) => {
   const hiddenDetails = (el) => { for (let d = el.closest('details:not([open])'); d; d = d.parentElement && d.parentElement.closest('details:not([open])')) { const sm = d.querySelector(':scope > summary'); if (!sm || !sm.contains(el)) return true; } return false; };
   const issues = [], vw = innerWidth, vis = (el) => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el); return r.width > 1 && r.height > 1 && cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity > 0.05 && (!el.checkVisibility || el.checkVisibility()) && !hiddenDetails(el); };
-  const chrome = (el) => !!el.closest('.nav,.tabbar,#state,.tmbar,#tmbar'), scroller = (el) => { for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) { const o = getComputedStyle(p).overflowX; if ((o === 'auto' || o === 'scroll') && p.scrollWidth > p.clientWidth + 1) return true; } return false; };
+  const chrome = (el) => !!el.closest('.nav,.tabbar,#state,.tmbar,#tmbar,#livebar'), scroller = (el) => { for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) { const o = getComputedStyle(p).overflowX; if ((o === 'auto' || o === 'scroll') && p.scrollWidth > p.clientWidth + 1) return true; } return false; };
   const label = (el) => (el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className ? '.' + el.className.split(' ')[0] : '') + ' "' + (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 26) + '"');
   if (document.documentElement.scrollWidth > vw + 1) issues.push(['overflow', 'page scrolls sideways: ' + document.documentElement.scrollWidth + ' > ' + vw]);
   const leaves = [];
@@ -51,7 +51,7 @@ async def run():
         br = await pw.chromium.launch(executable_path=CHROME, args=['--no-sandbox', '--autoplay-policy=no-user-gesture-required'])
         async def flow(name, vw, url, steps):
             nonlocal n_shots
-            cx = await br.new_context(viewport={'width': vw, 'height': 844 if vw < 800 else 900}, has_touch=vw < 800, reduced_motion='reduce'); pg = await cx.new_page(); errs = []
+            cx = await br.new_context(viewport={'width': vw, 'height': 844 if vw < 800 else 900}, has_touch=vw < 800, reduced_motion='reduce'); await cx.route('**/api.sleeper.app/**', lambda r: r.fulfill(status=200, content_type='application/json', body='[]')); pg = await cx.new_page(); errs = []
             pg.on('pageerror', lambda e: errs.append(('jserror', str(e)[:120]))); pg.on('console', lambda m: errs.append(('jserror', m.text[:120])) if m.type == 'error' and 'favicon' not in m.text else None)
             pg.on('response', lambda r: errs.append(('http', f'{r.status} {r.url[-50:]}')) if r.status >= 400 else None)
             out = results.setdefault((name, vw), [])
@@ -103,7 +103,7 @@ async def run():
             for vw in ([390, 1440] if QUICK else [320, 375, 390, 430, 768, 1024, 1440]): await flow(name, vw, url, [] if SMOKE else steps if vw in (390, 1440) or name in ('warroom', 'matchups') else steps[:3])
         # the phone journey from the brief, as one continuous session
         if not SMOKE and (not ONLY or 'journey' in ONLY): await flow('journey', 390, '', [('to matchups', 'click', '.tabbar a[href="week.html"]'), ('open a preview', 'click', '#m1 > summary'), ('expand lineups', 'click', '#m1 details.fold:nth-of-type(2) > summary'), ('collapse lineups', 'click', '#m1 details.fold:nth-of-type(2) > summary'), ('to war room', 'click', '.tabbar a[href="playoffs.html"]'), ('select franchise', 'click', '#pk button:nth-of-type(7)'), ('change scenario', 'click', '.forkb [data-br=win]'),
-               ('to rivalries', 'click', '.tabbar a[href="rivalry.html"]'), ('select rivalry', 'select', ('#b', 'taylor')), ('to franchises', 'click', '.tabbar a[href="./#franchises"]'), ('open a franchise', 'click', '#grid a:nth-of-type(7)'), ('play cinematic', 'js', "(()=>{const v=document.querySelector('video');if(v){v.muted=true;v.play().catch(()=>{})}})()"), ('to archives', 'click', '.tabbar a[href="archives.html"]'), ('back home', 'click', '.tabbar a[href="./"]')])
+               ('to rivalries', 'click', '.tabbar a[href="rivalry.html"]'), ('select rivalry', 'select', ('#b', 'taylor')), ('to franchises', 'click', '.tabbar a[href*="ranchise"]'), ('open a franchise', 'click', '#grid a:nth-of-type(7)'), ('play cinematic', 'js', "(()=>{const v=document.querySelector('video');if(v){v.muted=true;v.play().catch(()=>{})}})()"), ('to archives', 'click', '.tabbar a[href="archives.html"]'), ('back home', 'click', '.tabbar a[href="./"]')])
         await br.close()
     srv.terminate()
     CRIT = {'overflow', 'offscreen', 'overlap', 'jserror', 'http', 'fail', 'chart', 'loading', 'jump', 'dupid', 'clipped'}; WARN = {'smalltext', 'smalltap', 'skip'}

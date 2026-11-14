@@ -263,3 +263,23 @@ Rank definitions now in force: metric = season total fantasy points under this l
 ### UX addendum (14 November): status
 - **Done**: optional "Which franchise is yours?" panel on the homepage (`mine()` in `site/index.html`). Remembered on the device, dismissible, `?f=` in a link wins. Shows my matchup (scored, expected final, players still to play, win chance with its basis), my stakes, my picks.
 - **Not started**: five-tab navigation with a League index, player inspector and search, game-day view tabs, rooting guide and scenario A/B, pick transfer chain, "since your last visit", native share.
+
+## Player inspector, search and game-day scores (Nov 14, 2026)
+
+**Player inspector** (`openPlayer(pid, {week})` in `site/assets/app.js`). One panel for every player: a side panel on wide screens, a full sheet on phones.
+- Opens from any element carrying `data-pid` (award chips, franchise player cards, matchup jersey tiles, lineup rows, timeline rows, homepage MVP chips) by click, Enter or Space, from search, or from a link ending `#player=<id>`. Back or Escape closes it and focus returns to what opened it.
+- Data: `site/data/player_log.json`, written by `scripts/build-canonical.mjs` (every player in Sleeper's file with a position: name, eligibility, NFL team, number, status, league owner, points for each completed week, total, rank per eligible position, plus the same `basis` block as `ranks.json`). A `null` week means no game on record; it is shown as a dash, never as zero.
+- The panel always shows current information and says "through Week N". Opened from a past week (`data-pweek`), it adds a separate line with the rank as it stood after that week, read from `ranks.json`.
+- "What this rank means" lists measure, scoring, population, position rule, ties and source from the data file, so the wording cannot drift from the calculation.
+- Not included: PPG rank, weekly rank, projection rank, snap or usage data (not in the data we fetch).
+
+**Search** (`openSearch()`; the Search button in the header). Players, franchises, managers, former team names and former managers, in separate groups. A match on a former name says so.
+
+**Game-day scores** (`overlayLive`, `startLivePoll` in `app.js`).
+- While the fantasy week is in progress, every page that uses `loadLive()` reads `api.sleeper.app/v1/league/<id>/matchups/<week>` in the visitor's browser (read-only, confirmed reachable from the live site on Nov 14) and lays the scores over the built data. Team totals, player points and timeline windows are replaced; the live expectation is recomputed with the build's own rule using `live_sd` that `build-weekly.mjs` now writes per game.
+- Between builds a game window's state is advanced by the clock (started → live, 5 hours after kickoff → final) until the next build confirms it from the schedule. If a starting lineup changed since the build, the expectation is left as built.
+- The bar at the bottom shows the source and time; it is rechecked every 3 minutes while the tab is visible. When scores change it offers "Show new scores" (a reload), and reloads by itself when the visitor returns to the tab. If Sleeper can't be reached, the page keeps the built numbers and the bar says so.
+- Full rebuilds now also run every 20 minutes during game windows (extra cron lines in `refresh-and-deploy.yml`). GitHub may delay scheduled runs; the browser overlay does not depend on them.
+- Tests block `api.sleeper.app` so they read built data only; the overlay is tested with simulated responses (unchanged scores must reproduce the build exactly; changed scores must appear; failure must keep built scores and say so).
+
+Status: inspector, search and overlay implemented and tested in Chromium at 390px and 1280px. Not tested in Safari/WebKit or on a physical phone. The overlay has not been observed during a real live game window yet.
