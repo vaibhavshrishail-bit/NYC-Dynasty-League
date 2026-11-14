@@ -14,7 +14,7 @@ loadAll().then(([c,L])=>{
   sa.value=c.franchises.some((f)=>f.slug===q.get('a'))?q.get('a'):def[0];sb.value=c.franchises.some((f)=>f.slug===q.get('b'))?q.get('b'):def[1];
   let hov=null,armed=false;const steps=()=>{const sp=document.querySelectorAll('#steps span');sp[0].className=armed?'':'on';sp[1].className=armed?'on':''};if(!q.get('a')&&myTeam.get()&&c.franchises.some((f)=>f.slug===myTeam.get())&&myTeam.get()!==sb.value)sa.value=myTeam.get();
   // ---- Dynasty Universe: one network, four layers. Layer -> franchise -> rival -> the full file below. ----
-  let layer=['all','playoff','trades','picks'].includes(q.get('layer'))?q.get('layer'):'all';const LAYERS=[['all','Every game'],['playoff','Playoff games'],['trades',c.season+' trade ledger'],['picks','Draft capital board']];
+  let layer=['all','playoff','trades','picks'].includes(q.get('layer'))?q.get('layer'):'all';const LAYERS=[['all','Every game'],['playoff','Playoff games'],['trades','Trade ledger'],['picks','Draft capital board']];
   function linkOf(a,b){
     if(layer==='all'||layer==='playoff'){const g=L.meetings.filter((m)=>((m.a===a&&m.b===b)||(m.a===b&&m.b===a))&&(layer==='all'||['playoff','championship'].includes(m.type))),w=g.filter((m)=>(m.a===a?m.pa>m.pb:m.pb>m.pa)).length,l=g.filter((m)=>(m.a===a?m.pa<m.pb:m.pb<m.pa)).length,fin=g.filter((m)=>m.type==='championship').length;
       return {n:g.length,lab:g.length?`${w}–${l}`:'',share:g.length?w/g.length:0,lop:g.length?Math.abs(w-l)/g.length:0,text:g.length?`${w}–${l} in ${g.length} ${layer==='playoff'?'playoff ':''}game${g.length>1?'s':''}${fin?`, ${fin} of them for the title`:''}`:''}}
