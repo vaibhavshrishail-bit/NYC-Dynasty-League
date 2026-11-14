@@ -21,11 +21,11 @@ const state = await get('/state/nfl');
 await save('state', state);
 const seasons = [];
 const rostered = new Set();
-let id = LEAGUE_ID, current = true;
+let id = LEAGUE_ID, current = true, curScoring = null;
 while (id && id !== '0') {
   const league = await get('/league/' + id);
   if (!league) break;
-  const s = league.season, dir = 'seasons/' + s;
+  const s = league.season, dir = 'seasons/' + s; if (current) curScoring = league.scoring_settings || null;
   const [users, rosters, winners, losers, traded, drafts] = await Promise.all([
     get(`/league/${id}/users`), get(`/league/${id}/rosters`),
     get(`/league/${id}/winners_bracket`), get(`/league/${id}/losers_bracket`),
@@ -81,8 +81,25 @@ if (state.season_type === 'regular') for (const host of ['https://api.sleeper.ap
     if (Array.isArray(g) && g.length > 200) { const o = {}; for (const x of g) if (rostered.has(String(x.player_id)) && x.stats) o[x.player_id] = { stats: x.stats, team: x.team, opponent: x.opponent, game_id: x.game_id };
       await save(`projections/${state.week}`, o); console.log('projections saved', Object.keys(o).length); break; } } catch {}
 }
+// Every NFL player's weekly fantasy points under THIS league's scoring settings (unofficial stats endpoint, optional).
+// Position ranks must not depend on who happened to be on a league roster, so the population is the whole NFL.
+// Completed weeks are refetched on every run so stat corrections flow through. If the endpoint is unreachable or its
+// shape changes, nothing is written and the build falls back to league-roster points, labelled as such.
+let nflPts = null;
+if (state.season_type === 'regular' && curScoring) { const score = (st) => { let p = 0; for (const [k, m] of Object.entries(curScoring)) { const v = st[k]; if (typeof v === 'number' && m) p += v * m; } return Math.round(p * 100) / 100; };
+  const q = ['QB', 'RB', 'WR', 'TE', 'K', 'DL', 'LB', 'DB'].map((p) => 'position[]=' + p).join('&'), weeks = {}; let src = null;
+  for (let w = 1; w <= Math.min(18, state.week); w++) { let rows = null;
+    for (const [name, url, shape] of [['stats-array', `https://api.sleeper.app/stats/nfl/${state.season}/${w}?season_type=regular&${q}`, 'array'], ['stats-array-com', `https://api.sleeper.com/stats/nfl/${state.season}/${w}?season_type=regular&${q}`, 'array'], ['stats-v1', `${API}/stats/nfl/regular/${state.season}/${w}`, 'object']]) {
+      try { const r = await fetch(url); if (!r.ok) continue; const g = await r.json();
+        if (shape === 'array' && Array.isArray(g) && g.length > 200) rows = g.filter((x) => x && x.stats).map((x) => [String(x.player_id), x.stats]);
+        else if (shape === 'object' && g && !Array.isArray(g) && Object.keys(g).length > 200) rows = Object.entries(g).filter(([, st]) => st && typeof st === 'object');
+        if (rows) { src = name; break; } } catch {} }
+    if (!rows) continue; const o = {}; for (const [pid, st] of rows) { if (!/^\d+$/.test(pid)) continue; const p = score(st); if (p !== 0 || st.gp || st.gms_active) o[pid] = p; } weeks[w] = o; }
+  if (Object.keys(weeks).length) { const { createHash } = await import('node:crypto'); nflPts = { season: state.season, source: src, fetched_at: new Date().toISOString(), scoring_hash: createHash('sha1').update(JSON.stringify(Object.entries(curScoring).sort())).digest('hex').slice(0, 10), weeks }; console.log('NFL-wide points saved for weeks', Object.keys(weeks).join(', '), 'via', src); }
+  else console.log('NFL-wide stats not available; ranks will use league-roster points'); }
 // Full player file is large; keep only players this league has touched, and only display fields.
 const all = await get('/players/nfl');
+if (nflPts) { const pos = {}; for (const wk of Object.values(nflPts.weeks)) for (const pid of Object.keys(wk)) if (all[pid] && !pos[pid]) pos[pid] = [all[pid].position, (all[pid].fantasy_positions || []).join('/'), all[pid].full_name || `${all[pid].first_name || ''} ${all[pid].last_name || ''}`.trim()]; nflPts.players = pos; await save(`seasons/${state.season}/nfl_points`, nflPts); }
 const keep = ['player_id','full_name','first_name','last_name','position','fantasy_positions','team','number','age','years_exp','college','height','weight','status','injury_status','depth_chart_position','depth_chart_order'];
 const players = {};
 for (const pid of rostered) { const p = all[pid]; if (p) players[pid] = Object.fromEntries(keep.map((k) => [k, p[k] ?? null])); }

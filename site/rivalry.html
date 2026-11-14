@@ -179,7 +179,7 @@ loadAll().then(([c,L])=>{
       x.textAlign='center';x.fillStyle='#6f809a';x.font=`600 18px ${BC}`;x.letterSpacing='2px';x.fillText(`${mA} LISTED FIRST  ·  EVERY NUMBER IS A SLEEPER RESULT  ·  THROUGH WEEK ${c.through_week}`,Wc/2,Hc-26);x.letterSpacing='0px'};
     document.fonts.ready.then(()=>Promise.all(["400 100px 'Bebas Neue'","600 30px 'Barlow Condensed'","700 24px 'Barlow Condensed'"].map((f)=>document.fonts.load(f)))).then(paint);
     document.getElementById('zoom').onclick=()=>openLightbox(cv.toDataURL('image/png'),`${A.manager} vs ${B.manager}`,`${A.slug}-vs-${B.slug}.png`);
-    document.getElementById('dl').onclick=()=>{const l=document.createElement('a');l.download=`${A.slug}-vs-${B.slug}.png`;l.href=cv.toDataURL('image/png');l.click()};
+    exportButton(document.getElementById('dl'),async()=>({how:await savePng(cv,`${A.slug}-vs-${B.slug}.png`),width:cv.width,height:cv.height}));
   }
   sa.onchange=sb.onchange=draw;draw();addEventListener('resize',web);document.getElementById('foot').textContent=stamp(c);
 }).catch((e)=>{console.error(e);document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});

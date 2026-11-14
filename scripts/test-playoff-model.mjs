@@ -104,4 +104,14 @@ t('upsets are decided before the game: every upset has a pre-game win chance of 
   const WKJ = JSON.parse(await readFile(new URL('../site/data/weekly.json', import.meta.url)));
   for (const [w, a] of Object.entries(WKJ.awards)) if (a.chaos) assert.ok(a.chaos.win_prob > 0 && a.chaos.win_prob <= 0.4, `week ${w}: ${a.chaos.win_prob}`);
   for (const e of WKJ.season_story) if (/UPSET|STUNS/.test(e.head)) assert.ok(WKJ.awards[e.week].chaos, `week ${e.week} headline says upset without one: ${e.head}`); });
+t('position ranks are snapshots: each week is built only from games through that week, and awards show the rank as of their own week', async () => {
+  const RK = JSON.parse(await readFile(new URL('../site/data/ranks.json', import.meta.url))), WKJ = JSON.parse(await readFile(new URL('../site/data/weekly.json', import.meta.url))), CJ = JSON.parse(await readFile(new URL('../site/data/canonical.json', import.meta.url)));
+  const MU = JSON.parse(await readFile(new URL(`../site/data/sleeper/seasons/${CJ.season}/matchups.json`, import.meta.url)));
+  const wks = Object.keys(RK.weeks).map(Number).sort((a, b) => a - b); assert.equal(wks[wks.length - 1], CJ.through_week); assert.ok(RK.basis.population && RK.basis.metric);
+  for (const w of wks) for (const [pid, [rk, pts]] of Object.entries(RK.weeks[w])) { assert.match(rk, /^[A-Z]+\d+$/); if (w > wks[0] && RK.weeks[w - 1]?.[pid]) assert.ok(pts >= RK.weeks[w - 1][pid][1] - 60, 'totals only move by one week of scoring'); }
+  // a rostered player's snapshot total equals the sum of that player's league-scored weeks up to the snapshot (plus NFL-wide weeks when that source is in use)
+  if (RK.basis.population !== 'all NFL players') { const w = wks[Math.min(wks.length - 1, 4)], tot = {}; for (let k = 1; k <= w; k++) for (const m of MU[k] || []) for (const [pid, p] of Object.entries(m.players_points || {})) tot[pid] = (tot[pid] || 0) + (p || 0);
+    let n = 0; for (const [pid, [, pts]] of Object.entries(RK.weeks[w])) { assert.ok(Math.abs(pts - (tot[pid] || 0)) < 0.06, `player ${pid} week ${w}`); n++; } assert.ok(n > 100); }
+  for (const [w, a] of Object.entries(WKJ.awards)) for (const x of a.list) for (const p of x.players) { const snap = RK.weeks[w]?.[p.player_id]; assert.equal(p.rank, snap ? snap[0] : null, `week ${w} ${p.name}`); assert.equal(p.rank_through, Number(w)); }
+  for (const [pid, rk] of Object.entries(CJ.player_ranks)) assert.equal(rk, RK.weeks[CJ.through_week][pid][0]); });
 console.log(`${n} checks passed`);

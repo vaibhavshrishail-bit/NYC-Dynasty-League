@@ -74,7 +74,6 @@ function crestCanvas(x, th, cx, cy, r) { // the same medallion as emblem(), for 
   for (const p of th.glyph) { x.fillStyle = p.f === 'ink' ? '#0a1120' : p.f === 'hot' ? th.hot : p.f === 'mid' ? th.mid : p.f === 'hi' ? th.hi : p.f === 'deep' ? th.metal[2] : gr; x.fill(new Path2D(p.d), p.eo ? 'evenodd' : 'nonzero'); }
   x.shadowColor = 'transparent'; for (const [sx, sy, sr] of crestStars(th.titles)) { x.save(); x.translate(sx, sy); x.rotate(sr); const sp = new Path2D(STAR); x.lineJoin = 'round'; x.lineWidth = 3.2; x.strokeStyle = '#0a1120'; x.stroke(sp); x.fillStyle = '#ffd24a'; x.fill(sp); x.restore(); } x.restore(); }
 async function loadLive(base = '') { const [c, l] = await loadAll(base), [w, h] = await Promise.all([fetch(base + 'data/weekly.json', { cache: 'no-cache' }).then((r) => r.json()), fetch(base + 'data/history.json', { cache: 'no-cache' }).then((r) => r.json())]); return [c, l, w, h]; }
-const savePng = (cv, name) => { const l = document.createElement('a'); l.download = name; l.href = cv.toDataURL('image/png'); l.click(); };
 
 // ---- tables: label every cell with its column heading so phones can show rows as cards ----
 function labelTables() { document.querySelectorAll('.tw table,.tw2 table').forEach((t) => { const h = [...t.querySelectorAll('tr:first-child th')].map((x) => x.textContent.trim()); if (!h.length) { t.classList.add('kv'); return; } t.classList.add('stk');
@@ -104,15 +103,49 @@ const POSG = { QB: 'M8 30 L20 8 L32 30 M14 20 H26', RB: 'M6 28 C14 10 26 10 34 2
 function playerToken(p, opts = {}) { return `<span class="ptok ${opts.cls || ''}"><span class="pj">${jerseySVG(p)}</span><span class="pi"><b>${esc(p.name)}</b><small>${nflBadge(p.nfl_team)} ${esc(p.position || '')}${opts.extra ? ' · ' + opts.extra : ''}</small></span></span>`; }
 
 // ================= Lightbox: any image opens whole, fits the screen, scrolls if tall, closes with a visible button or Esc =================
-function openLightbox(src, title, downloadName) { closeLightbox(); const d = document.createElement('div'); d.id = 'lb'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', title || 'Image');
-  d.innerHTML = `<div class="lbbar"><span>${esc(title || '')}</span><span>${downloadName ? `<a class="b2" href="${src}" download="${esc(downloadName)}">Download</a>` : `<a class="b2" href="${src}" target="_blank" rel="noopener">Open original size</a>`}<button class="b2 on" id="lbx" aria-label="Close">Close ✕</button></span></div><div class="lbbody"><img src="${src}" alt="${esc(title || '')}"></div>`;
-  document.body.appendChild(d); document.documentElement.style.overflow = 'hidden'; d.querySelector('#lbx').onclick = closeLightbox; d.onclick = (e) => { if (e.target === d || e.target.classList.contains('lbbody')) closeLightbox(); }; d.querySelector('#lbx').focus(); }
-function closeLightbox() { const d = document.getElementById('lb'); if (d) { d.remove(); document.documentElement.style.overflow = ''; } }
+// Image viewer as a native modal dialog: the browser keeps keyboard focus inside it, makes the page behind inert, closes on Escape,
+// and focus goes back to whatever opened it.
+let _lbOpener = null;
+function openLightbox(src, title, downloadName) { closeLightbox(); _lbOpener = document.activeElement; const d = document.createElement('dialog'); d.id = 'lb'; d.setAttribute('aria-label', title || 'Image');
+  d.innerHTML = `<div class="lbbar"><span id="lbt">${esc(title || '')}</span><span>${downloadName ? `<a class="b2" href="${src}" download="${esc(downloadName)}">Download</a>` : `<a class="b2" href="${src}" target="_blank" rel="noopener">Open original size</a>`}<button class="b2 on" id="lbx" aria-label="Close image viewer" autofocus>Close ✕</button></span></div><div class="lbbody" tabindex="0" aria-label="${esc(title || 'Image')}, scrollable"><img src="${src}" alt="${esc(title || '')}"></div>`;
+  document.body.appendChild(d); document.documentElement.style.overflow = 'hidden'; d.querySelector('#lbx').onclick = closeLightbox; d.addEventListener('close', closeLightbox); d.addEventListener('cancel', (e) => { e.preventDefault(); closeLightbox(); });
+  d.onclick = (e) => { if (e.target === d || e.target.classList.contains('lbbody')) closeLightbox(); };
+  d.addEventListener('keydown', (e) => { if (e.key !== 'Tab') return; const f = [...d.querySelectorAll('a[href],button,[tabindex="0"]')].filter((x) => !x.disabled), i = f.indexOf(document.activeElement); // Tab wraps inside the viewer instead of leaving to the browser's own controls
+    if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && (i === f.length - 1 || i < 0)) { e.preventDefault(); f[0].focus(); } });
+  if (d.showModal) d.showModal(); else { d.setAttribute('open', ''); d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); } d.querySelector('#lbx').focus(); }
+function closeLightbox() { const d = document.getElementById('lb'); if (!d) return; d.remove(); document.documentElement.style.overflow = ''; if (_lbOpener && document.contains(_lbOpener) && _lbOpener.focus) _lbOpener.focus(); _lbOpener = null; }
 addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+
+// ---- one export path for every "save as image" button ----
+// saveBlob: a real file download where the browser supports it; where it does not (iOS in-app browsers), the image opens in the viewer to be saved by hand.
+function saveBlob(blob, name) { const url = URL.createObjectURL(blob), l = document.createElement('a'); if (!('download' in l)) { openLightbox(url, name, null); return 'viewer'; }
+  l.href = url; l.download = name; l.style.display = 'none'; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000); return 'download'; }
+const savePng = (cv, name) => new Promise((res, rej) => cv.toBlob((b) => (b ? res(saveBlob(b, name)) : rej(new Error('The image could not be encoded'))), 'image/png'));
+// exportSvgPng: serialise an on-page SVG with explicit size and resolved colours, draw it under a title on a canvas at least `minW` pixels wide, and save it.
+async function exportSvgPng(svgEl, { title = '', name = 'chart.png', bg = '#0f1b2d', minW = 1800, css = '' } = {}) {
+  const r = svgEl.getBoundingClientRect(), vb = svgEl.viewBox && svgEl.viewBox.baseVal && svgEl.viewBox.baseVal.width ? svgEl.viewBox.baseVal : { width: r.width, height: r.height }, w = vb.width, h = vb.height;
+  if (!(w > 0 && h > 0)) throw new Error('The chart has no size yet');
+  const svg = svgEl.cloneNode(true); svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink'); svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `0 0 ${w} ${h}`); svg.removeAttribute('class'); svg.removeAttribute('style');
+  svg.querySelectorAll('title,[data-noexport]').forEach((e) => e.remove());
+  // inline the colours and type the page's stylesheet gives each element, so the picture does not depend on the page
+  const src = svgEl.querySelectorAll('*'), dst = svg.querySelectorAll('*'), props = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity', 'font-family', 'font-size', 'font-weight', 'letter-spacing', 'text-anchor'];
+  if (src.length === svgEl.querySelectorAll('*').length) { const live = [...svgEl.querySelectorAll('*')].filter((e) => !e.matches('title,[data-noexport]') && !e.closest('[data-noexport]')), copy = [...svg.querySelectorAll('*')];
+    if (live.length === copy.length) live.forEach((e, i) => { const cs = getComputedStyle(e); for (const p of props) { const v = cs.getPropertyValue(p); if (v) copy[i].style.setProperty(p, p === 'font-family' ? 'Arial, Helvetica, sans-serif' : v); } }); }
+  if (css) { const st = document.createElementNS('http://www.w3.org/2000/svg', 'style'); st.textContent = css; svg.prepend(st); }
+  const xml = new XMLSerializer().serializeToString(svg), url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' })), img = new Image();
+  try { await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('The chart could not be drawn as an image')); img.src = url; }); if (img.decode) await img.decode().catch(() => 0);
+    const k = Math.max(2, minW / w), top = title ? Math.round(64 * k / 2) : 0, cv = document.createElement('canvas'); cv.width = Math.round(w * k); cv.height = Math.round(h * k) + top; const x = cv.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, cv.width, cv.height);
+    if (title) { x.fillStyle = '#f2f4f8'; x.font = `600 ${Math.round(top * .42)}px Arial, Helvetica, sans-serif`; x.textBaseline = 'middle'; x.fillText(title, Math.round(20 * k / 2), top / 2, cv.width - 40); }
+    x.drawImage(img, 0, top, cv.width, Math.round(h * k)); const px = x.getImageData(Math.round(cv.width / 2), top + 4, 1, 1).data; if (!cv.width || !cv.height || px[3] === 0) throw new Error('The exported image came out empty');
+    return { how: await savePng(cv, name), width: cv.width, height: cv.height }; } finally { URL.revokeObjectURL(url); } }
+// wire a button to an export with visible progress, success and failure states
+function exportButton(btn, run) { const label = btn.textContent; btn.onclick = async () => { if (btn.disabled) return; btn.disabled = true; btn.textContent = 'Preparing image…'; btn.setAttribute('aria-live', 'polite');
+  try { const r = await run(); btn.textContent = r && r.how === 'viewer' ? 'Opened: press and hold the image to save it' : `Saved${r && r.width ? ` (${r.width} × ${r.height})` : ''}`; } catch (e) { console.error(e); btn.textContent = 'Could not save. Tap to try again'; }
+  btn.disabled = false; setTimeout(() => { if (!btn.disabled) btn.textContent = label; }, 6000); }; }
 addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[data-lb]'); if (a) { e.preventDefault(); openLightbox(a.getAttribute('href'), a.dataset.lb); } });
 
 // One weekly award from weekly.json awards[w].list: the winner is a player or a position group, with jersey tokens for who it was.
-const awardItem = (a, mgrName) => `<div class="${a.key} awp"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="${AWICON[a.key] || ''}"/></svg><span>${a.label}</span><b>${esc(a.big)}</b><em>${a.points.toFixed(2)} pts · ${esc(mgrName(a.roster_id))}</em><p>${esc(a.text)}</p><footer class="awt">${a.players.slice(0, 4).map((p) => `<i>${nflBadge(p.nfl_team)}${esc(p.name)}${p.rank ? ` <small>${esc(p.rank)}</small>` : ''} <u>${p.points.toFixed(1)}</u></i>`).join('')}</footer></div>`;
+const awardItem = (a, mgrName) => `<div class="${a.key} awp"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="${AWICON[a.key] || ''}"/></svg><span>${a.label}</span><b>${esc(a.big)}</b><em>${a.points.toFixed(2)} pts · ${esc(mgrName(a.roster_id))}</em><p>${esc(a.text)}</p><footer class="awt">${a.players.slice(0, 4).map((p) => `<i>${nflBadge(p.nfl_team)}${esc(p.name)}${p.rank ? ` <small title="Season rank at the position by total points${p.rank_through ? ', as it stood after Week ' + p.rank_through : ''}">${esc(p.rank)}</small>` : ''} <u>${p.points.toFixed(1)}</u></i>`).join('')}</footer></div>`;
 
 // Toilet Bowl punishment for a season, from src/config/punishments.json via canonical.json. Shown wherever the Toilet Bowl is mentioned.
 const punishOf = (c, season) => { const p = (c.punishments || {})[season]; return p ? p.punishment + (p.outcome ? ' (' + p.outcome + ')' : '') : ''; };

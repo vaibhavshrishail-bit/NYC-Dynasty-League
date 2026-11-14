@@ -16,11 +16,27 @@ if (rosters.length !== 12) problems.push(`expected 12 rosters, found ${rosters.l
 // Thursday-night scores appear while the week is still being played.
 const st = idx.nfl_state, liveWeek = String(st.season) === season && st.season_type === 'regular' ? st.week : st.season_type === 'post' ? 99 : 0;
 const weeks = Object.keys(matchups).map(Number).filter((w) => w < liveWeek && matchups[w].some((m) => (m.points || 0) > 0)).sort((a, b) => a - b);
-// Season rank at each position: total points in this league's scoring (starting or not) through the last completed week, across every player who has been on a league roster.
-const RPOS = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' }, SEASON_PTS = {}, RANK = {};
-for (const w of weeks) for (const m of matchups[w]) for (const [pid, pts] of Object.entries(m.players_points || {})) SEASON_PTS[pid] = Math.round(((SEASON_PTS[pid] || 0) + (pts || 0)) * 100) / 100;
-{ const g = {}; for (const [pid, pts] of Object.entries(SEASON_PTS)) { const ps = RPOS[players[pid]?.position] || players[pid]?.position; if (ps) (g[ps] ||= []).push([pts, pid]); }
-  for (const [ps, l] of Object.entries(g)) l.sort((a, b) => b[0] - a[0]).forEach(([, pid], i) => { RANK[pid] = ps + (i + 1); }); }
+// ---- Position ranks: one snapshot per completed week, so a past week always shows the rank as it stood then ----
+// Metric: season total fantasy points under this league's scoring, through the snapshot week. Population: every NFL player when the
+// NFL-wide points file is present and agrees with the league's own scores; otherwise players who have been on a league roster (labelled).
+// A player's league-scored points are used whenever Sleeper reports them for a roster; NFL-wide points fill every other week, so games
+// played while unrostered, benched, on taxi or IR still count, and nothing is counted twice around trades (one value per player-week).
+const RPOS = { DE: 'DL', DT: 'DL', NT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB', MLB: 'LB' }, r2c = (x) => Math.round(x * 100) / 100;
+const NFLP = await J(`${D}/seasons/${season}/nfl_points.json`).catch(() => null);
+const leaguePts = {}; for (const w of weeks) { leaguePts[w] = {}; for (const m of matchups[w]) for (const [pid, pts] of Object.entries(m.players_points || {})) leaguePts[w][pid] = pts || 0; }
+let chk = 0, ok = 0, maxDiff = 0; if (NFLP) for (const w of weeks) for (const [pid, pts] of Object.entries(leaguePts[w])) { const n = NFLP.weeks?.[w]?.[pid]; if (n == null || (!pts && !n)) continue; chk++; const d = Math.abs(n - pts); if (d <= 0.011) ok++; maxDiff = Math.max(maxDiff, d); }
+const nflOK = !!NFLP && chk >= 100 && ok / chk >= 0.97 && weeks.every((w) => NFLP.weeks?.[w]);
+const posOf = (pid) => { const p = players[pid]?.position || NFLP?.players?.[pid]?.[0]; return RPOS[p] || p || null; };
+const ptsAt = (pid, w) => (pid in leaguePts[w] ? leaguePts[w][pid] : nflOK ? NFLP.weeks[w][pid] ?? 0 : 0);
+const pop = new Set(weeks.flatMap((w) => Object.keys(leaguePts[w]))); if (nflOK) for (const w of weeks) for (const pid of Object.keys(NFLP.weeks[w])) pop.add(pid);
+const RANKS = { basis: { metric: 'Season total fantasy points', scoring: "this league's scoring settings (half-PPR with IDP)", scoring_hash: NFLP?.scoring_hash || null, population: nflOK ? 'all NFL players' : 'players who have been on a league roster this season', position_rule: 'primary Sleeper position; DE/DT count as DL, CB/S as DB, OLB/ILB as LB', ties: 'equal totals are ordered by player id', season: Number(season), source: nflOK ? `Sleeper NFL stats (${NFLP.source}) scored locally, league scores where rostered` : 'Sleeper league matchups', nfl_points_check: NFLP ? { compared: chk, agreed: ok, largest_difference: r2c(maxDiff), fetched_at: NFLP.fetched_at } : null, built_at: new Date().toISOString() }, weeks: {} };
+const SEASON_PTS = {}, RANK = {}; { const tot = {};
+  for (const w of weeks) { for (const pid of pop) { const v = ptsAt(pid, w); if (v) tot[pid] = r2c((tot[pid] || 0) + v); }
+    const g = {}; for (const [pid, pts] of Object.entries(tot)) { const ps = posOf(pid); if (ps) (g[ps] ||= []).push([pts, pid]); }
+    const snap = {}; for (const [ps, l] of Object.entries(g)) l.sort((a, b) => b[0] - a[0] || (Number(a[1]) - Number(b[1]))).forEach(([pts, pid], i) => { if (players[pid]) snap[pid] = [ps + (i + 1), pts]; });
+    RANKS.weeks[w] = snap; }
+  const lastW = weeks[weeks.length - 1]; if (lastW != null) for (const [pid, [rk, pts]] of Object.entries(RANKS.weeks[lastW])) { RANK[pid] = rk; SEASON_PTS[pid] = pts; } RANKS.through_week = lastW == null ? 0 : Number(lastW); }
+await writeFile('site/data/ranks.json', JSON.stringify(RANKS));
 const through = weeks.length ? weeks[weeks.length - 1] : 0;
 const POS = { DE: 'DL', DT: 'DL', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', OLB: 'LB', ILB: 'LB' };
 const pos = (p) => { const x = p?.position || p?.fantasy_positions?.[0] || '?'; return POS[x] || x; };
@@ -131,7 +147,7 @@ const tradeSeasons = idx.seasons.map((s) => Number(s.season)).filter((se) => Str
 if (problems.length) { console.error('IDENTITY RECONCILIATION FAILED:\n - ' + problems.join('\n - ')); process.exit(1); }
 const out = { generated_at: new Date().toISOString(), source: 'Sleeper public API', league_id: league.league_id, league_name: league.name, season: Number(season), through_week: through, current_week: Math.min(liveWeek, 18), week_in_progress: liveWeek <= 18 && (matchups[liveWeek] || []).some((m) => (m.points || 0) > 0),
   playoff_teams: playoffTeams, playoff_rule: 'Seeds 1–5 go to the best records, with points for as the tiebreaker. Seed 6 goes to the highest-scoring team among the other seven.', playoff_week_start: league.settings.playoff_week_start, roster_positions: league.roster_positions.filter((p) => p !== 'BN'), scoring: { rec: league.scoring_settings.rec, pass_td: league.scoring_settings.pass_td, idp: true },
-  standings: seedOrder.map((r) => r.roster_id), franchises, history: history.map(({ teams, ...h }) => h), trades: trades.sort((a, b) => a.week - b.week).map((t) => ({ season: Number(season), ...t })), past_trades: pastTrades, player_ranks: RANK, punishments, trade_seasons: tradeSeasons };
+  standings: seedOrder.map((r) => r.roster_id), franchises, history: history.map(({ teams, ...h }) => h), trades: trades.sort((a, b) => a.week - b.week).map((t) => ({ season: Number(season), ...t })), past_trades: pastTrades, player_ranks: RANK, rank_basis: { ...RANKS.basis, through_week: RANKS.through_week }, punishments, trade_seasons: tradeSeasons };
 // keep the previous timestamp when nothing but the clock changed, so scheduled runs do not create empty commits
 try { const prev = JSON.parse(await readFile('site/data/canonical.json', 'utf8')); const strip = (o) => JSON.stringify({ ...o, generated_at: 0 }); if (strip(prev) === strip(out)) out.generated_at = prev.generated_at; } catch {}
 await writeFile('site/data/canonical.json', JSON.stringify(out));

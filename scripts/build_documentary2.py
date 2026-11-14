@@ -36,7 +36,7 @@ def plan():
         win = g['a'] if g['pa'] > g['pb'] else g['b']; aw = next((a for a in WK['awards'][str(w)]['list'] if a['key'] == 'mvp'), None); sw = e.get('swing')
         mvp = None
         if aw:
-            p = aw['players'][0]; mvp = dict(jer(p['player_id'], p['name'], p['nfl_team']), pts=p['points'])
+            p = aw['players'][0]; mvp = dict(jer(p['player_id'], p['name'], p['nfl_team']), pts=p['points']); mvp['rank'] = p.get('rank') or ''   # the rank as it stood after that week
         side = lambda i, s: {'theme': th(i), 'name': mgr(i), 'team': up(F[i]['team_name']), 's': s}
         add(wb, type='week', theme=th(win), week=w, kind=KIND[e['kind']][0], col=KIND[e['kind']][1], head=up(e['head']), a=side(g['a'], g['pa']), b=side(g['b'], g['pb']), mvp=mvp,
             swing={'name': mgr(sw['roster_id']), 'from': sw['from'], 'to': sw['to']} if sw else None)

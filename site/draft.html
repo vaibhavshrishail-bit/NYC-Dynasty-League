@@ -24,7 +24,7 @@ loadLive().then(([c,L])=>{
   const rows=ids.map((id)=>{const f=T(id),s=scen[id],dist=s.slot.map((v,k)=>({slot:k+1,p:v})).filter((x)=>x.p>=.03),top=s.slot.indexOf(Math.max(...s.slot)),exp=s.slot.reduce((a,v,k)=>a+v*(k+1),0)+(1-s.miss)*9.5,now=f.seed>NP?12-f.seed+1:null,hold=H(yr,1,id)??id;
     return {id,f,s,dist,top,exp,now,holder:hold,lo:dist.length?dist[0].slot:null,hi:dist.length?dist[dist.length-1].slot:null,conf:s.miss<.5?(s.miss<.05?'Playoff pick':'Leaning playoff pick'):s.slot[top]>=.6?'Firm':s.slot[top]>=.35?'Likely':'Wide open'}}).sort((x,y)=>x.exp-y.exp);
   function pk(){$('pk').innerHTML=`<button data-me="0" aria-pressed="${!S.me}">None</button>`+[...c.franchises].sort((a,b)=>a.manager.localeCompare(b.manager)).map((f)=>`<button data-me="${f.roster_id}" aria-pressed="${S.me===f.roster_id}">${esc(f.manager)}</button>`).join('');
-    $('pk').querySelectorAll('button').forEach((b)=>b.onclick=()=>keepPlace(()=>{S.me=+b.dataset.me||null;if(S.me)myTeam.set(T(S.me).slug);draw()}))}
+    $('pk').querySelectorAll('button').forEach((b)=>b.onclick=()=>keepPlace(()=>{S.me=+b.dataset.me||null;if(S.me)myTeam.set(T(S.me).slug);history.replaceState(null,'',`draft.html${S.me?`?f=${T(S.me).slug}`:''}${location.hash}`);draw()}))}
   // ---- round one: projected landing spots ----
   function drawG(){const sel=S.pick&&rows.find((r)=>r.id===S.pick),mine=(r)=>S.me&&(r.holder===S.me||r.id===S.me);
     const cells=(r)=>`<span class="dcells" aria-hidden="true">${Array.from({length:12},(_,k)=>{const v=k<6?r.s.slot[k]:(1-r.s.miss)/6;return `<i class="${k>=6?'po':''}" style="opacity:${v<.005?.08:Math.min(1,.18+v*1.3).toFixed(2)}"></i>`}).join('')}</span>`;
@@ -37,7 +37,7 @@ loadLive().then(([c,L])=>{
        <p><b>Simulated landing spots:</b> ${sel.dist.length?sel.dist.map((x)=>`${lab(x.slot)} ${pct(x.p)}`).join(' · '):'none in the top six'}${sel.s.miss<.995?` · playoff pick (1.07–1.12) ${pct(1-sel.s.miss)}`:''}.</p>
        <p><b>Range:</b> ${sel.lo?`${lab(sel.lo)} to ${sel.s.miss<.97?'1.12':lab(sel.hi)}`:'1.07 to 1.12'} · <b>Confidence:</b> ${sel.conf.toLowerCase()}.</p>
        <p><button class="b2" id="dclose">Back to the board</button> <a class="b2" href="playoffs.html?f=${T(sel.id).slug}">Test results in the War Room</a></p></div>`:''}
-     <p class="sm" style="margin-top:12px">${esc(L.rules.draft)}</p><div class="flag2"><b>Provisional.</b> ${esc(L.rules.draft_flag)} To see how one result would move this order, use "What if" in the <a href="playoffs.html">War Room</a>.</div>`;
+     <p class="sm" style="margin-top:12px">${esc(L.rules.draft)}</p><div class="flag2"><b>Provisional.</b> ${esc(L.rules.draft_flag)} To see how one result would move this order, use "What if" in the <a href="playoffs.html${S.me?`?f=${T(S.me).slug}`:''}">War Room</a>.</div>`;
     $('G').querySelectorAll('[data-pick]').forEach((b)=>b.onclick=()=>keepPlace(()=>{S.pick=S.pick===+b.dataset.pick?null:+b.dataset.pick;drawG()}));const dc=$('dclose');if(dc)dc.onclick=()=>keepPlace(()=>{S.pick=null;drawG()})}
   // ---- every round, every year: one row per original pick, one column per round, the crest is who holds it ----
   function drawR(){const first=S.yr===yr,order=first?rows.map((r)=>r.id):[...c.franchises].sort((a,b)=>a.manager.localeCompare(b.manager)).map((f)=>f.roster_id),moved=order.reduce((n,o)=>n+rounds.filter((r)=>H(S.yr,r,o)!==o).length,0);

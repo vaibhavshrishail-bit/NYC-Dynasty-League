@@ -37,6 +37,8 @@ jobs:
         run: pip install playwright && python -m playwright install --with-deps chromium
       - name: Browser regression test (every route, phone and desktop, after each interaction)
         run: python tests/site_test.py --ci
+      - name: Regression checks for fixed defects (exports, film links, modal focus, route context, one win chance)
+        run: python tests/regression_test.py
       - name: Commit data if changed
         run: |
           git config user.name "sleeper-refresh[bot]"
