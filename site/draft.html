@@ -1,0 +1,62 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>Draft Room — NYC Dynasty League</title><meta name="description" content="Where the next rookie draft's picks are projected to land, who holds every pick in every round, and each franchise's draft capital.">
+<link rel="stylesheet" href="assets/app.css">
+</head><body class="wr">
+<div id="nav"></div>
+<section class="band dark hero-w"><div class="wrap">
+ <div class="tagrow"><span>NYC Dynasty League</span><span id="tg0"></span></div><h1>Draft Room</h1>
+ <p style="color:#dfe7f3;max-width:38em">Where the next rookie draft's picks are projected to land, who holds every pick in every round, and how much draft capital each franchise has. It counts and locates picks; it does not value them or recommend anyone.</p>
+ <div class="q" id="pkq">Outline a franchise's picks</div><div class="pk" id="pk" role="group" aria-labelledby="pkq"></div>
+</div><div style="height:clamp(20px,3vw,36px)"></div></section>
+<section class="band" id="r1"><div class="wrap" id="G"><p style="padding:30px 0">Running 8,000 simulated seasons…</p></div></section>
+<section class="band alt" id="rounds"><div class="wrap" id="R"></div></section>
+<section class="band" id="capital"><div class="wrap" id="K"></div></section>
+<section class="band alt"><div class="wrap" id="B"></div><div class="wrap"><footer id="foot"></footer></div></section>
+<script src="assets/app.js"></script><script src="assets/sim.js"></script><script>
+document.getElementById('nav').innerHTML=nav('Draft Room');
+loadLive().then(([c,L])=>{
+  const $=(id)=>document.getElementById(id),T=(id)=>c.byRoster[id],th=(id)=>c.themes[T(id).theme],M=(id)=>esc(T(id).manager),ids=c.standings,NP=c.playoff_teams;
+  const q=new URLSearchParams(location.search),S={me:(c.franchises.find((f)=>f.slug===(q.get('f')||myTeam.get()))||{}).roster_id||null,pick:null,yr:null};
+  const scen=simulate(c,L),seasons=[...new Set(c.franchises.flatMap((f)=>f.future_picks.map((p)=>+p.season)))].sort(),rounds=[...new Set(c.franchises.flatMap((f)=>f.future_picks.map((p)=>p.round)))].sort(),yr=seasons[0];S.yr=yr;
+  const holder={};for(const f of c.franchises)for(const p of f.future_picks)holder[`${p.season}-${p.round}-${p.original_roster}`]=f.roster_id;const H=(se,r,o)=>holder[`${se}-${r}-${o}`]??null;
+  $('tg0').textContent=`${yr} rookie draft · through Week ${c.through_week}`;
+  const lab=(k)=>'1.'+String(k).padStart(2,'0');
+  const rows=ids.map((id)=>{const f=T(id),s=scen[id],dist=s.slot.map((v,k)=>({slot:k+1,p:v})).filter((x)=>x.p>=.03),top=s.slot.indexOf(Math.max(...s.slot)),exp=s.slot.reduce((a,v,k)=>a+v*(k+1),0)+(1-s.miss)*9.5,now=f.seed>NP?12-f.seed+1:null,hold=H(yr,1,id)??id;
+    return {id,f,s,dist,top,exp,now,holder:hold,lo:dist.length?dist[0].slot:null,hi:dist.length?dist[dist.length-1].slot:null,conf:s.miss<.5?(s.miss<.05?'Playoff pick':'Leaning playoff pick'):s.slot[top]>=.6?'Firm':s.slot[top]>=.35?'Likely':'Wide open'}}).sort((x,y)=>x.exp-y.exp);
+  function pk(){$('pk').innerHTML=`<button data-me="0" aria-pressed="${!S.me}">None</button>`+[...c.franchises].sort((a,b)=>a.manager.localeCompare(b.manager)).map((f)=>`<button data-me="${f.roster_id}" aria-pressed="${S.me===f.roster_id}">${esc(f.manager)}</button>`).join('');
+    $('pk').querySelectorAll('button').forEach((b)=>b.onclick=()=>keepPlace(()=>{S.me=+b.dataset.me||null;if(S.me)myTeam.set(T(S.me).slug);draw()}))}
+  // ---- round one: projected landing spots ----
+  function drawG(){const sel=S.pick&&rows.find((r)=>r.id===S.pick),mine=(r)=>S.me&&(r.holder===S.me||r.id===S.me);
+    const cells=(r)=>`<span class="dcells" aria-hidden="true">${Array.from({length:12},(_,k)=>{const v=k<6?r.s.slot[k]:(1-r.s.miss)/6;return `<i class="${k>=6?'po':''}" style="opacity:${v<.005?.08:Math.min(1,.18+v*1.3).toFixed(2)}"></i>`}).join('')}</span>`;
+    $('G').innerHTML=`<div class="q">Where will the picks land?</div><h2>${yr} rookie draft · round one</h2>
+     <p class="sm"><span class="tg sim">Simulated</span> Ordered by where each franchise's own pick is most likely to land. Picks 1–6 go to the non-playoff teams in reverse order of finish; 7–12 are decided by playoff results, so they are shown as a group. Tap a pick for its detail.</p>
+     <div class="dkey"><span><i class="k1"></i>Chance of landing in each slot, 1.01 → 1.06</span><span><i class="k2"></i>Playoff pick, 1.07 → 1.12</span></div>
+     <div class="dboard">${rows.map((r)=>`<button class="dpick ${mine(r)?'mine':''}" data-pick="${r.id}" aria-pressed="${S.pick===r.id}" aria-label="${M(r.id)}'s first-round pick"><span class="ds">${r.s.miss>=.5?lab(r.top+1):'7–12'}<small>${r.conf}</small></span><span class="dw">${emblem(th(r.id))}<span><b>${M(r.id)}'s pick</b><small>${r.holder!==r.id?`held by ${M(r.holder)}`:'own pick'}${r.now?` · today ${lab(r.now)}`:' · in playoff position today'}</small></span>${r.holder!==r.id?`<span class="dvia">${emblem(th(r.holder))}</span>`:''}</span>${cells(r)}</button>`).join('')}</div>
+     ${sel?`<div class="cardw dsel"><div class="q" style="color:var(--dim)">Pick detail</div><h3 style="font:400 30px/1 'Bebas Neue';margin:0 0 6px">${M(sel.id)}'s ${yr} first-round pick</h3>
+       <p><b>Held by:</b> ${sel.holder!==sel.id?`${M(sel.holder)} (${esc(T(sel.holder).team_name)}), originally ${M(sel.id)}'s`:`${M(sel.id)} (own pick)`}. <b>If the season ended today:</b> ${sel.now?lab(sel.now):'a playoff pick, 1.07–1.12'}.</p>
+       <p><b>Simulated landing spots:</b> ${sel.dist.length?sel.dist.map((x)=>`${lab(x.slot)} ${pct(x.p)}`).join(' · '):'none in the top six'}${sel.s.miss<.995?` · playoff pick (1.07–1.12) ${pct(1-sel.s.miss)}`:''}.</p>
+       <p><b>Range:</b> ${sel.lo?`${lab(sel.lo)} to ${sel.s.miss<.97?'1.12':lab(sel.hi)}`:'1.07 to 1.12'} · <b>Confidence:</b> ${sel.conf.toLowerCase()}.</p>
+       <p><button class="b2" id="dclose">Back to the board</button> <a class="b2" href="playoffs.html?f=${T(sel.id).slug}">Test results in the War Room</a></p></div>`:''}
+     <p class="sm" style="margin-top:12px">${esc(L.rules.draft)}</p><div class="flag2"><b>Provisional.</b> ${esc(L.rules.draft_flag)} To see how one result would move this order, use "What if" in the <a href="playoffs.html">War Room</a>.</div>`;
+    $('G').querySelectorAll('[data-pick]').forEach((b)=>b.onclick=()=>keepPlace(()=>{S.pick=S.pick===+b.dataset.pick?null:+b.dataset.pick;drawG()}));const dc=$('dclose');if(dc)dc.onclick=()=>keepPlace(()=>{S.pick=null;drawG()})}
+  // ---- every round, every year: one row per original pick, one column per round, the crest is who holds it ----
+  function drawR(){const first=S.yr===yr,order=first?rows.map((r)=>r.id):[...c.franchises].sort((a,b)=>a.manager.localeCompare(b.manager)).map((f)=>f.roster_id),moved=order.reduce((n,o)=>n+rounds.filter((r)=>H(S.yr,r,o)!==o).length,0);
+    $('R').innerHTML=`<div class="q">Every round</div><h2>Who holds every ${S.yr} pick</h2>
+     <div class="dr-yr" role="group" aria-label="Draft year">${seasons.map((se)=>`<button data-yr="${se}" aria-pressed="${se===S.yr}">${se}</button>`).join('')}</div>
+     <p class="sm">Each row is one franchise's original pick in each round; the crest shows who holds it now. Shaded cells have changed hands (${moved} of ${order.length*rounds.length} in ${S.yr}). ${first?'Rows follow the projected round-one order above.':'The order for this draft is not known yet, so rows are alphabetical.'}</p>
+     <div class="dr-g"><div class="dr-row hd"><span>${first?'Projected slot · original owner':'Original owner'}</span>${rounds.map((r)=>`<span>R${r}</span>`).join('')}</div>
+     ${order.map((o,i)=>{const rw=first?rows[i]:null;return `<div class="dr-row"><span>${first?`<b>${rw.s.miss>=.5?rw.top+1:'7–12'}</b>`:''}<span>${M(o)}</span></span>${rounds.map((r)=>{const h=H(S.yr,r,o);return h==null?'<span>—</span>':`<a class="${h!==o?'mv':''} ${S.me&&h===S.me?'me':''}" href="${h!==o?`rivalry.html?a=${T(h).slug}&b=${T(o).slug}`:`franchise.html?f=${T(o).slug}`}" title="${S.yr} round ${r}: ${h!==o?`held by ${M(h)}, originally ${M(o)}'s`:`${M(o)}'s own pick`}" aria-label="${S.yr} round ${r}: ${h!==o?`held by ${M(h)}, originally ${M(o)}'s`:`${M(o)}'s own pick`}">${emblem(th(h))}</a>`}).join('')}</div>`}).join('')}</div>
+     <p class="sm" style="margin-top:10px">Ownership is read from Sleeper's traded-picks record. Rounds two to four follow the same order as round one.</p>`;
+    $('R').querySelectorAll('[data-yr]').forEach((b)=>b.onclick=()=>keepPlace(()=>{S.yr=+b.dataset.yr;drawR()}))}
+  // ---- draft capital: ladder, then each franchise's board ----
+  function drawK(){const st=(id)=>{const h=T(id).future_picks;return {n:h.length,by:rounds.map((r)=>h.filter((p)=>p.round===r).length)}},ord2=[...ids].sort((x,y)=>st(y).by[0]-st(x).by[0]||st(y).n-st(x).n),mx=Math.max(...ord2.map((id)=>st(id).n)),foc=S.foc||S.me||ord2[0];
+    $('K').innerHTML=`<div class="q">Draft capital</div><h2>Who holds the most picks</h2><p class="sm">Ordered by first-round picks held, then total picks, across the ${seasons[0]}–${seasons[seasons.length-1]} drafts. Tap a franchise to bring up its board.</p>
+     <div class="dark" style="background:var(--navy);border-radius:var(--r)"><div class="pk-lad">${ord2.map((id,i)=>{const x=st(id);return `<button data-go="${id}" aria-pressed="${foc===id}"><span class="pk-rk">${i+1}</span>${emblem(th(id))}<span class="pk-nm">${M(id)}</span><span class="pk-bar">${x.by.map((n,r)=>n?`<i class="r${rounds[r]}" style="flex:${n}">${n}</i>`:'').join('')}<i class="sp" style="flex:${mx-x.n}"></i></span><b>${x.n}</b></button>`}).join('')}</div>
+     <div class="pk-leg"><span><i class="rd r1">R1</i>firsts</span><span><i class="rd r2">R2</i></span><span><i class="rd r3">R3</i></span><span><i class="rd r4">R4</i></span></div></div><div style="max-width:560px;margin-top:12px">${pickBoard(c,foc)}</div>`;
+    $('B').innerHTML=`<div class="q">Franchise boards</div><h2>The other eleven boards</h2><div class="dr-boards">${ord2.filter((id)=>id!==foc).map((id)=>`<div>${pickBoard(c,id)}</div>`).join('')}</div>
+     <p class="sm" style="margin-top:12px">Trades that moved picks are in the <a href="rivalry.html?layer=trades">trade ledger</a>.</p>`;
+    $('K').querySelectorAll('[data-go]').forEach((b)=>b.onclick=()=>keepPlace(()=>{S.foc=+b.dataset.go;drawK()}))}
+  function draw(){pk();drawG();drawR();drawK()}
+  draw();$('foot').textContent=stamp(c);if(location.hash)document.querySelector(location.hash)?.scrollIntoView();
+}).catch((e)=>{console.error(e);document.getElementById('G').innerHTML='<p>League data could not be loaded. Try again in a minute.</p>'});
+</script></body></html>

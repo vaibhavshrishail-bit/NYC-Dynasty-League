@@ -218,3 +218,12 @@ What changed and where:
 - **Film, second pass** (`scripts/build_cinematics.py`, `src/engine/*`): no player cut under about 2.2 seconds and the film runs as long as that needs (`V2.dur`); each player's tag is their season rank at the position (total points in this league's scoring across every rostered player); `src/music/` holds an optional licensed track per film with a credit line; `auto2` re-renders the films listed in `src/config/films.json`; `.github/workflows/render-films.yml` does that weekly.
 
 Checks: `scripts/test-playoff-model.mjs` has 26 checks (new: preseason odds, awards). `tests/site_test.py` covers the new ledger, board and all timeline seasons.
+
+## Draft Room, crest v2, ranks and punishments (Week 10, second pass)
+
+- **Draft Room** (`site/draft.html`, seventh navigation item): round-one projected board (moved from the War Room, which now links here), a grid of who holds every pick in every round for each draft year, the draft-capital ladder and all twelve boards (`pickBoard` in `app.js`, also used on franchise pages).
+- **Crest v2** (`emblem` and `crestCanvas` in `app.js`): a self-contained medallion with its own dark field, metal rim and white keyline, so it reads on light and dark. Every page uses these two functions. The films draw their own crest in `src/engine/core.js` and pick the change up only when re-rendered.
+- **Season position ranks**: `canonical.json` `player_ranks` (total points in league scoring through the last completed week). Used on franchise pages, previews, posters, award chips and the films.
+- **Toilet Bowl punishments**: `src/config/punishments.json`, shown through `punishOf` / `punishTag`.
+- **Season titles on the Dynasty Timeline**: `seasonTitle` / `seasonSub` in `site/timeline.html`, generated from results (first crown, dethrones, takes the crown back, back-to-back, three-peat, wire to wire).
+- **Hype banner**: "NEXT UP" names the unbeaten team's actual opponent; a data check enforces it.
