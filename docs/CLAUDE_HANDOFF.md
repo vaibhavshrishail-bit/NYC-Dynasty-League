@@ -283,3 +283,12 @@ Rank definitions now in force: metric = season total fantasy points under this l
 - Tests block `api.sleeper.app` so they read built data only; the overlay is tested with simulated responses (unchanged scores must reproduce the build exactly; changed scores must appear; failure must keep built scores and say so).
 
 Status: inspector, search and overlay implemented and tested in Chromium at 390px and 1280px. Not tested in Safari/WebKit or on a physical phone. The overlay has not been observed during a real live game window yet.
+
+## Rooting guide and scenario A/B (Nov 14, 2026)
+
+Both live in the War Room (`site/playoffs.html`, `drawR()`, section `#rooting`, compare block `#compare`).
+- **Rooting guide.** For the chosen franchise, every other game this week is simulated twice (each side winning) on the same 4,000 simulated seasons (`simulate(..., 4000, seed)`; the new optional `seed` argument makes paired runs comparable). The gap is what that game is worth. Gaps under 2 points show "No preference". Measure can be playoff chance, first-round bye or top-five seed. Tapping a result fixes it in the page-wide scenario. "If the week breaks its way / if nothing does" forces every stated preference plus the franchise's own game. It runs on top of any scenario already fixed and is then labelled Hypothetical.
+- It describes standings math only: no lineup, trade or waiver suggestions.
+- **Scenario A/B.** Save the currently fixed results as A or B (kept in `sessionStorage` key `nyc.scen`, this tab only), then compare Now / A / B for the chosen franchise and, in a fold, for all twelve. Each column is an 8,000-season run with its own seed, so differences of about a point can be noise (stated on the page).
+- Known limit: both use the season-strength model for this week's games, not the live lineup forecast, so points already scored this week are not reflected.
+- Tests: regression checks that every other game is listed, each verdict matches its bars, tapping fixes the result, and a saved scenario survives a reset. Chromium only.

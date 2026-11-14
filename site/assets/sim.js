@@ -13,8 +13,9 @@ function seedTeams(rows, nPlayoff) { // rows: [{id,w,pf}] -> ids in seed order 1
 function priorWeight(games) { return Math.max(0, (6 - games) / 6); }
 function modelOf(L) { const m = {}; for (const [id, t] of Object.entries(L.teams)) { const obs = 0.7 * t.ppg + 0.3 * t.last3, w = t.prior ? t.prior.w : 0;
   m[id] = { mu: w >= 1 || !isFinite(obs) ? t.prior.mu : w > 0 ? (1 - w) * obs + w * t.prior.mu : obs, sd: Math.max(18, 0.5 * (isFinite(t.sd) && t.sd > 0 ? t.sd : L.league_sd) + 0.5 * L.league_sd), u: 8 * w }; } return m; } // u: how unsure the model is about the team's true level (points per game) while the preseason expectation still carries weight
-function simulate(C, L, forced = {}, n = 8000) {
-  const R = rng32(20260 + Object.keys(forced).length * 7919 + Object.values(forced).reduce((a, b) => a + b, 0)), M = modelOf(L), ids = C.franchises.map((f) => f.roster_id), NP = C.playoff_teams;
+// seed: pass the same number to two calls to compare them on the same simulated seasons (the difference between them is then far less noisy).
+function simulate(C, L, forced = {}, n = 8000, seed = null) {
+  const R = rng32(seed ?? (20260 + Object.keys(forced).length * 7919 + Object.values(forced).reduce((a, b) => a + b, 0))), M = modelOf(L), ids = C.franchises.map((f) => f.roster_id), NP = C.playoff_teams;
   const norm = () => { let u = 0; while (!u) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); }, off = {}, draw = (id) => M[id].mu + off[id] + M[id].sd * norm();
   const base = Object.fromEntries(C.franchises.map((f) => [f.roster_id, { w: f.wins, pf: f.pf }])), games = Object.entries(L.schedule).flatMap(([w, prs]) => prs.map(([a, b]) => ({ w, a, b, key: `${w}:${a}-${b}` })));
   const out = Object.fromEntries(ids.map((id) => [id, { playoff: 0, top5: 0, sixth: 0, bye: 0, champ: 0, seed: Array(12).fill(0), slot: Array(6).fill(0), wins: 0 }]));

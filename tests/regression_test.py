@@ -64,6 +64,21 @@ async def run(p, eng):
         num = ''.join(ch for ch in cell.split('lineup')[0] if ch.isdigit() or ch in '<>.')
         exp = '>99' if want > .99 else '<1' if want < .01 else str(round(want * 100))
         ok(f'{eng}: franchise page shows the same win chance as Matchups for this week', num == exp, f'page {cell!r} vs matchups {want}')
+    # ---- rooting guide and scenario compare ----
+    L_ = json.load(open(ROOT + '/site/data/league.json')); gms = L_['schedule'].get(str(L_['current_week'])) or []
+    if gms:
+        me = c['franchises'][0]; await pg.goto(U + 'playoffs.html?f=' + me['slug'], wait_until='load'); await pg.wait_for_selector('#R .rg-g', timeout=60000)
+        others = [x for x in gms if me['roster_id'] not in x]
+        ok(f'{eng}: rooting guide lists every other game this week', await pg.locator('#R .rg-g').count() == len(others))
+        rows = await pg.evaluate("[...document.querySelectorAll('#R .rg-g')].map(g=>{const p=[...g.querySelectorAll('.rg-p')].map(x=>parseFloat(x.textContent.replace(/[<>%]/g,''))),y=[...g.querySelectorAll('.rg-o')].map(x=>x.classList.contains('yes'));return {p,y,none:g.classList.contains('none')}})")
+        ok(f'{eng}: each rooting verdict matches its own bars (higher chance is the side marked; small gaps show no preference)', all((r['none'] and not any(r['y'])) or (not r['none'] and r['y'][0] == (r['p'][0] >= r['p'][1]) and sum(r['y']) == 1) for r in rows), json.dumps(rows)[:300])
+        ok(f'{eng}: rooting guide is labelled simulated and states its basis', 'SIMULATED' in (await pg.inner_text('#R')).upper() and 'same 4,000' in await pg.inner_text('#R'))
+        await pg.locator('#R .rg-o').first.click(); await pg.wait_for_timeout(500)
+        ok(f'{eng}: tapping a rooting result fixes it in the scenario and the page says hypothetical', 'HYPOTHETICAL' in (await pg.inner_text('#state')).upper() and await pg.locator('#R .rg-g').count() == len(others) - 1)
+        await pg.locator('#R [data-sv=A]').click(); await pg.wait_for_timeout(300); await pg.locator('#rs2').click(); await pg.wait_for_timeout(400)
+        ok(f'{eng}: a saved scenario stays in the comparison after the live scenario is reset', await pg.locator('#compare .cmp').count() >= 1 and await pg.locator('#compare [data-ld=A]').count() == 1 and await pg.locator('#state .sb').count() == 0)
+        ok(f'{eng}: rooting guide and comparison fit a 390px screen', await pg.evaluate("document.documentElement.scrollWidth<=innerWidth+1"))
+        await pg.locator('#compare [data-cl=A]').click()
     # ---- player inspector and search ----
     PL = json.load(open(ROOT + '/site/data/player_log.json')); fv = c['franchises'][0]; feat = fv['featured'][0]
     await pg.goto(U + 'franchise.html?f=' + fv['slug'], wait_until='load'); await pg.wait_for_selector('.pl[data-pid]', timeout=20000)
