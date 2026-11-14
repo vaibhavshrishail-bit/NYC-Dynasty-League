@@ -34,16 +34,21 @@ jobs:
           node scripts/build-weekly.mjs
       - name: Render approved second editions
         run: python scripts/build_cinematics.py auto2
+      - name: Render the season documentary (second edition)
+        run: |
+          if python3 -c "import json,sys; sys.exit(0 if json.load(open('src/config/films.json')).get('documentary_second_edition') else 1)"; then python scripts/build_documentary2.py render; fi
       - name: Check the output is a playable film
         run: |
-          for f in site/cinematics/*-v2.mp4; do
+          for f in site/cinematics/*-v2.mp4 site/documentary/*-v2.mp4; do
+            [ -f "$f" ] || continue
             d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$f"); echo "$f ${d}s"
-            python3 -c "import sys; d=float('$d'); sys.exit(0 if 40 < d < 70 else 1)"
+            python3 -c "import sys; d=float('$d'); sys.exit(0 if 40 < d < 150 else 1)"
           done
       - name: Commit films
         run: |
           git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add site/cinematics/*-v2.mp4 site/cinematics/*-v2.jpg
+          git add site/documentary/*-v2.mp4 site/documentary/*-v2.jpg site/documentary/*-v2.json 2>/dev/null || true
           if git diff --cached --quiet; then echo "No film changes"; exit 0; fi
           git stash -q --include-untracked --keep-index || true
           git commit -q -m "Re-render second-edition films from current data"

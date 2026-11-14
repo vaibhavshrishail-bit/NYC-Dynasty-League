@@ -36,7 +36,7 @@ def configs():
                        'ppg':p['ppg'],'pts':f"{p['points']:.1f}",'starts':p['starts'],'nick':(p['nickname'] or '').upper(),'nick_source':p['nickname_source'],'role':role,'rank':RANK.get(p['player_id'],''),'small':p['starts']<c['through_week']/2})
         name=f['team_name'].strip()
         out.append({'slug':f['slug'],'roster_id':f['roster_id'],'owner_id':f['owner_id'],'theme':f['theme'],'team':name.upper(),'team_display':name,'manager':f['manager'],
-                    'lines':[l1,l2,f['tagline']],'sub':f"{f['manager'].upper()}  ·  NYC DYNASTY LEAGUE  ·  EST. 2022",'record':f['record'],'seed':f['seed'],'points_rank':f['points_rank'],'titles':ti,
+                    'titles':{f['theme']:len(ti)},'lines':[l1,l2,f['tagline']],'sub':f"{f['manager'].upper()}  ·  NYC DYNASTY LEAGUE  ·  EST. 2022",'record':f['record'],'seed':f['seed'],'points_rank':f['points_rank'],'titles':ti,
                     'season':str(c['season']),'through_week':c['through_week'],'duration':45,'players':pl})
     return out
 def music_for(c):
@@ -61,7 +61,7 @@ def v2_plan(c):
     while sum(bt)>tb-last and max(bt)>mn:bt[bt.index(max(bt))]-=1
     bt=sorted(bt,reverse=True)+[last];ps=[a2[-1]]          # cuts shorten steadily, then the top scorer gets room to land
     for x in bt:ps.append(ps[-1]+x*B)
-    c0=ps[-1];l0=snap(c0+5.0)
+    c0=ps[-1]
     can=J(ROOT+'/site/data/canonical.json');L=J(ROOT+'/site/data/league.json');f=[x for x in can['franchises'] if x['roster_id']==c['roster_id']][0];by={x['roster_id']:x for x in can['franchises']}
     riv=[r for r in J(ROOT+'/src/config/rivalries.json')['rivalries'] if c['roster_id'] in (r['a'],r['b'])]
     def series(o):
@@ -78,8 +78,34 @@ def v2_plan(c):
     r=json.loads(subprocess.check_output(['node','-e',js],cwd=ROOT));p=r['p'];pc='100%' if r['c']=='certain' else '0%' if r['c']=='impossible' else '>99%' if p>=.995 else '<1%' if p<.005 else f"{round(p*100)}%"
     left=can['playoff_week_start']-1-can['through_week']
     cards.append({'k':'THE STAKES','big':pc,'sub':f"SIMULATED CHANCE TO MAKE THE PLAYOFFS  ·  {c['lines'][1].split('   ·   ')[-2] if '   ·   ' in c['lines'][1] else ''}  ·  {left} TO PLAY".replace('  ·    ·  ','  ·  ')})
-    dur=round((l0+3.8)*30)/30;mus=music_for(c)
-    return {'dur':dur,'credit':(mus or {}).get('credit',''),'beat':round(B,5),'a2':[round(x,4) for x in a2],'cards':cards,'ps':[round(x,4) for x in ps],'c0':round(c0,4),'l0':round(l0,4),'payoff':{'big':f"{c['record'].replace('–','-')}  ·  {pc} TO MAKE THE PLAYOFFS",'sub':f"THROUGH WEEK {can['through_week']}  ·  {c['season']}  ·  SIMULATED FROM LEAGUE RESULTS"}}
+    # ---- season moments (replace the old roll call and its zoom): every card is a fact from this season's results ----
+    mom=[];H=J(ROOT+'/site/data/history.json');mu=J(f"{ROOT}/site/data/sleeper/seasons/{can['season']}/matchups.json");sp=J(ROOT+'/site/data/sleeper/players.json');M=lambda i:by[i]['manager'].upper();rid=c['roster_id']
+    if wins:
+        r=max(wins,key=lambda r:r['pf']-r['pa']);mom.append({'k':'THE BIGGEST WIN','big':f"{r['pf']:.2f}–{r['pa']:.2f}",'sub':f"WEEK {r['week']}  ·  BEAT {M(r['opp'])} BY {r['pf']-r['pa']:.2f}",'w':r['week']})
+    r=max(f['results'],key=lambda r:r['pf'])
+    if not mom or r['week']!=mom[0]['w']:mom.append({'k':'THE BEST DAY','big':f"{r['pf']:.2f}",'sub':f"WEEK {r['week']}  ·  SEASON HIGH FOR THIS TEAM  ·  {'BEAT' if r['result']=='W' else 'LOST TO'} {M(r['opp'])}"})
+    elif len(wins)>1:
+        r=min(wins,key=lambda r:r['pf']-r['pa']);mom.append({'k':'THE ESCAPE','big':f"{r['pf']:.2f}–{r['pa']:.2f}",'sub':f"WEEK {r['week']}  ·  BEAT {M(r['opp'])} BY {r['pf']-r['pa']:.2f}"})
+    best=None
+    for w,ms in mu.items():
+        if int(w)>can['through_week']:continue
+        for m in ms:
+            if m['roster_id']!=rid:continue
+            for pid,pts in zip(m.get('starters') or [],m.get('starters_points') or []):
+                if pid!='0' and (best is None or pts>best[0]):best=(pts,pid,int(w))
+    if best:
+        p=sp.get(best[1]) or {};rk=can.get('player_ranks',{}).get(best[1],'');mom.append({'k':'THE BEST SINGLE GAME','big':f"{best[0]:.1f}",'sub':f"{(p.get('full_name') or '').upper()}  ·  WEEK {best[2]}"+(f"  ·  {rk} THIS SEASON" if rk else '')})
+    od=lambda w:(H['weeks'][str(w)]['odds'][str(rid)]['playoff'] if w>0 else H['preseason']['odds'][str(rid)]['playoff']) if (w>0 or H.get('preseason')) else None;tp=None
+    for r in f['results']:
+        a_,b_=od(r['week']-1),od(r['week'])
+        if a_ is not None and (tp is None or abs(b_-a_)>abs(tp[1]-tp[0])):tp=(a_,b_,r)
+    pcs=lambda x:'>99%' if x>.99 else '<1%' if x<.01 else f"{round(x*100)}%"
+    if tp and abs(tp[1]-tp[0])>=.08:mom.append({'k':'THE TURNING POINT','big':f"{pcs(tp[0])} → {pcs(tp[1])}",'sub':f"WEEK {tp[2]['week']}  ·  PLAYOFF CHANCE AFTER {'BEATING' if tp[2]['result']=='W' else 'LOSING TO'} {M(tp[2]['opp'])}"})
+    for x in mom:x.pop('w',None)
+    md=max(1,round(3.0/B))*B;m=[c0+i*md for i in range(len(mom)+1)];l0=m[-1]
+    dur=round((l0+4.4)*30)/30;mus=music_for(c)
+    bar=4*B;bb=lambda t:int(round(t/bar));sect=[(0,max(1,bb(a2[0])),'intro'),(bb(a2[0]),max(1,bb(ps[0])-bb(a2[0])),'light'),(bb(ps[0]),max(1,bb(l0)-bb(ps[0])),'full'),(bb(l0),max(1,int(math.ceil((dur-l0)/bar))),'outro')]
+    return {'dur':dur,'m':[round(x,4) for x in m],'mom':mom,'sections':sect,'bpm':round(60/B,3),'hits':[round(x,4) for x in a2[:-1]+ps[:-1]+m],'credit':(mus or {}).get('credit',''),'beat':round(B,5),'a2':[round(x,4) for x in a2],'cards':cards,'ps':[round(x,4) for x in ps],'c0':round(c0,4),'l0':round(l0,4),'payoff':{'big':f"{c['record'].replace('–','-')}  ·  {pc} TO MAKE THE PLAYOFFS",'sub':f"THROUGH WEEK {can['through_week']}  ·  {c['season']}  ·  SIMULATED FROM LEAGUE RESULTS"}}
 def html(c,audio=None):
     s=open(E+'/shell.html').read().replace('/*FONTS*/',open(E+'/fonts.css').read()).replace('/*CORE*/',open(E+'/core.js').read()).replace('/*THEMES*/',open(E+'/themes.js').read())
     s=s.replace('/*TITLE*/',c['team_display']).replace('/*CFG*/',json.dumps(c)).replace('/*AUDIO*/','data:audio/mp4;base64,'+base64.b64encode(open(audio,'rb').read()).decode() if audio else '')
@@ -108,7 +134,10 @@ def render(c,v2=False):
     if v2:c=dict(c);c['v2']=v2_plan(c);c['slug_out']=c['slug']+'-v2'
     spec=importlib.util.spec_from_file_location('audio',E+'/audio.py');a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
     os.makedirs(B,exist_ok=True);os.makedirs(OUT,exist_ok=True);wav=f"{B}/{c['slug']}.wav";m4a=f"{B}/{c['slug']}.m4a"
-    a.score(wav,c['theme'],len(c['players']),c.get('v2'));mus=music_for(c) if v2 else None
+    if v2:   # second edition: the harder half-time score, laid out on the film's own cut times
+        s2=importlib.util.spec_from_file_location('s2',E+'/score2.py');sm=importlib.util.module_from_spec(s2);s2.loader.exec_module(sm);sm.score2(wav,c['v2']['dur'],c['v2']['bpm'],c['v2']['sections'],c['v2']['hits'],seed=7+sum(map(ord,c['theme'])))
+    else:a.score(wav,c['theme'],len(c['players']),c.get('v2'))
+    mus=music_for(c) if v2 else None
     if mus:   # licensed track: trimmed to the film, faded, with the film's own hits and risers kept underneath at low level
         d=c['v2']['dur'];subprocess.check_call(['ffmpeg','-y','-loglevel','error','-ss',str(mus['start']),'-t',str(d),'-i',mus['path'],'-i',wav,'-filter_complex',f"[0:a]loudnorm=I=-14:TP=-1.5,afade=t=in:d=0.4,afade=t=out:st={d-1.2}:d=1.2[m];[1:a]volume=0.28[s];[m][s]amix=inputs=2:duration=first:normalize=0[o]",'-map','[o]','-ar','48000','-c:a','aac','-b:a','160k',m4a])
     else:subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',wav,'-c:a','aac','-b:a','128k',m4a])

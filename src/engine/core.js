@@ -76,17 +76,23 @@ const RING=new Path2D('M100 8a92 92 0 1 0 .01 0z'),RING2=new Path2D('M100 17a83 
 let GLY;
 function laurel(ctx,p){for(const sgn of[-1,1])for(let i=0;i<9;i++){if(i/9>p)break;const a=Math.PI/2+sgn*(.32+i*.2),r=75.5,x=100+Math.cos(a)*r,y=100+Math.sin(a)*r;
   ctx.save();ctx.translate(x,y);ctx.rotate(a+sgn*1.05);ctx.beginPath();ctx.ellipse(0,0,6.5,2.4,0,0,7);ctx.fill();ctx.restore()}}
+// Crest v2 (matches the website): dark field, metal rim, white keyline, laurel, glyph, and one gold star per championship.
+// p animates it on: the rim sweeps round, the field fades up, the glyph pops, the stars land.
+let CURT=CFG.theme,TITLES=CFG.titles||{};
+const STARP=new Path2D('M0-7.4L2.2-2.5 7.5-2 3.5 1.6 4.6 6.8 0 4.1-4.6 6.8-3.5 1.6-7.5-2-2.2-2.5Z');
 function emblem(ctx,cx,cy,size,p,glow){
   GLY=GLY||T.glyph.map(g=>({...g,p:new Path2D(g.d)}));
-  ctx.save();ctx.translate(cx-size/2,cy-size/2);ctx.scale(size/200,size/200);
-  const draw=(path,a,b,len)=>{const q=seg(p,a,b);if(q<=0)return;ctx.setLineDash([len*q,len]);ctx.stroke(path)};
-  ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=T.hi;ctx.shadowColor=T.glow;ctx.shadowBlur=18*glow;
-  ctx.lineWidth=3;draw(RING,0,.45,580);ctx.lineWidth=1;draw(RING2,.1,.5,525);
-  ctx.lineWidth=2.2;GLY.forEach((g,i)=>draw(g.p,.15+i*.03,.55+i*.03,420));
-  const f=seg(p,.55,1);if(f>0){ctx.setLineDash([]);ctx.globalAlpha=f;ctx.shadowBlur=8*glow;
-    for(const g of GLY){if(g.f==='ink'){ctx.fillStyle=T.ink;ctx.shadowBlur=0}else if(g.f==='hot'){ctx.fillStyle=T.hot;ctx.shadowColor=T.glow;ctx.shadowBlur=22*glow}else if(g.f==='mid'||g.f==='hi'||g.f==='deep'){ctx.fillStyle=g.f==='deep'?T.metal[2]:T[g.f];ctx.shadowColor=T.glow;ctx.shadowBlur=14*glow}else{ctx.fillStyle=metal(ctx,40,160);ctx.shadowColor=T.glow;ctx.shadowBlur=8*glow}
-      ctx.fill(g.p,g.eo?'evenodd':'nonzero')}
-    ctx.fillStyle=T.mid;ctx.shadowBlur=4;laurel(ctx,f)}
+  ctx.save();ctx.translate(cx-size/2,cy-size/2);ctx.scale(size/200,size/200);ctx.lineCap='round';ctx.lineJoin='round';
+  const a=seg(p,0,.3),sw=eo(seg(p,0,.6))*Math.PI*2,f=seg(p,.3,.85),arc=(r,full)=>{ctx.beginPath();ctx.arc(100,100,r,-Math.PI/2,full?Math.PI*1.5:-Math.PI/2+sw)};
+  ctx.globalAlpha=a;ctx.shadowColor=T.glow;ctx.shadowBlur=26*glow;arc(98.5,1);ctx.fillStyle='#0a1120';ctx.fill();ctx.shadowBlur=0;
+  arc(87,1);ctx.fillStyle='#0d1728';ctx.fill();const fl=ctx.createRadialGradient(100,84,0,100,84,108);fl.addColorStop(0,`rgba(${T.flash},.5)`);fl.addColorStop(.7,`rgba(${T.flash},.12)`);fl.addColorStop(1,`rgba(${T.flash},0)`);arc(87,1);ctx.fillStyle=fl;ctx.fill();
+  ctx.globalAlpha=1;if(sw>0){arc(98.5);ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();const rim=ctx.createLinearGradient(10,10,190,190);[0,.28,.5,.62,1].forEach((o,i)=>rim.addColorStop(o,T.metal[i]));arc(91.5);ctx.strokeStyle=rim;ctx.lineWidth=7;ctx.stroke()}
+  if(f>0){ctx.globalAlpha=f*.45;ctx.strokeStyle=T.hi;ctx.lineWidth=1;ctx.beginPath();for(let i=0;i<48;i++){const an=i*Math.PI/24,r2=i%4?83.5:81.5;ctx.moveTo(100+Math.cos(an)*85.5,100+Math.sin(an)*85.5);ctx.lineTo(100+Math.cos(an)*r2,100+Math.sin(an)*r2)}ctx.stroke();
+    ctx.globalAlpha=f*.92;ctx.fillStyle=T.hi;for(const sgn of[-1,1])for(let i=0;i<9;i++){if(i/9>f)break;const an=Math.PI/2+sgn*(.32+i*.2);ctx.save();ctx.translate(100+Math.cos(an)*75.5,100+Math.sin(an)*75.5);ctx.rotate(an+sgn*1.05);ctx.beginPath();ctx.ellipse(0,0,6.8,2.6,0,0,7);ctx.fill();ctx.restore()}
+    ctx.globalAlpha=f;const k=.82+.18*eoe(f);ctx.save();ctx.translate(100,100);ctx.scale(k,k);ctx.translate(-100,-100);ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=5;ctx.shadowOffsetY=2.5;
+    for(const g of GLY){ctx.fillStyle=g.f==='ink'?'#0a1120':g.f==='hot'?T.hot:g.f==='mid'?T.mid:g.f==='hi'?T.hi:g.f==='deep'?T.metal[2]:metal(ctx,40,160);ctx.fill(g.p,g.eo?'evenodd':'nonzero')}ctx.restore()}
+  const n=Math.min(TITLES[CURT]||0,7);for(let i=0;i<n;i++){const q=eoe(seg(p,.7+i*.06,.95+i*.06));if(q<=0)continue;const an=-Math.PI/2+(i-(n-1)/2)*.25;ctx.save();ctx.globalAlpha=q;ctx.translate(100+Math.cos(an)*77.5,100+Math.sin(an)*77.5);ctx.rotate(an+Math.PI/2);ctx.scale(1.6-.6*q,1.6-.6*q);
+    ctx.lineWidth=3.2;ctx.strokeStyle='#0a1120';ctx.stroke(STARP);ctx.fillStyle='#ffd24a';ctx.shadowColor='#ffd24a';ctx.shadowBlur=8*glow;ctx.fill(STARP);ctx.restore()}
   ctx.restore()}
 
 // ---------- jersey: original generic football jersey in the player's NFL team colours (no logos or uniform artwork) ----------
@@ -136,15 +142,18 @@ function sLines(ctx,t){
     text(ctx,['THE RECORD','THE SEASON','THE CREED'][i],W/2,452,`600 22px ${SANS}`,T.txt,12);ctx.restore()})
 }
 // Act 2, second edition: three slammed cards (rival, worst day, stakes). Every figure comes from CFG.v2.cards, built from league data.
-function sConflict(ctx,t){
-  const A=V2.a2,j=Math.max(0,A.findIndex((x,k)=>k<A.length-1&&t>=x&&t<A[k+1])),a=A[j],b=A[j+1],c=V2.cards[j],lt=t-a,d=b-a,inn=eoe(seg(lt,0,.5)),out=seg(lt,d-.16,d);
+function sConflict(ctx,t){sCards(ctx,t,V2.a2,V2.cards,false)}
+// Season moments (second edition, replaces the roll call): the biggest win, the best score, the best single game, the turning point. Same slammed-card language, in the franchise colour.
+function sMoments(ctx,t){sCards(ctx,t,V2.m,V2.mom,true)}
+function sCards(ctx,t,A,CARDS,warm){
+  const j=Math.max(0,A.findIndex((x,k)=>k<A.length-1&&t>=x&&t<A[k+1])),a=A[j],b=A[j+1],c=CARDS[j],last=j===CARDS.length-1,lt=t-a,d=b-a,inn=eoe(seg(lt,0,.5)),out=seg(lt,d-.16,d);
   (T.back||T.scene)(ctx,t*.5+j*7,T.back?1:.6,0);ctx.fillStyle='rgba(2,2,6,.62)';ctx.fillRect(0,0,W,H);
-  const vg=ctx.createRadialGradient(W/2,H/2,200,W/2,H/2,1100);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,j===2?`rgba(${T.flash},.22)`:'rgba(150,20,40,.30)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);T.fx(ctx,t,.5);
+  const vg=ctx.createRadialGradient(W/2,H/2,200,W/2,H/2,1100);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,last||warm?`rgba(${T.flash},.22)`:'rgba(150,20,40,.30)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);T.fx(ctx,t,.5);
   ctx.save();ctx.globalAlpha=(1-out);ctx.shadowColor='#000';ctx.shadowBlur=34;
   const bw=eo(seg(lt,.05,.7))*520;ctx.fillStyle=T.mid;ctx.fillRect(W/2-bw,330,bw*2,3);
   text(ctx,c.k,W/2,300,`600 34px ${SANS}`,T.txt,mix(40,16,eo(seg(lt,0,d))));
   const sc=mix(1.7,1,inn)*(1+seg(lt,.5,d)*.035),fs=fit(ctx,c.big,`400 %px ${BOLD}`,300,1700,6);
-  ctx.save();ctx.translate(W/2,600);ctx.scale(sc,sc);ctx.globalAlpha=(1-out)*seg(lt,0,.12);ctx.font=`400 ${fs}px ${BOLD}`;ctx.letterSpacing='6px';ctx.textAlign='center';ctx.fillStyle=j===2?T.hi:T.pale;ctx.fillText(c.big,0,fs*.36);ctx.restore();
+  ctx.save();ctx.translate(W/2,600);ctx.scale(sc,sc);ctx.globalAlpha=(1-out)*seg(lt,0,.12);ctx.font=`400 ${fs}px ${BOLD}`;ctx.letterSpacing='6px';ctx.textAlign='center';ctx.fillStyle=last?T.hi:T.pale;ctx.fillText(c.big,0,fs*.36);ctx.restore();
   const sp=seg(lt,.45,.95);if(sp>0){ctx.globalAlpha=sp*(1-out);const f=`600 %px ${SANS}`;text(ctx,c.sub,W/2,800,f.replace('%',fit(ctx,c.sub,f,44,1640,6)),T.pale,6)}
   ctx.restore();
   const fl=lt<.07?1:Math.exp(-(lt-.07)*9);if(fl>.02){ctx.fillStyle=`rgba(${T.wipe||'255,244,222'},${fl*.55})`;ctx.fillRect(0,0,W,H)}
@@ -220,6 +229,6 @@ function render(ctx,t){
   if(t<A2){sOpen(ctx,t);const x=seg(t,A2-.2,A2);if(x>0){ctx.fillStyle=`rgba(0,0,0,${x})`;ctx.fillRect(0,0,W,H)}const fi=1-seg(t,0,.8);if(fi>0){ctx.fillStyle=`rgba(0,0,0,${fi})`;ctx.fillRect(0,0,W,H)}}
   else if(t<P0){if(V2)sConflict(ctx,t);else{sLines(ctx,t);const fi=1-seg(t,6,6.4);if(fi>0){ctx.fillStyle=`rgba(0,0,0,${fi})`;ctx.fillRect(0,0,W,H)}}}
   else if(t<C0){let i=NP_-1;if(V2){i=0;while(i<NP_-1&&t>=V2.ps[i+1])i++}else i=Math.min(NP_-1,Math.floor((t-P0)/PD));sPlayer(ctx,t,i)}
-  else if(t<L0)sClimax(ctx,t);
+  else if(t<L0){if(V2&&V2.m)sMoments(ctx,t);else sClimax(ctx,t)}
   else sLogo(ctx,t);
   post(ctx,t,f)}

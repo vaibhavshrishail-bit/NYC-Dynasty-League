@@ -75,3 +75,20 @@ What changes in a second edition (`CFG.v2`, built by `v2_plan()`):
 - Audio cues (`audio.score(..., v2=plan)`) are placed at the same cut times.
 
 Checked by machine, not by ear: audio level rises at each card cut, drops to about a tenth in the gap before the crest, and peaks on the crest. **Nobody has listened to it.** The reference film is `vaibhav-v2.mp4` (Die Another Day). Roll-out to the other eleven is `render2` with no slug, about 10 minutes each, after the commissioner approves the reference. To make a second edition the default on a franchise page, point the page's video source at `<slug>-v2.mp4` (not done).
+
+## Second-generation films (Week 10)
+
+**Score** (`src/engine/score2.py`): `score2(path, dur, bpm, sections, hits)`. A half-time beat at 140 bpm (kick, clap, rolling hats, 808 sub, distorted lead), laid out in bars, with timing and velocity slightly humanised. Sections are `intro | light | full | break | outro`; `hits` get an impact and a crash. All synthesized, nothing sampled. A licensed track in `src/music/` still replaces it for a franchise film.
+
+**Documentary, second edition** (`scripts/build_documentary2.py`, `src/engine/doc2.js`): a week-by-week cut on the bar grid.
+Cold open (twelve crests on the eighth notes, title slam) → The Race (every franchise's playoff chance drawn from preseason to now) → one shot per completed week (headline game with scores counting up, the week's MVP with season rank, the swing in the race) → The Stars (top five starters by points) → The Line (standings and playoff chance) → the countdown.
+Three bars per week through Week 9, two bars after that, so it stays under about two minutes. Every shot has a camera push and drift, a beat kick, and a flash and shake on the cut.
+Output: `site/documentary/season-<year>-v2.mp4`, `.jpg`, `.json`. The first edition (`season-<year>.mp4`) is never touched.
+Commands: `plan`, `stills [t ...]`, `render`, or `audio` + `part i k` + `finish k` when a session limits command time.
+
+**Franchise film, second edition, third pass** (`scripts/build_cinematics.py` `v2_plan`, `src/engine/core.js`):
+- The roll call and its zoom are gone. In their place: a season-moments reel (`sMoments`): the biggest win, the best day, the best single game, the turning point in the playoff race. All from results.
+- Crest v2 with championship stars (`emblem` in `core.js`, `CFG.titles`).
+- Uses `score2` on the film's own cut times.
+
+**Weekly re-render**: `.github/workflows/render-films.yml` runs `build_cinematics.py auto2` and, when `documentary_second_edition` is true in `src/config/films.json`, `build_documentary2.py render`.

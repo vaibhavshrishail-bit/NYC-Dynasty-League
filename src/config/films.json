@@ -2,5 +2,6 @@
  "second_edition": [
   "vaibhav"
  ],
- "_note": "Second-edition films re-rendered automatically each week by .github/workflows/render-films.yml. Add a franchise slug here only after its film has been approved."
+ "_note": "Films re-rendered automatically each week by .github/workflows/render-films.yml. second_edition: franchise slugs whose second-edition film is approved. documentary_second_edition: re-render site/documentary/season-<year>-v2.mp4.",
+ "documentary_second_edition": true
 }
