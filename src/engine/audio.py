@@ -79,17 +79,20 @@ STY={
    bass=('pluck',{'S':'x...............','P':'x.......x.......'},-1,7),chord=('ks',{'I':'x...............','S':'x.......x.......','P':'x...x.x...x.x.x.'},1,6,'strum'),lead=('ks',{'I':'x.x.x.x.x.x.x.x.','S':'x.x.x.x.x.x.x.x.'},2,[0,2,1,2,3,2,1,2],4)),
 }
 STY['temple']=STY['range']
-def score(path,theme,n=10):
-    global rs;rs=np.random.RandomState(7+sum(map(ord,theme)));s=STY[theme];PD=24.0/n;step=60/s['bpm']/4;sw=s.get('swing',0)*step*2;kit=KITS[s['kit']]
+def beat(theme):return 60/STY[theme]['bpm']
+def score(path,theme,n=10,v2=None):
+    """v2 (second edition) = dict(a2=[card starts.., end], ps=[player starts.., end], c0, l0): every cue lands on those cut times, which the build script snaps to this style's beat grid."""
+    global rs,P0,C0,L0;P0,C0,L0=(v2['ps'][0],v2['c0'],v2['l0']) if v2 else (12.0,36.0,41.2);A2=v2['a2'][0] if v2 else 6.0
+    rs=np.random.RandomState(7+sum(map(ord,theme)));s=STY[theme];PD=24.0/n;step=60/s['bpm']/4;sw=s.get('swing',0)*step*2;kit=KITS[s['kit']]
     bus={k:[np.zeros(N),np.zeros(N)] for k in('drum','bass','chord','lead','fx')}
     def add(b,sig,at,pan=0.0,g=1.0):
         i=int(at*SR);m=min(len(sig),N-i)
         if m<=0 or i<0:return
         bus[b][0][i:i+m]+=sig[:m]*g*(1-max(pan,0));bus[b][1][i:i+m]+=sig[:m]*g*(1+min(pan,0))
-    sec=lambda t:'I' if t<6 else 'S' if t<12 else 'P'
+    sec=lambda t:'I' if t<A2 else 'S' if t<P0 else 'P'
     k=0;walk=0;ai=0
     while k*step<L0-.05:
-        pos=k%16;bar=k//16;t=k*step+(sw if pos%4==2 else 0);S=sec(k*step);deg,q=s['prog'][bar%len(s['prog'])];tones=Q[q];base=s['root']+deg;build=min(1,max(.55,(k*step)/36+.45))
+        pos=k%16;bar=k//16;t=k*step+(sw if pos%4==2 else 0);S=sec(k*step);deg,q=s['prog'][bar%len(s['prog'])];tones=Q[q];base=s['root']+deg;build=min(1,max(.55,(k*step)/C0+.45))
         for nm,bn,fn,g in(('kick','drum',kit['k'],1.0),('snare','drum',kit['s'],.8)):
             c=s[nm].get(S,'')[pos:pos+1]
             if c in('x','X'):add(bn,fn(),t,0,g*(1.15 if c=='X' else 1)*build)
@@ -116,13 +119,19 @@ def score(path,theme,n=10):
     def whoosh(d=.45):m=int(d*SR);return bp(rs.randn(m),400,5000)*np.linspace(0,1,m)**3
     add('fx',lp(rs.randn(N),500)*np.interp(np.arange(N)/SR,[0,.8,5,9,12],[0,1,1,.3,0]),0,0,.12)
     add('fx',whoosh(.5),2.7,0,.6);add('fx',impact(100),3.2,0,1.0)
-    for j,at in enumerate((6.0,8.0,10.0)):add('fx',whoosh(.4),at-.4,(-1)**j*.3,.4);add('fx',impact(60),at,0,.5)
-    for i in range(n):at=P0+i*PD;add('fx',whoosh(.45),at-.45,(-1)**i*.4,.5);add('fx',impact(90),at,0,.75)
+    for j,at in enumerate(v2['a2'][:-1] if v2 else (6.0,8.0,10.0)):add('fx',whoosh(.4),at-.4,(-1)**j*.3,.4);add('fx',impact(60 if not v2 else 70+12*j),at,0,.5 if not v2 else .85)
+    if v2:   # riser into the player run, so act three arrives rather than starts
+        m=int(1.7*SR);qq=np.linspace(0,1,m);add('fx',hp(rs.randn(m),900)*qq**2*.55+np.sin(2*np.pi*np.cumsum(180+1500*qq**2)/SR)*qq**2*.28,P0-1.7,0,.8);add('drum',crash()*.5,P0,0,.9)
+    for i in range(n):at=(v2['ps'][i] if v2 else P0+i*PD);add('fx',whoosh(.45 if not v2 else min(.45,(v2['ps'][i+1]-v2['ps'][i])*.4)),at-.3,(-1)**i*.4,.5);add('fx',impact(90),at,0,.75)
     st=min(.34,(L0-C0-1.9)/n)
     for j in range(n):add('fx',impact(80+4*j),C0+.35+j*st,(-1)**j*.3,.6)
     r=0.0;x=C0+2.2
     while x<L0-.02:add('drum',kit['s'](),x,0,.35+.5*(x-C0-2.2)/(L0-C0-2.2));x+=max(.045,.16-.12*(x-C0-2.2)/(L0-C0-2.2))
     m=int(2.2*SR);qq=np.linspace(0,1,m);add('fx',hp(rs.randn(m),800)*qq**2*.6+np.sin(2*np.pi*np.cumsum(200+1400*qq**2)/SR)*qq**2*.3,L0-2.2,0,.8)
+    if v2:   # hard stop: a breath of near-silence before the crest lands
+        i0,i1=int((L0-.34)*SR),int(L0*SR)
+        for b_ in bus.values():
+            for ch in b_:ch[i0:i1]*=np.linspace(1,0,i1-i0)**3
     # ---- crest: final chord in the style's own chord instrument, plus a hit and a cymbal ----
     inst,_,octv,_=s['chord'][:4];deg,q=s['prog'][0];fin='power' if inst=='mute' else inst if inst not in('sq',) else 'sq'
     for j,iv in enumerate(Q[q]+[12]):add('chord',INST[fin](hz(s['root']+12*octv+iv),3.6),L0+j*.02,(-.4+.27*j),1.3/2)

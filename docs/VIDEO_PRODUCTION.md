@@ -62,3 +62,16 @@ Deficiencies to fix, in order: (1) every film uses the same 45-second timeline, 
 Proposed structure for the reference film (one franchise first): Act 1 identity (0–8s: crest reveal, one line from `storyline`); Act 2 conflict (8–20s: the rival from `src/config/rivalries.json` with the real series record, the season's worst loss); Act 3 escalation (20–38s: players in descending points-per-start with cuts that shorten from 2.4s to 1.2s, jersey and team badge each); Act 4 payoff (38–45s: playoff chance from the simulation at render time, crest, record). Audio: derive cut times from the track's beat grid in `src/engine/audio.py` (it already knows tempo per theme) and export them to the timeline so picture changes land on beats; add a riser into Act 3 and a hard stop before the final crest.
 
 Render cost is about 10–15 minutes per film on two cores, in the foreground. Nobody has listened to the generated music; a human should before a second edition is published.
+
+## Second edition: implemented for one reference film (14 Nov 2026)
+`python3 scripts/build_cinematics.py render2 <slug>` renders `site/cinematics/<slug>-v2.mp4` and `.jpg`. It never touches `<slug>.mp4`. `plan2 <slug>` prints the cut list and card text first; `stills2 <slug>` renders test frames.
+
+What changes in a second edition (`CFG.v2`, built by `v2_plan()`):
+- **Cut on the beat.** Every cut time is a whole number of beats of that franchise's music style (`audio.beat(theme)`), so picture changes land on kicks.
+- **Act 1 identity** (about 0–6.9s): the existing opening.
+- **Act 2 conflict** (three cards, about 3.4s each): the Playbook rival and the all-time series record; the worst loss of the season (or the closest win for an unbeaten team); the simulated playoff chance and distance from the sixth seed. All read from `canonical.json`, `league.json`, `rivalries.json` and the simulation. Nothing is typed by hand.
+- **Act 3 escalation**: players in rising order with cuts that shorten (for nine players: 6, 6, 5, 5, 3, 3, 2, 2 beats), then the top scorer gets 6 beats. Short cuts play the same entrance faster so every name still lands. A riser and crash lead into the act.
+- **Act 4 payoff**: roll call, a near-silent beat (the music is ducked for 0.34s), then the crest hit; the byline is replaced by record and playoff chance.
+- Audio cues (`audio.score(..., v2=plan)`) are placed at the same cut times.
+
+Checked by machine, not by ear: audio level rises at each card cut, drops to about a tenth in the gap before the crest, and peaks on the crest. **Nobody has listened to it.** The reference film is `vaibhav-v2.mp4` (Die Another Day). Roll-out to the other eleven is `render2` with no slug, about 10 minutes each, after the commissioner approves the reference. To make a second edition the default on a franchise page, point the page's video source at `<slug>-v2.mp4` (not done).

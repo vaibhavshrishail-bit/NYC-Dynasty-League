@@ -38,6 +38,35 @@ def configs():
                     'lines':[l1,l2,f['tagline']],'sub':f"{f['manager'].upper()}  ·  NYC DYNASTY LEAGUE  ·  EST. 2022",'record':f['record'],'seed':f['seed'],'points_rank':f['points_rank'],'titles':ti,
                     'season':str(c['season']),'through_week':c['through_week'],'duration':45,'players':pl})
     return out
+def v2_plan(c):
+    """Second edition: a four-act timeline snapped to the franchise theme's beat grid, with conflict cards built only from league data."""
+    spec=importlib.util.spec_from_file_location('audio',E+'/audio.py');a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
+    B=a.beat(c['theme']);snap=lambda t:round(t/B)*B
+    a2=[snap(6.9)];[a2.append(snap(a2[0]+3.45*(i+1))) for i in range(3)]
+    n=len(c['players']);tb=round(16.4/B);last=max(4,round(2.6/B));w=[5-3*i/max(1,n-2) for i in range(n-1)];raw=[(tb-last)*x/sum(w) for x in w];bt=[max(2,int(x)) for x in raw]
+    i=0
+    while sum(bt)<tb-last:bt[i%len(bt)]+=1;i+=1          # leftover beats go to the earliest, slowest cuts
+    while sum(bt)>tb-last and max(bt)>2:bt[bt.index(max(bt))]-=1
+    bt=sorted(bt,reverse=True)+[last];ps=[a2[-1]]          # cuts shorten steadily, then the top scorer gets room to land
+    for x in bt:ps.append(ps[-1]+x*B)
+    c0=ps[-1];l0=snap(c0+5.0)
+    can=J(ROOT+'/site/data/canonical.json');L=J(ROOT+'/site/data/league.json');f=[x for x in can['franchises'] if x['roster_id']==c['roster_id']][0];by={x['roster_id']:x for x in can['franchises']}
+    riv=[r for r in J(ROOT+'/src/config/rivalries.json')['rivalries'] if c['roster_id'] in (r['a'],r['b'])]
+    def series(o):
+        g=[m for m in L['meetings'] if {m['a'],m['b']}=={c['roster_id'],o}];w_=sum(1 for m in g if (m['pa']>m['pb'])==(m['a']==c['roster_id']) and m['pa']!=m['pb']);l_=sum(1 for m in g if (m['pa']<m['pb'])==(m['a']==c['roster_id']) and m['pa']!=m['pb']);return w_,l_,len(g)
+    if riv:o=riv[0]['b'] if riv[0]['a']==c['roster_id'] else riv[0]['a'];tag=riv[0]['tag'].upper()
+    else:o=max((x['roster_id'] for x in can['franchises'] if x['roster_id']!=c['roster_id']),key=lambda q:series(q)[2]);tag='MOST-PLAYED OPPONENT'
+    w_,l_,g_=series(o);cards=[{'k':'THE RIVAL','big':f"{w_}–{l_}",'sub':f"ALL-TIME AGAINST {by[o]['manager'].upper()}  ·  {by[o]['team_name'].upper()}  ·  {tag}"}]
+    losses=[r for r in f['results'] if r['result']=='L'];wins=[r for r in f['results'] if r['result']=='W']
+    if losses:
+        r=max(losses,key=lambda r:r['pa']-r['pf']);cards.append({'k':'THE WORST DAY','big':f"{r['pf']:.2f}–{r['pa']:.2f}",'sub':f"WEEK {r['week']}  ·  LOST TO {by[r['opp']]['manager'].upper()} BY {r['pa']-r['pf']:.2f}"})
+    else:
+        r=min(wins,key=lambda r:r['pf']-r['pa']);cards.append({'k':'THE CLOSEST CALL','big':f"{r['pf']:.2f}–{r['pa']:.2f}",'sub':f"WEEK {r['week']}  ·  BEAT {by[r['opp']]['manager'].upper()} BY {r['pf']-r['pa']:.2f}"})
+    js="const fs=require('fs');const S=new Function(fs.readFileSync('site/assets/sim.js','utf8')+';return {simulate,certainty}')();const C=JSON.parse(fs.readFileSync('site/data/canonical.json')),L=JSON.parse(fs.readFileSync('site/data/league.json'));C.byRoster=Object.fromEntries(C.franchises.map(f=>[f.roster_id,f]));const o=S.simulate(C,L),ct=S.certainty(C,L);console.log(JSON.stringify({p:o[%d].playoff,c:ct[%d].playoff}))"%(c['roster_id'],c['roster_id'])
+    r=json.loads(subprocess.check_output(['node','-e',js],cwd=ROOT));p=r['p'];pc='100%' if r['c']=='certain' else '0%' if r['c']=='impossible' else '>99%' if p>=.995 else '<1%' if p<.005 else f"{round(p*100)}%"
+    left=can['playoff_week_start']-1-can['through_week']
+    cards.append({'k':'THE STAKES','big':pc,'sub':f"SIMULATED CHANCE TO MAKE THE PLAYOFFS  ·  {c['lines'][1].split('   ·   ')[-2] if '   ·   ' in c['lines'][1] else ''}  ·  {left} TO PLAY".replace('  ·    ·  ','  ·  ')})
+    return {'beat':round(B,5),'a2':[round(x,4) for x in a2],'cards':cards,'ps':[round(x,4) for x in ps],'c0':round(c0,4),'l0':round(l0,4),'payoff':{'big':f"{c['record'].replace('–','-')}  ·  {pc} TO MAKE THE PLAYOFFS",'sub':f"THROUGH WEEK {can['through_week']}  ·  {c['season']}  ·  SIMULATED FROM LEAGUE RESULTS"}}
 def html(c,audio=None):
     s=open(E+'/shell.html').read().replace('/*FONTS*/',open(E+'/fonts.css').read()).replace('/*CORE*/',open(E+'/core.js').read()).replace('/*THEMES*/',open(E+'/themes.js').read())
     s=s.replace('/*TITLE*/',c['team_display']).replace('/*CFG*/',json.dumps(c)).replace('/*AUDIO*/','data:audio/mp4;base64,'+base64.b64encode(open(audio,'rb').read()).decode() if audio else '')
@@ -61,14 +90,15 @@ async def frames(c,times=None,fps=30,n=1350):
         await b.close()
         if errs:print(c['slug'],'PAGE ERRORS',errs[:3]);return False
         return True
-def render(c):
+def render(c,v2=False):
+    if v2:c=dict(c);c['v2']=v2_plan(c);c['slug_out']=c['slug']+'-v2'
     spec=importlib.util.spec_from_file_location('audio',E+'/audio.py');a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
     os.makedirs(B,exist_ok=True);os.makedirs(OUT,exist_ok=True);wav=f"{B}/{c['slug']}.wav";m4a=f"{B}/{c['slug']}.m4a"
-    a.score(wav,c['theme'],len(c['players']));subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',wav,'-c:a','aac','-b:a','128k',m4a])
+    a.score(wav,c['theme'],len(c['players']),c.get('v2'));subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',wav,'-c:a','aac','-b:a','128k',m4a])
     html(c,m4a);assert asyncio.run(frames(c))
-    subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',f"{B}/{c['slug']}.video.mp4",'-i',m4a,'-c:v','copy','-c:a','copy','-shortest','-movflags','+faststart',f"{OUT}/{c['slug']}.mp4"])
-    subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',f"{B}/{c['slug']}.poster.jpg",'-vf','scale=960:-2','-q:v','4',f"{OUT}/{c['slug']}.jpg"])
-    print('rendered',c['slug'],os.path.getsize(f"{OUT}/{c['slug']}.mp4")//1024,'KB',flush=True)
+    subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',f"{B}/{c['slug']}.video.mp4",'-i',m4a,'-c:v','copy','-c:a','copy','-shortest','-movflags','+faststart',f"{OUT}/{c.get('slug_out',c['slug'])}.mp4"])
+    subprocess.check_call(['ffmpeg','-y','-loglevel','error','-i',f"{B}/{c['slug']}.poster.jpg",'-vf','scale=960:-2','-q:v','4',f"{OUT}/{c.get('slug_out',c['slug'])}.jpg"])
+    print('rendered',c.get('slug_out',c['slug']),os.path.getsize(f"{OUT}/{c.get('slug_out',c['slug'])}.mp4")//1024,'KB',flush=True)
 if __name__=='__main__':
     cmd=sys.argv[1] if len(sys.argv)>1 else 'config';cs=configs();want=sys.argv[2:]
     sel=[c for c in cs if not want or c['slug'] in want]
@@ -80,3 +110,9 @@ if __name__=='__main__':
         for c in sel:html(c);print(c['slug'],asyncio.run(frames(c,times=[2.4,4.6,7.0,9.2,13.2,24.5,35.0,39.6,40.9,43.6])))
     elif cmd=='render':
         for c in sel:render(c)
+    elif cmd=='plan2':      # print the second-edition cut list and cards for review before rendering
+        for c in sel:print(c['slug'],json.dumps(v2_plan(c),indent=1,ensure_ascii=False))
+    elif cmd=='stills2':
+        for c in sel:c=dict(c);c['v2']=v2_plan(c);html(c);v=c['v2'];print(c['slug'],asyncio.run(frames(c,times=[v['a2'][0]+1.2,v['a2'][1]+1.5,v['a2'][2]+1.5,v['ps'][0]+1.2,v['ps'][5]+.8,v['ps'][-2]+1.6,v['c0']+3,v['l0']+3.4])))
+    elif cmd=='render2':    # second edition: saved beside the original as <slug>-v2.mp4, never overwriting it
+        for c in sel:render(c,True)

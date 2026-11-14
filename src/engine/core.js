@@ -1,7 +1,10 @@
 // NYC Dynasty League — franchise cinematic engine. Deterministic: frame = render(ctx,t), t in seconds.
 // CFG (injected by scripts/build_cinematics.py from site/data/canonical.json) = {theme, team, manager, sub, lines:[..3], players:[{f,l,num,pos,tm,ppg,pts,starts,nick,role,small}]}
 // Timeline (45s): 0-6 intro · 6-12 season storyline · 12-36 player showcase · 36-41.2 roll call · 41.2-45 crest
-const W=1920,H=1080,DUR=45,FPS=30,NP_=CFG.players.length,P0=12,PD=24/NP_,C0=36,L0=41.2;
+// Second edition (CFG.v2): four acts cut on the music's beat grid. v2 = {beat, a2:[card starts.., end], cards:[{k,big,sub}], ps:[player starts.., end], c0, l0, payoff}
+const V2=CFG.v2||null;
+const W=1920,H=1080,DUR=45,FPS=30,NP_=CFG.players.length,P0=V2?V2.ps[0]:12,PD=24/NP_,C0=V2?V2.c0:36,L0=V2?V2.l0:41.2,A2=V2?V2.a2[0]:6;
+const pStart=i=>V2?V2.ps[i]:P0+i*PD,pDur=i=>V2?V2.ps[i+1]-V2.ps[i]:PD;
 const SERIF="'Cinzel',serif",SANS="'Barlow Condensed',sans-serif",TECH="'Orbitron',sans-serif",BOLD="'Bebas Neue',sans-serif";
 const cl=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const seg=(t,a,b)=>cl((t-a)/(b-a));
@@ -132,11 +135,26 @@ function sLines(ctx,t){
     const ls=mix(18,8,eo(seg(t,a,b))),f=`${T.dw} %px ${T.disp}`;text(ctx,s,W/2,558,f.replace('%',fit(ctx,s,f,(i===2?50:44)*ks,1640,18)),i===2?T.hi:T.pale,ls);
     text(ctx,['THE RECORD','THE SEASON','THE CREED'][i],W/2,452,`600 22px ${SANS}`,T.txt,12);ctx.restore()})
 }
+// Act 2, second edition: three slammed cards (rival, worst day, stakes). Every figure comes from CFG.v2.cards, built from league data.
+function sConflict(ctx,t){
+  const A=V2.a2,j=Math.max(0,A.findIndex((x,k)=>k<A.length-1&&t>=x&&t<A[k+1])),a=A[j],b=A[j+1],c=V2.cards[j],lt=t-a,d=b-a,inn=eoe(seg(lt,0,.5)),out=seg(lt,d-.16,d);
+  (T.back||T.scene)(ctx,t*.5+j*7,T.back?1:.6,0);ctx.fillStyle='rgba(2,2,6,.62)';ctx.fillRect(0,0,W,H);
+  const vg=ctx.createRadialGradient(W/2,H/2,200,W/2,H/2,1100);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,j===2?`rgba(${T.flash},.22)`:'rgba(150,20,40,.30)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);T.fx(ctx,t,.5);
+  ctx.save();ctx.globalAlpha=(1-out);ctx.shadowColor='#000';ctx.shadowBlur=34;
+  const bw=eo(seg(lt,.05,.7))*520;ctx.fillStyle=T.mid;ctx.fillRect(W/2-bw,330,bw*2,3);
+  text(ctx,c.k,W/2,300,`600 34px ${SANS}`,T.txt,mix(40,16,eo(seg(lt,0,d))));
+  const sc=mix(1.7,1,inn)*(1+seg(lt,.5,d)*.035),fs=fit(ctx,c.big,`400 %px ${BOLD}`,300,1700,6);
+  ctx.save();ctx.translate(W/2,600);ctx.scale(sc,sc);ctx.globalAlpha=(1-out)*seg(lt,0,.12);ctx.font=`400 ${fs}px ${BOLD}`;ctx.letterSpacing='6px';ctx.textAlign='center';ctx.fillStyle=j===2?T.hi:T.pale;ctx.fillText(c.big,0,fs*.36);ctx.restore();
+  const sp=seg(lt,.45,.95);if(sp>0){ctx.globalAlpha=sp*(1-out);const f=`600 %px ${SANS}`;text(ctx,c.sub,W/2,800,f.replace('%',fit(ctx,c.sub,f,44,1640,6)),T.pale,6)}
+  ctx.restore();
+  const fl=lt<.07?1:Math.exp(-(lt-.07)*9);if(fl>.02){ctx.fillStyle=`rgba(${T.wipe||'255,244,222'},${fl*.55})`;ctx.fillRect(0,0,W,H)}
+  if(out>0){ctx.fillStyle=`rgba(0,0,0,${out*.9})`;ctx.fillRect(0,0,W,H)}
+}
 const NICHES={arch:'M-300 380 V-120 A300 300 0 0 1 300 -120 V380 Z',rect:'M-290 380 V-410 H290 V380 Z',hex:'M0 -430 L300 -260 V210 L0 380 L-300 210 V-260 Z',round:'M0 -410 a395 395 0 1 0 .01 0z',
   shield:'M-290 -410 H290 V120 Q290 300 0 380 Q-290 300 -290 120 Z'};
 let NP;const pad2=n=>String(n).padStart(2,'0');
 function sPlayer(ctx,t,i){
-  const pl=CFG.players[i],lt=t-(P0+i*PD),p=lt/PD,side=i%2?1:-1,inn=eoe(seg(lt,0,.55)),out=seg(lt,PD-.14,PD);
+  const pl=CFG.players[i],PDi=pDur(i),kq=Math.max(1,1.9/PDi),lt=(t-pStart(i))*kq,PD=PDi*kq,p=lt/PD,side=i%2?1:-1,inn=eoe(seg(lt,0,.55)),out=seg(lt,PD-.14*kq,PD);
   (T.back||T.scene)(ctx,T.back?t*.35+i*3.3:t,.55,0);
   ctx.fillStyle='rgba(3,3,5,.6)';ctx.fillRect(0,0,W,H);
   const drift=(p-.5)*46,nx=W/2+side*430+side*(1-inn)*260-side*drift,ny=575;
@@ -190,16 +208,17 @@ function sLogo(ctx,t){
   const wp=seg(st,1.1,1.9);if(wp>0){ctx.save();ctx.globalAlpha=wp;ctx.shadowColor=T.glow;ctx.shadowBlur=30;const f=`${T.dw} %px ${T.disp}`,ls=mix(70,26,eo(wp)),fs=fit(ctx,CFG.team,f,104,1500,26);
     ctx.font=f.replace('%',fs);ctx.letterSpacing=ls*fs/104+'px';ctx.textAlign='center';ctx.fillStyle=metal(ctx,830-fs*.8,830+fs*.45);ctx.fillText(CFG.team,W/2+ls*fs/208,830);ctx.restore()}
   const sp=seg(st,1.7,2.3);if(sp>0){ctx.save();ctx.globalAlpha=sp;const lw=eo(sp)*260;ctx.fillStyle=T.mid;ctx.fillRect(W/2-lw-460,878,lw,2);ctx.fillRect(W/2+460,878,lw,2);
-    text(ctx,CFG.sub,W/2,888,`600 28px ${SANS}`,T.txt,9);ctx.restore()}
+    const pay=V2&&V2.payoff&&st>=3.0;if(V2&&V2.payoff)ctx.globalAlpha=sp*(st<2.8?1:st<3.0?(3.0-st)/.2:Math.min(1,(st-3.0)/.35));   // second edition: the byline gives way to the stakes
+    if(pay)text(ctx,V2.payoff.big,W/2,892,`600 36px ${SANS}`,T.hi,8);else text(ctx,CFG.sub,W/2,888,`600 28px ${SANS}`,T.txt,9);ctx.restore()}
   ctx.restore();T.fx(ctx,t,amb);
   const wf=st<.1?1:Math.exp(-(st-.1)*4);if(wf>.01){ctx.fillStyle=`rgba(${T.wipe||'255,244,222'},${wf*.92})`;ctx.fillRect(0,0,W,H)}
   const fo=seg(t,DUR-.7,DUR-.05);if(fo>0){ctx.fillStyle=`rgba(0,0,0,${fo})`;ctx.fillRect(0,0,W,H)}
 }
 function render(ctx,t){
   t=cl(t,0,DUR-1e-6);const f=Math.round(t*FPS);ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.setLineDash([]);ctx.letterSpacing='0px';ctx.textBaseline='alphabetic';
-  if(t<6){sOpen(ctx,t);const x=seg(t,5.8,6);if(x>0){ctx.fillStyle=`rgba(0,0,0,${x})`;ctx.fillRect(0,0,W,H)}const fi=1-seg(t,0,.8);if(fi>0){ctx.fillStyle=`rgba(0,0,0,${fi})`;ctx.fillRect(0,0,W,H)}}
-  else if(t<P0){sLines(ctx,t);const fi=1-seg(t,6,6.4);if(fi>0){ctx.fillStyle=`rgba(0,0,0,${fi})`;ctx.fillRect(0,0,W,H)}}
-  else if(t<C0)sPlayer(ctx,t,Math.min(NP_-1,Math.floor((t-P0)/PD)));
+  if(t<A2){sOpen(ctx,t);const x=seg(t,A2-.2,A2);if(x>0){ctx.fillStyle=`rgba(0,0,0,${x})`;ctx.fillRect(0,0,W,H)}const fi=1-seg(t,0,.8);if(fi>0){ctx.fillStyle=`rgba(0,0,0,${fi})`;ctx.fillRect(0,0,W,H)}}
+  else if(t<P0){if(V2)sConflict(ctx,t);else{sLines(ctx,t);const fi=1-seg(t,6,6.4);if(fi>0){ctx.fillStyle=`rgba(0,0,0,${fi})`;ctx.fillRect(0,0,W,H)}}}
+  else if(t<C0){let i=NP_-1;if(V2){i=0;while(i<NP_-1&&t>=V2.ps[i+1])i++}else i=Math.min(NP_-1,Math.floor((t-P0)/PD));sPlayer(ctx,t,i)}
   else if(t<L0)sClimax(ctx,t);
   else sLogo(ctx,t);
   post(ctx,t,f)}

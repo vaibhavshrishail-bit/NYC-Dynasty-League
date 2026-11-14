@@ -194,3 +194,7 @@ Checkpoint before this work: branch `checkpoint-pre-visual-upgrade`.
 | Season rollover to 2027 | **Manual, documented** | See the sitewide sprint section above |
 
 **Not done in this cycle.** The cinematic video rebuild (see VIDEO_PRODUCTION.md, "Next edition plan"). NFL logos, mascots and player photographs (see the finding above). A separate mobile-size poster export.
+
+## Dynasty Timeline and the second-edition film (14 Nov 2026)
+`site/timeline.html`: season rail (2022 → now) → that season's moments on a vertical rail → tap a moment for detail and links. Events are computed in the page from `league.json` (meetings, records, seasons), `canonical.json` (trades, franchise seasons, former managers) and `weekly.json` (season highlights); filters by kind, and a "follow a franchise" select dims everything else. Linked from Archives and the homepage films block; covered by `tests/site_test.py` (`timeline` flow). Trades exist for the current season only, and team names from earlier seasons are not stored, so earlier seasons name the manager of that season and the current team name.
+Second-edition film pipeline: see VIDEO_PRODUCTION.md, "Second edition". One reference film exists (`site/cinematics/vaibhav-v2.mp4`); it is not linked from any page yet.
