@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
-<title>Rivalry Central — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body>
+<title>Rivalry Central — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body class="wr">
 <div id="nav"></div><div class="wrap" style="padding-top:26px;padding-bottom:50px"><div class="k">Rivalry Central</div><h1 class="h-page">Head to head</h1>
 <p class="lede">Every meeting between any two franchises since the league began in 2022, from Sleeper results.</p>
 <div id="web"></div>
@@ -13,10 +13,12 @@ loadAll().then(([c,L])=>{
   const m0=L.pulse.matchups[0],def=m0?[T(m0.a).slug,T(m0.b).slug]:[T(c.standings[0]).slug,T(c.standings[1]).slug];
   sa.value=c.franchises.some((f)=>f.slug===q.get('a'))?q.get('a'):def[0];sb.value=c.franchises.some((f)=>f.slug===q.get('b'))?q.get('b'):def[1];
   let hov=null,armed=false;const steps=()=>{const sp=document.querySelectorAll('#steps span');sp[0].className=armed?'':'on';sp[1].className=armed?'on':''};if(!q.get('a')&&myTeam.get()&&c.franchises.some((f)=>f.slug===myTeam.get())&&myTeam.get()!==sb.value)sa.value=myTeam.get();
-  function web(){const el=document.getElementById('web');if(innerWidth<760){el.innerHTML='';return}
+  function web(){const el=document.getElementById('web');if(innerWidth<760){const A0=c.franchises.find((f)=>f.slug===sa.value).roster_id,B0=c.franchises.find((f)=>f.slug===sb.value).roster_id,rc=(a,b)=>{const g=L.meetings.filter((m)=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a));return [g.filter((m)=>(m.a===a?m.pa>m.pb:m.pb>m.pa)).length,g.filter((m)=>(m.a===a?m.pa<m.pb:m.pb<m.pa)).length,g.length]};
+      el.innerHTML=`<div class="rl"><div class="k" style="padding:14px 14px 6px">${esc(T(A0).manager)} against everyone · tap a rival</div>${c.standings.filter((id)=>id!==A0).map((id)=>{const r=rc(A0,id);return `<button data-rv="${T(id).slug}" aria-pressed="${id===B0}">${emblem(c.themes[T(id).theme])}<span>${esc(T(id).manager)}<small>${esc(T(id).team_name)}</small></span><span class="bar"><i style="width:${r[2]?(r[0]/r[2]*100).toFixed(0):0}%"></i></span><b>${r[0]}–${r[1]}</b></button>`}).join('')}</div>`;
+      el.querySelectorAll('[data-rv]').forEach((b)=>b.onclick=()=>{sb.value=b.dataset.rv;draw()});return}
     const ids=c.standings,n=ids.length,R=250,cx=500,cy=300,pos=Object.fromEntries(ids.map((id,i)=>{const a=-Math.PI/2+i/n*2*Math.PI;return [id,[cx+Math.cos(a)*R*1.55,cy+Math.sin(a)*R]]}));
     const A=c.franchises.find((f)=>f.slug===sa.value).roster_id,B=c.franchises.find((f)=>f.slug===sb.value).roster_id,foc=hov||A,rec=(a,b)=>{const g=L.meetings.filter((m)=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a));return [g.filter((m)=>(m.a===a?m.pa>m.pb:m.pb>m.pa)).length,g.filter((m)=>(m.a===a?m.pa<m.pb:m.pb<m.pa)).length,g.length]};
-    let s='<svg viewBox="0 0 1000 600" style="width:100%;height:auto;display:block" role="img" aria-label="Rivalry web: pick two franchises">';
+    let s='<svg viewBox="0 -24 1000 660" style="width:100%;height:auto;display:block" role="img" aria-label="Rivalry web: pick two franchises">';
     for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=ids[i],b=ids[j],r=rec(a,b),on=(a===foc||b===foc),pair=(a===A&&b===B)||(a===B&&b===A);if(!r[2])continue;const lop=Math.abs(r[0]-r[1])/r[2];
       s+=`<line x1="${pos[a][0]}" y1="${pos[a][1]}" x2="${pos[b][0]}" y2="${pos[b][1]}" stroke="${pair?'#fff':on?`hsl(${Math.round(140-140*lop)} 70% 55%)`:'#3a3d48'}" stroke-width="${pair?4:on?1+r[2]*.45:1}" opacity="${pair?1:on?.85:.25}"/>`}
     for(const id of ids){const t=c.themes[T(id).theme],p=pos[id],r=id!==foc?rec(foc,id):null,is=id===A||id===B;
@@ -25,7 +27,8 @@ loadAll().then(([c,L])=>{
     el.innerHTML=s+`</svg><p class="note" style="text-align:center;margin-top:0">Showing ${esc(T(foc).manager)}'s record against everyone. Green lines are close series, red are lopsided, thicker means more meetings. ${armed?'Now click the rival.':'Click a crest to start from a different franchise.'}</p>`;
     el.querySelectorAll('g[data-id]').forEach((g)=>{const id=+g.dataset.id;g.onmouseenter=()=>{if(hov!==id){hov=id;web()}};g.onclick=()=>{if(!armed){if(T(id).slug===sb.value)sb.value=sa.value;sa.value=T(id).slug;armed=true}else{if(T(id).slug===sa.value)return;sb.value=T(id).slug;armed=false}hov=null;steps();draw()}});
     el.onmouseleave=()=>{if(hov){hov=null;web()}}}
-  function draw(){
+  function draw(){keepPlace(_draw)}
+  function _draw(){
     const A=c.franchises.find((f)=>f.slug===sa.value),B=c.franchises.find((f)=>f.slug===sb.value),pg=document.getElementById('page');
     web();if(A===B){pg.innerHTML='<p class="note">Pick two different franchises.</p>';return}
     history.replaceState(null,'',`rivalry.html?a=${A.slug}&b=${B.slug}`);document.title=`${A.team_name} vs ${B.team_name} — Rivalry Central`;

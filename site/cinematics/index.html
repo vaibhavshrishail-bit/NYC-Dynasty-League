@@ -8,7 +8,7 @@ a.back{font:600 12px system-ui,sans-serif;letter-spacing:.24em;text-transform:up
 h1{font-size:clamp(32px,6vw,60px);font-weight:400;margin:14px 0 8px;line-height:1.05}
 p.s{color:#9a968a;margin:0;font-size:17px;max-width:62ch}
 #stage{max-width:1280px;margin:0 auto 28px;display:none}
-#stage video{width:100%;aspect-ratio:16/9;background:#000;display:block}
+#stage video{width:100%;aspect-ratio:16/9;background:var(--invfg);display:block}
 #stage h2{font-weight:400;font-size:24px;margin:14px 0 2px}#stage p{margin:0;color:#9a968a;font:14px system-ui,sans-serif}
 #grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
 button.card{all:unset;cursor:pointer;display:block;background:#12131a;border:1px solid #2a2b31}
@@ -18,7 +18,7 @@ button.card div{padding:12px 14px 14px}
 button.card b{display:block;font-weight:400;font-size:19px}
 button.card span{font:13px system-ui,sans-serif;color:#9a968a}
 footer{max-width:1280px;margin:32px auto 0;font:13px system-ui,sans-serif;color:#6c6a63}
-</style></head><body>
+</style></head><body class="wr dark">
 <header><a class="back" href="../">← League Pulse</a> &nbsp; <a class="back" href="../archives.html">Archives</a><h1>Franchise Cinematics</h1>
 <p class="s">Twelve franchises, twelve films. Each features the players who have scored the most while starting for that franchise this season, shown in their NFL team colours.</p></header>
 <section id="stage"><video id="v" controls playsinline preload="none"></video><h2 id="vt"></h2><p id="vs"></p></section>

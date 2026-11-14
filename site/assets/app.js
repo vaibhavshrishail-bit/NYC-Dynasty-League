@@ -12,7 +12,7 @@ function emblem(th) { // the same crest the cinematic draws: ring, laurel, theme
   let leaves = ''; for (const s of [-1, 1]) for (let i = 0; i < 9; i++) { const a = Math.PI / 2 + s * (.32 + i * .2), x = 100 + Math.cos(a) * 75.5, y = 100 + Math.sin(a) * 75.5;
     leaves += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="6.5" ry="2.4" transform="rotate(${((a + s * 1.05) * 180 / Math.PI).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${th.mid}"/>`; }
   const g = th.glyph.map((p) => `<path d="${p.d}" fill="${p.f === 'ink' ? th.ink : p.f === 'hot' ? th.hot : `url(#${id})`}"${p.eo ? ' fill-rule="evenodd"' : ''}/>`).join('');
-  return `<svg viewBox="0 0 200 200" role="img" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="40" x2="0" y2="160" gradientUnits="userSpaceOnUse">${st}</linearGradient></defs>
+  return `<svg class="em" viewBox="0 0 200 200" role="img" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="40" x2="0" y2="160" gradientUnits="userSpaceOnUse">${st}</linearGradient></defs>
 <circle cx="100" cy="100" r="92" fill="none" stroke="${th.hi}" stroke-width="3"/><circle cx="100" cy="100" r="83" fill="none" stroke="${th.hi}" stroke-width="1" opacity=".7"/>${leaves}${g}</svg>`;
 }
 const fontOf = (th) => `font-family:'${th.font}',serif;font-weight:${th.weight};${th.font === 'Orbitron' ? 'letter-spacing:.02em;font-size:.82em;' : th.font === 'Bebas Neue' ? 'letter-spacing:.04em;font-size:1.18em;' : 'letter-spacing:.03em;'}`;
@@ -54,3 +54,15 @@ function crestCanvas(x, th, cx, cy, r) { x.save(); x.translate(cx - r, cy - r); 
   for (const p of th.glyph) { x.fillStyle = p.f === 'ink' ? th.ink : p.f === 'hot' ? th.hot : gr; x.fill(new Path2D(p.d), p.eo ? 'evenodd' : 'nonzero'); } x.restore(); }
 async function loadLive(base = '') { const [c, l] = await loadAll(base), [w, h] = await Promise.all([fetch(base + 'data/weekly.json', { cache: 'no-cache' }).then((r) => r.json()), fetch(base + 'data/history.json', { cache: 'no-cache' }).then((r) => r.json())]); return [c, l, w, h]; }
 const savePng = (cv, name) => { const l = document.createElement('a'); l.download = name; l.href = cv.toDataURL('image/png'); l.click(); };
+
+// ---- tables: label every cell with its column heading so phones can show rows as cards ----
+function labelTables() { document.querySelectorAll('.tw table,.tw2 table').forEach((t) => { const h = [...t.querySelectorAll('tr:first-child th')].map((x) => x.textContent.trim()); if (!h.length) { t.classList.add('kv'); return; } t.classList.add('stk');
+  const short = /^(#|seed|wk|week|season)$/i.test(h[0] || ''); t.querySelectorAll('tr').forEach((r) => [...r.children].forEach((td, i) => { if (td.tagName !== 'TD' || td.hasAttribute('colspan')) return; td.dataset.l = h[i] || ''; if (i === 0 && !short) td.classList.add('t0'); })); }); }
+let _lt; new MutationObserver(() => { clearTimeout(_lt); _lt = setTimeout(labelTables, 20); }).observe(document.documentElement, { childList: true, subtree: true });
+// ---- keepPlace: re-rendering a page must not move what the reader just touched ----
+let _anc = null;
+const _selOf = (el) => { if (el.id) return '#' + CSS.escape(el.id); const box = el.closest('[id]'), pre = box ? '#' + CSS.escape(box.id) + ' ' : ''; for (const a of ['data-id', 'data-br', 'data-k', 'data-tab', 'data-un', 'data-w', 'data-f', 'data-me']) if (el.hasAttribute(a)) return pre + el.tagName.toLowerCase() + (a === 'data-k' ? `[data-k="${el.getAttribute('data-k')}"][data-w="${el.getAttribute('data-w')}"]` : `[${a}="${el.getAttribute(a)}"]`); return box ? '#' + CSS.escape(box.id) : null; };
+const _mark = (e) => { const el = e.target.closest && e.target.closest('button,select,summary,a,[role=button],[data-id],[data-w],[data-br]'); if (!el) return; const box = el.parentElement && el.parentElement.closest('[id]'); _anc = { sel: _selOf(el), top: el.getBoundingClientRect().top, box: box && box.id ? '#' + CSS.escape(box.id) : null, boxTop: box ? box.getBoundingClientRect().top : 0 }; };
+addEventListener('pointerdown', _mark, true); addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') _mark(e); }, true); addEventListener('change', _mark, true);
+function keepPlace(fn) { const a = _anc; fn(); if (!a) return; let el = a.sel && document.querySelector(a.sel), was = a.top; if (!el || !el.getClientRects().length) { el = a.box && document.querySelector(a.box); was = a.boxTop; } if (!el) return;
+  const d = el.getBoundingClientRect().top - was; if (Math.abs(d) > 1) scrollBy({ top: d, behavior: 'instant' }); _anc.top = was; }

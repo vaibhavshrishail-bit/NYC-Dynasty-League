@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
-<title>Franchise — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body>
+<title>Franchise — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body class="wr">
 <div id="nav"></div><div id="page"></div>
 <script src="assets/app.js"></script><script src="assets/sim.js"></script><script>
 document.getElementById('nav').innerHTML=nav('Franchises');
@@ -19,7 +19,7 @@ loadAll().then(([c,L])=>{
   const hh=(o)=>{const v=f.h2h[o];return v?`${v.w}–${v.l}`:'0–0'};
   document.getElementById('page').innerHTML=`
 <header class="hero" id="hero"><div class="wrap">
- <div class="bar"><a href="./#franchises">← All franchises</a><span><a href="franchise.html?f=${esc(prev.slug)}">‹ ${esc(prev.team_name)}</a> &nbsp; <a href="franchise.html?f=${esc(next.slug)}">${esc(next.team_name)} ›</a></span></div>
+ <div class="bar"><a href="./#franchises">← All franchises</a><span><a href="franchise.html?f=${esc(prev.slug)}">‹ ${esc(prev.team_name)}</a><a href="franchise.html?f=${esc(next.slug)}">${esc(next.team_name)} ›</a></span></div>
  <div class="id">${emblem(th)}<div><div class="k">${esc(f.manager)}${stars(f)} · ${f.in_playoff_position?ord(f.seed)+' seed':ord(f.seed)+' in the standings'}${f.titles.length?` · Champion ${f.titles.join(', ')}`:''}</div>
   <h1 style="${fontOf(th)}">${esc(f.team_name)}</h1>${f.former_names.length?`<div class="was">Formerly ${esc(f.former_names.join(', '))}</div>`:''}</div></div>
  <div class="stats"><div><b>${esc(f.record)}</b><span>${c.season} record</span></div><div><b>${f.pf.toFixed(1)}</b><span>Points for · ${ord(f.points_rank)}</span></div><div><b>${f.pa.toFixed(1)}</b><span>Points against</span></div>
@@ -45,7 +45,7 @@ loadAll().then(([c,L])=>{
   <p class="note">Every meeting since 2022, playoffs included, for this roster spot${prior.length?` (including seasons under ${esc(f.former_managers.join(', ')||'a previous manager')})`:''}.</p></section>
  <section class="blk"><h3>History</h3><div class="tw"><table><tr><th>Season</th><th>Record</th><th>Points</th><th>Finish</th></tr>${f.seasons.map((s)=>`<tr><td>${s.season}</td><td>${s.wins}–${s.losses}</td><td>${s.pf.toFixed(1)}</td><td>${s.champion?'<span class="tag gold">🏆 Champion</span>':s.runner_up?'<span class="tag silver">Runner-up</span>':s.toilet_bowl?'<span class="tag brown">🚽 Lost the Toilet Bowl</span>':''}${s.same_owner?'':' <span class="note">previous manager</span>'}</td></tr>`).join('')}</table></div>
   <p class="note">Franchise record score: ${tm.franchise_high.pf.toFixed(2)}, ${tm.franchise_high.season} Week ${tm.franchise_high.week} v ${esc(name(tm.franchise_high.opp))}. Power ranking: ${ord(tm.power.rank)}${tm.power.prev!==tm.power.rank?` (was ${ord(tm.power.prev)})`:''} · ${tm.momentum.label}: ${esc(tm.momentum.detail)}.</p>
-  <h3 style="margin-top:28px">Draft position</h3><p class="note" style="font-size:16px;color:#c4c6cd">${yr?`This franchise's own ${yr} first-round pick ${sim.miss<.03?'projects to the 7–12 range (playoff teams pick by playoff result)':`has a ${pct(sim.miss)} chance of landing in the top six, most likely 1.${String(slotTop+1).padStart(2,'0')}`}. ${ownR1&&ownR1.roster_id!==id?`It is currently owned by ${esc(ownR1.team_name)}.`:ownR1?'It still owns that pick.':''}`:''} <a href="playoffs.html">Draft stakes →</a></p><div class="flag">${esc(L.rules.draft_flag)}</div>
+  <h3 style="margin-top:28px">Draft position</h3><p class="note" style="font-size:16px;color:var(--txt2)">${yr?`This franchise's own ${yr} first-round pick ${sim.miss<.03?'projects to the 7–12 range (playoff teams pick by playoff result)':`has a ${pct(sim.miss)} chance of landing in the top six, most likely 1.${String(slotTop+1).padStart(2,'0')}`}. ${ownR1&&ownR1.roster_id!==id?`It is currently owned by ${esc(ownR1.team_name)}.`:ownR1?'It still owns that pick.':''}`:''} <a href="playoffs.html">Draft stakes →</a></p><div class="flag">${esc(L.rules.draft_flag)}</div>
   <h3 style="margin-top:28px">Future draft picks</h3>${Object.entries(picks).map(([y,ps])=>`<p class="k" style="margin:10px 0 6px">${y}</p><div class="chips">${ps.map((p)=>`<span>Round ${p.round}${p.original_roster!==f.roster_id?` · via ${esc(name(p.original_roster))}`:''}</span>`).join('')}</div>`).join('')||'<p class="note">None.</p>'}</section>
  </div>
  <section class="blk"><details class="ro"><summary>Current roster (${tm.roster.length})</summary><div class="rost">${tm.roster.map((p)=>`<div>${esc(p.name)} <em>${esc(p.position)} · ${esc(p.nfl_team)}${p.starter?' · starter':p.taxi?' · taxi':p.ir?' · IR':''}</em></div>`).join('')}</div></details></section>

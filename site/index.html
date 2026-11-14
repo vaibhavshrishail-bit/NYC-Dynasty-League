@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
 <title>NYC Dynasty League — League Pulse</title><meta name="description" content="The NYC Dynasty League this week: the matchup that matters, the playoff race, power rankings and all twelve franchises.">
-<link rel="stylesheet" href="assets/app.css"></head><body>
+<link rel="stylesheet" href="assets/app.css"></head><body class="wr">
 <div id="nav"></div><div id="tmbar"></div>
 <div class="wrap show">
 <header class="top" style="padding-bottom:10px"><div><div class="k" id="sub">NYC Dynasty League</div><h1 id="wk">League Pulse</h1><div class="k" id="state" style="margin-top:8px"></div></div>
@@ -48,7 +48,7 @@ loadLive().then(([c,L,WK,H])=>{
       <details class="note" style="margin-top:8px"><summary style="cursor:pointer">How this is ranked</summary>40% record against every team every week, 35% scoring average, 25% last three weeks. Labels compare the last three weeks with the season average.</details></div>`;
     const rg=now&&pv.games.length?(pv.games.find((x)=>x.tag)||pv.games.find((x)=>x.series.games>=4&&!x.series.first_for_managers)):null;
     $('spot').innerHTML=rg?(()=>{const h=rg.history,last=h[h.length-1],close=h.reduce((p,m)=>Math.abs(m.a-m.b)<Math.abs(p.a-p.b)?m:p),big=h.reduce((p,m)=>Math.abs(m.a-m.b)>Math.abs(p.a-p.b)?m:p),A=T(rg.a),B=T(rg.b);
-      return `<h3 class="sec">Rivalry spotlight<small>${esc(rg.tag||'this week')}</small></h3><div class="panel"><div class="vs"><a href="${fl(rg.a)}">${emblem(th(rg.a))}<div class="n" style="color:${th(rg.a).hi}">${esc(A.manager)}</div></a><div class="mid" style="font-family:'Bebas Neue';font-weight:400;font-size:clamp(40px,6vw,72px);color:#fff">${rg.series.a}–${rg.series.b}</div><a href="${fl(rg.b)}">${emblem(th(rg.b))}<div class="n" style="color:${th(rg.b).hi}">${esc(B.manager)}</div></a></div>
+      return `<h3 class="sec">Rivalry spotlight<small>${esc(rg.tag||'this week')}</small></h3><div class="panel"><div class="vs"><a href="${fl(rg.a)}">${emblem(th(rg.a))}<div class="n" style="color:${th(rg.a).hi}">${esc(A.manager)}</div></a><div class="mid" style="font-family:'Bebas Neue';font-weight:400;font-size:clamp(40px,6vw,72px);color:var(--hi)">${rg.series.a}–${rg.series.b}</div><a href="${fl(rg.b)}">${emblem(th(rg.b))}<div class="n" style="color:${th(rg.b).hi}">${esc(B.manager)}</div></a></div>
        <div class="big3"><div><b>${f2(Math.abs(close.a-close.b))}</b><span>Closest · ${close.season} Wk ${close.week}</span></div><div><b>${f2(Math.abs(big.a-big.b))}</b><span>Biggest win · ${esc((big.a>big.b?A:B).manager)}, ${big.season}</span></div><div><b>${esc((last.a>last.b?A:B).manager)}</b><span>Won the last one · ${last.season} Wk ${last.week}</span></div></div>
        <p><a class="btn" href="rivalry.html?a=${A.slug}&b=${B.slug}">Open the rivalry file</a></p></div>`})():'';
     const jug=hs?hs.power[0]:null;
@@ -63,9 +63,9 @@ loadLive().then(([c,L,WK,H])=>{
       ${sh.closest?hc('CLOSEST FINISH',f2(sh.closest.v)+' pts',`${M(sh.closest.pa>sh.closest.pb?sh.closest.a:sh.closest.b)} over ${M(sh.closest.pa>sh.closest.pb?sh.closest.b:sh.closest.a)}.`,sh.closest.week):''}${sh.biggest_margin?hc('MOST DOMINANT WIN','+'+f2(sh.biggest_margin.margin),`${M(sh.biggest_margin.roster_id)} over ${M(sh.biggest_margin.opp)}.`,sh.biggest_margin.week):''}
       ${sh.best_player?hc('BEST SINGLE GAME',esc(sh.best_player.name),`${f2(sh.best_player.points)} for ${M(sh.best_player.roster_id)}.`,sh.best_player.week):''}${sh.heartbreak?hc('CRUELEST LOSS',M(sh.heartbreak.roster_id),`Scored ${f2(sh.heartbreak.points)}, lost to ${M(sh.heartbreak.opp)}.`,sh.heartbreak.week):''}
       ${sh.longest_win_streak?hc('LONGEST WIN STREAK',sh.longest_win_streak.length+' straight',`${M(sh.longest_win_streak.roster_id)}, Weeks ${sh.longest_win_streak.from}–${sh.longest_win_streak.to}.`,sh.longest_win_streak.to):''}</div>`:'';
-    const bk=$('back');if(bk)bk.onclick=()=>{tm.value='0';render(0);scrollTo(0,0)};
+    const bk=$('back');if(bk)bk.onclick=()=>{tm.value='0';render(0);scrollTo({top:0,behavior:'instant'})};
   }
-  tm.onchange=()=>{render(+tm.value);scrollTo(0,0)};render(0);
+  tm.onchange=()=>keepPlace(()=>render(+tm.value));render(0);
   const order=c.standings.map((id)=>c.byRoster[id]);
   $('grid').innerHTML=order.map((f,i)=>{const t=c.themes[f.theme],s=f.streak;
     return `<a class="card" href="franchise.html?f=${esc(f.slug)}" style="--c:${t.hi};--g:${t.flash};animation-delay:${i*45}ms" aria-label="${esc(f.team_name)}, ${esc(f.manager)}, ${c.season} record ${esc(f.record)}, ${f.pf.toFixed(1)} points for${f.titles.length?`, ${f.titles.length} titles`:''}">

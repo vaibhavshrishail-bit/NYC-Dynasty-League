@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
-<title>This Week — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body>
+<title>This Week — NYC Dynasty League</title><link rel="stylesheet" href="assets/app.css"></head><body class="wr">
 <div id="nav"></div><div class="wrap show" style="padding-top:22px;padding-bottom:50px">
 <div class="k" id="kind">NYC Dynasty</div><h1 class="h-page" id="h">Week</h1><div class="k" id="sub" style="color:var(--gn);font-size:15px;margin-top:6px"></div>
 <div class="tabs" id="tabs"></div><div class="rule3"></div><div id="page"></div><footer id="foot"></footer></div>
@@ -32,7 +32,7 @@ loadLive().then(async([c,L,WK,H])=>{const LIB=await fetch('data/library.json').t
       const tile=(p,r)=>`<div class="jt ${r?'r':''}">${jerseySVG(p)}<b>${up(p.name)}</b><span>${esc(p.position)} · ${esc(p.nfl_team)}${p.projected!=null?' · '+f2(p.projected):''}</span></div>`;
       const lu=(l,r,id)=>`<div class="${r?'r':''}"><h4>${up(T(id).manager)}<small>${esc(T(id).team_name)}</small></h4>${l.map((p)=>`<div class="p"><span class="s">${esc(p.slot)}</span><span class="n">${p.empty?'':`<i class="sw" style="background:${(NFLC[p.nfl_team]||NFLC.FA)[0]};outline:1px solid ${(NFLC[p.nfl_team]||NFLC.FA)[1]}"></i>`}${esc(p.name)}${p.status?`<sup title="${esc(p.status)}">${esc(p.status[0])}</sup>`:''}</span><span class="o">${esc(p.opp)}</span><span class="v">${g.live&&p.live?`<b>${f2(p.live)}</b>`:p.projected!=null?f2(p.projected):'—'}</span></div>`).join('')}</div>`;
       return `<details class="mx" id="m${i}" ${i===openI?'open':''}><summary><div class="mrow"><div class="tags">${g.kicker?`<span class="chip o">${up(g.kicker)}</span>`:''}<span class="chip">${up(g.rating)}</span>${lv(g)}</div><div class="l"><div class="who">${up(A.manager)}</div><small>${esc(A.team_name)} · ${esc(A.record)}</small></div>
-        <div class="mid"><div class="pp"><i>${f2(g.projected[0])}</i> <span style="font-size:.4em;color:#fff">VS</span> <b>${f2(g.projected[1])}</b></div><div class="wbar"><i style="width:${(g.win[0]*100).toFixed(1)}%"></i></div><small>${(g.win[0]*100).toFixed(1)}% win · ${(g.win[1]*100).toFixed(1)}% win</small></div>
+        <div class="mid"><div class="pp"><i>${f2(g.projected[0])}</i> <span style="font-size:.4em;color:var(--hi)">VS</span> <b>${f2(g.projected[1])}</b></div><div class="wbar"><i style="width:${(g.win[0]*100).toFixed(1)}%"></i></div><small>${(g.win[0]*100).toFixed(1)}% win · ${(g.win[1]*100).toFixed(1)}% win</small></div>
         <div class="r"><div class="who">${up(B.manager)}</div><small>${esc(B.team_name)} · ${esc(B.record)}</small><small>${ser(g)}</small></div>
         <div class="hl1">${esc(g.headline[0])}</div><div class="more">Tap for the full preview</div></div></summary>
        <div class="in"><div class="hl">${g.headline.map(esc).join('<br>')}</div>${g.why?`<p class="st" style="text-align:center;margin:0 auto 18px"><b style="color:var(--gn);font-weight:600;letter-spacing:.14em;font-size:14px">WHY IT MATTERS</b><br>${esc(g.why)}</p>`:''}
