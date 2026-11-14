@@ -3,7 +3,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const ord = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 async function loadLeague(base = '') {
   const [c, t] = await Promise.all([fetch(base + 'data/canonical.json', { cache: 'no-cache' }).then((r) => r.json()), fetch(base + 'data/themes.json').then((r) => r.json())]);
-  c.byRoster = Object.fromEntries(c.franchises.map((f) => [f.roster_id, f])); c.themes = t; return c;
+  c.byRoster = Object.fromEntries(c.franchises.map((f) => [f.roster_id, f])); c.themes = t; for (const f of c.franchises) if (t[f.theme]) t[f.theme].titles = (f.titles || []).length; return c; // championships ride on the theme so every crest can show its stars
 }
 function themeVars(el, th) { el.style.setProperty('--c', th.hi); el.style.setProperty('--g', th.flash); }
 let _eid = 0;
@@ -12,13 +12,16 @@ function emblem(th) { // Franchise crest: a self-contained medallion. It carries
   let leaves = ''; for (const s of [-1, 1]) for (let i = 0; i < 9; i++) { const a = Math.PI / 2 + s * (.32 + i * .2), x = 100 + Math.cos(a) * 75.5, y = 100 + Math.sin(a) * 75.5;
     leaves += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="6.8" ry="2.6" transform="rotate(${((a + s * 1.05) * 180 / Math.PI).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${th.hi}" opacity=".92"/>`; }
   let ticks = ''; for (let i = 0; i < 48; i++) { const a = i * Math.PI / 24, r1 = 85.5, r2 = i % 4 ? 83.5 : 81.5; ticks += `M${(100 + Math.cos(a) * r1).toFixed(1)} ${(100 + Math.sin(a) * r1).toFixed(1)}L${(100 + Math.cos(a) * r2).toFixed(1)} ${(100 + Math.sin(a) * r2).toFixed(1)}`; }
-  const g = th.glyph.map((p) => `<path d="${p.d}" fill="${p.f === 'ink' ? '#0a1120' : p.f === 'hot' ? th.hot : `url(#${id})`}"${p.eo ? ' fill-rule="evenodd"' : ''}/>`).join('');
+  const g = th.glyph.map((p) => `<path d="${p.d}" fill="${p.f === 'ink' ? '#0a1120' : p.f === 'hot' ? th.hot : p.f === 'mid' ? th.mid : p.f === 'hi' ? th.hi : `url(#${id})`}"${p.eo ? ' fill-rule="evenodd"' : ''}/>`).join('');
   return `<svg class="em" viewBox="0 0 200 200" role="img" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="40" x2="0" y2="160" gradientUnits="userSpaceOnUse">${st}</linearGradient>
 <linearGradient id="${id}r" x1="0" y1="0" x2="1" y2="1">${st}</linearGradient><radialGradient id="${id}f" cx=".5" cy=".42" r=".62"><stop offset="0" stop-color="rgb(${th.flash})" stop-opacity=".5"/><stop offset=".7" stop-color="rgb(${th.flash})" stop-opacity=".12"/><stop offset="1" stop-color="rgb(${th.flash})" stop-opacity="0"/></radialGradient>
 <filter id="${id}s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.5" stdDeviation="2.2" flood-color="#000" flood-opacity=".7"/></filter></defs>
 <circle cx="100" cy="100" r="98.5" fill="#0a1120" stroke="#fff" stroke-width="3"/><circle cx="100" cy="100" r="91.5" fill="none" stroke="url(#${id}r)" stroke-width="7"/><circle cx="100" cy="100" r="87" fill="#0d1728"/><circle cx="100" cy="100" r="87" fill="url(#${id}f)"/>
-<path d="${ticks}" stroke="${th.hi}" stroke-width="1" opacity=".45" fill="none"/>${leaves}<g filter="url(#${id}s)">${g}</g><path d="M22 84a80 80 0 0 1 156 0c-40-22-116-22-156 0z" fill="#fff" opacity=".07"/></svg>`;
+<path d="${ticks}" stroke="${th.hi}" stroke-width="1" opacity=".45" fill="none"/>${leaves}<g filter="url(#${id}s)">${g}</g>${crestStars(th.titles).map(([sx, sy, sr]) => `<path d="${STAR}" transform="translate(${sx.toFixed(1)} ${sy.toFixed(1)}) rotate(${(sr * 180 / Math.PI).toFixed(1)})" fill="#ffd24a" stroke="#0a1120" stroke-width="1.6" stroke-linejoin="round" paint-order="stroke"/>`).join('')}<path d="M22 84a80 80 0 0 1 156 0c-40-22-116-22-156 0z" fill="#fff" opacity=".07"/></svg>`;
 }
+// One small gold star per championship, on an arc across the top of the crest (inside the rim, in the gap the laurel leaves open).
+const STAR = 'M0-7.4L2.2-2.5 7.5-2 3.5 1.6 4.6 6.8 0 4.1-4.6 6.8-3.5 1.6-7.5-2-2.2-2.5Z';
+const crestStars = (n) => Array.from({ length: Math.min(n || 0, 7) }, (_, i) => { const a = -Math.PI / 2 + (i - (Math.min(n, 7) - 1) / 2) * 0.25; return [100 + Math.cos(a) * 77.5, 100 + Math.sin(a) * 77.5, a + Math.PI / 2]; });
 const fontOf = (th) => `font-family:'${th.font}',serif;font-weight:${th.weight};${th.font === 'Orbitron' ? 'letter-spacing:.02em;font-size:.82em;' : th.font === 'Bebas Neue' ? 'letter-spacing:.04em;font-size:1.18em;' : 'letter-spacing:.03em;'}`;
 const stamp = (c) => `Sleeper data through Week ${c.through_week} of ${c.season}. Data last changed ${new Date(c.generated_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}.`;
 const stars = (f) => f.titles.length ? ` <span class="stars" title="Champion ${f.titles.join(', ')}" aria-label="${f.titles.length} championship${f.titles.length > 1 ? 's' : ''}">${'★'.repeat(f.titles.length)}</span>` : '';
@@ -68,7 +71,8 @@ function crestCanvas(x, th, cx, cy, r) { // the same medallion as emblem(), for 
   x.strokeStyle = th.hi; x.globalAlpha = .45; x.lineWidth = 1; x.beginPath(); for (let i = 0; i < 48; i++) { const a = i * Math.PI / 24, r2 = i % 4 ? 83.5 : 81.5; x.moveTo(100 + Math.cos(a) * 85.5, 100 + Math.sin(a) * 85.5); x.lineTo(100 + Math.cos(a) * r2, 100 + Math.sin(a) * r2); } x.stroke();
   x.globalAlpha = .92; x.fillStyle = th.hi; for (const s of [-1, 1]) for (let i = 0; i < 9; i++) { const a = Math.PI / 2 + s * (.32 + i * .2); x.save(); x.translate(100 + Math.cos(a) * 75.5, 100 + Math.sin(a) * 75.5); x.rotate(a + s * 1.05); x.beginPath(); x.ellipse(0, 0, 6.8, 2.6, 0, 0, 7); x.fill(); x.restore(); }
   x.globalAlpha = 1; x.shadowColor = 'rgba(0,0,0,.7)'; x.shadowBlur = 5 * r / 100; x.shadowOffsetY = 2.5 * r / 100;
-  for (const p of th.glyph) { x.fillStyle = p.f === 'ink' ? '#0a1120' : p.f === 'hot' ? th.hot : gr; x.fill(new Path2D(p.d), p.eo ? 'evenodd' : 'nonzero'); } x.restore(); }
+  for (const p of th.glyph) { x.fillStyle = p.f === 'ink' ? '#0a1120' : p.f === 'hot' ? th.hot : p.f === 'mid' ? th.mid : p.f === 'hi' ? th.hi : gr; x.fill(new Path2D(p.d), p.eo ? 'evenodd' : 'nonzero'); }
+  x.shadowColor = 'transparent'; for (const [sx, sy, sr] of crestStars(th.titles)) { x.save(); x.translate(sx, sy); x.rotate(sr); const sp = new Path2D(STAR); x.lineJoin = 'round'; x.lineWidth = 3.2; x.strokeStyle = '#0a1120'; x.stroke(sp); x.fillStyle = '#ffd24a'; x.fill(sp); x.restore(); } x.restore(); }
 async function loadLive(base = '') { const [c, l] = await loadAll(base), [w, h] = await Promise.all([fetch(base + 'data/weekly.json', { cache: 'no-cache' }).then((r) => r.json()), fetch(base + 'data/history.json', { cache: 'no-cache' }).then((r) => r.json())]); return [c, l, w, h]; }
 const savePng = (cv, name) => { const l = document.createElement('a'); l.download = name; l.href = cv.toDataURL('image/png'); l.click(); };
 

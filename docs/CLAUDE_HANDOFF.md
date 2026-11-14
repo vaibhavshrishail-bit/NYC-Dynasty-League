@@ -227,3 +227,8 @@ Checks: `scripts/test-playoff-model.mjs` has 26 checks (new: preseason odds, awa
 - **Toilet Bowl punishments**: `src/config/punishments.json`, shown through `punishOf` / `punishTag`.
 - **Season titles on the Dynasty Timeline**: `seasonTitle` / `seasonSub` in `site/timeline.html`, generated from results (first crown, dethrones, takes the crown back, back-to-back, three-peat, wire to wire).
 - **Hype banner**: "NEXT UP" names the unbeaten team's actual opponent; a data check enforces it.
+
+### Crest glyphs and championship stars
+- Glyphs live in `src/engine/themes.js` (`glyph:`). After editing run `sh scripts/export-themes.sh` to refresh `site/data/themes.json`. Glyph parts can be filled `ink`, `hot`, `mid`, `hi` or (default) the metal gradient.
+- Redrawn from scratch: eclipse (Die Another Day: heart with a live pulse), bunker (The RB shelter: roof over a football), beach (Its your bye week: palm, island, sun).
+- Championship stars: `loadLeague` copies each franchise's title count onto its theme; `emblem` and `crestCanvas` draw one gold star per title on the upper rim. Films and existing poster images keep the old crest until re-rendered.

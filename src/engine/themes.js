@@ -22,7 +22,7 @@ temple:{...base,metal:['#fbe6b8','#d9a862','#8a5c28','#e2b676','#4a2f12'],hi:'#f
   fx(ctx,t,a){if(t>6)motes(ctx,t,a,71,70,'#ffb866','#ffe2b0','#ff9a3c')}},
 eclipse:{...base,niche:'round',metal:['#ffffff','#ece4de','#9a2430','#f6cfc6','#2a070c'],hi:'#ffd9d0',mid:'#e0463e',glow:'#ff4a3a',flash:'255,90,70',tint1:[210,60,50],tint2:[70,60,95],nicheTop:'#220a0e',pale:'#fff3ee',wipe:'255,225,215',
   hon:['THE SURVIVOR','THE SECOND WIND','THE LAST STAND','THE COMEBACK','THE UNKILLABLE','ONE MORE DAY'],
-  glyph:[{d:'M100 40a40 40 0 1 0 .01 0z M100 49a31 31 0 1 0 .01 0z',eo:1},{d:'M126 50a6 6 0 1 0 .01 0z',f:'hot'},{d:'M36 134h36l7-18 9 34 9-28 6 12h61v6h-65l-3-6-8 26-10-36-3 8h-39z'}],
+  glyph:[{d:'M100 152C62 124 44 102 44 80A28.5 28.5 0 0 1 100 71A28.5 28.5 0 0 1 156 80C156 102 138 124 100 152Z',f:'mid'},{d:'M100 146C66 121 50 100 50 81A22.5 22.5 0 0 1 95 76L100 84L105 76A22.5 22.5 0 0 1 150 81C150 100 134 121 100 146Z',f:'ink'},{d:'M100 140C70 117 56 98 56 81A16.5 16.5 0 0 1 89 78L100 94L111 78A16.5 16.5 0 0 1 144 81C144 98 130 117 100 140Z',f:'mid'},{d:'M26 101h44l7-18 10 38 10-32 6 12h71v7h-75l-3-6-9 29-11-40-3 10h-48z',f:'hot'}],
   scene(ctx,t,e,fl){sky(ctx,[[0,'#020204'],[.6,'#0a0508'],[.86,'#2a0a10'],[1,'#080305']]);const R=rng(66);
     for(let i=0;i<150;i++){const x=R()*W,y=R()*700,s=R();ctx.fillStyle=`rgba(255,235,230,${(.15+.55*s)*(.6+.4*Math.sin(t*1.7+i))*e})`;ctx.fillRect(x,y,1.4+s,1.4+s)}
     tile(ctx,TEX.b,t*8,0,8,.25*e);const cx=960,cy=540,pu=.5+.5*Math.sin(t*1.1);
@@ -36,7 +36,7 @@ eclipse:{...base,niche:'round',metal:['#ffffff','#ece4de','#9a2430','#f6cfc6','#
   fx(ctx,t,a){motes(ctx,t,a*.6,166,60,'#ff8a70','#ffe2d8','#ff4a3a',.6)}},
 bunker:{...base,disp:BOLD,dw:400,dw2:400,nameSize:150,lineScale:1.5,niche:'rect',metal:['#ffe9b0','#f2b233','#8a5a10','#f7c95a','#3d2a08'],hi:'#ffd36b',mid:'#f2a91e',glow:'#ff9a1e',flash:'255,170,40',tint1:[150,140,125],tint2:[90,85,80],nicheTop:'#1a1710',pale:'#f4efe2',
   hon:['THE SENTRY','THE BULWARK','THE GENERATOR','THE VAULT DOOR','THE WARDEN','LAST LINE OF DEFENSE'],
-  glyph:[{d:'M52 150 V96 A48 48 0 0 1 148 96 V150 Z'},{d:'M84 150 V106 A16 16 0 0 1 116 106 V150 Z',f:'ink'},{d:'M97 112 h6 v32 h-6z',f:'hot'},{d:'M40 154h120v6h-120z'}],
+  glyph:[{d:'M100 42L164 92L152 106L100 66L48 106L36 92Z'},{d:'M58 124Q100 86 142 124Q100 162 58 124Z'},{d:'M82 121h36v6h-36zM88 114h5v20h-5zM97.5 114h5v20h-5zM107 114h5v20h-5z',f:'ink'},{d:'M58 124q5-5 10-9v18q-5-4-10-9zM142 124q-5-5-10-9v18q5-4 10-9z',f:'hot'}],
   scene(ctx,t,e,fl){sky(ctx,[[0,'#08090b'],[.6,'#15130f'],[1,'#050505']]);tile(ctx,TEX.a,t*5,0,8,.22*e);
     ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=2;for(let x=120;x<W;x+=280){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=250;y<H;y+=250){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
     const sl=10+34*(.5+.5*Math.sin(t*.9))*e+fl*40;glowAt(ctx,960,640,620,'255,160,40',(.35+fl*.4)*e);
@@ -99,7 +99,7 @@ casino:{...base,disp:BOLD,dw:400,dw2:400,nameSize:150,lineScale:1.5,niche:'round
   fx(ctx,t,a){motes(ctx,t,a*.5,71,40,'#fff0c0','#fff','#ffe08a',.4)}},
 beach:{...base,disp:BOLD,dw:400,dw2:400,nameSize:150,lineScale:1.5,niche:'arch',metal:['#fff6dc','#ffc46b','#e0567a','#ffd98f','#4a1640'],hi:'#ffd98f',mid:'#ff8a5c',glow:'#ff7a5a',flash:'255,150,110',tint1:[255,150,130],tint2:[130,70,150],nicheTop:'#2a1238',pale:'#fff6dc',wipe:'255,230,205',
   hon:['THE SEA BREEZE','THE RIPTIDE','THE HIGH TIDE','THE SUNSET','THE BIG WAVE','THE LIFEGUARD'],
-  glyph:[{d:'M100 54a24 24 0 1 0 .01 0z',f:'hot'},...[116,132,148].map(y=>({d:`M44 ${y}q14-10 28 0t28 0 28 0 28 0v7q-14-10-28 0t-28 0-28 0-28 0z`}))],
+  glyph:[{d:'M138 62a17 17 0 1 0 .01 0z',f:'hot'},{d:'M95 148C96 122 100 104 107 88L116 91C109 107 106 124 106 148Z'},{d:'M112 88Q84 64 54 82Q86 78 110 96ZM112 88Q98 58 70 52Q96 66 106 92ZM112 88Q126 58 154 58Q130 68 116 94ZM112 88Q142 74 164 96Q138 86 114 96ZM110 90Q88 92 74 116Q94 100 114 97Z'},{d:'M50 152Q100 128 150 152Z'},{d:'M40 157q15-8 30 0t30 0 30 0 30 0v6q-15-8-30 0t-30 0-30 0-30 0z',f:'hot'}],
   scene(ctx,t,e,fl){sky(ctx,[[0,'#170f3c'],[.38,'#7a2a66'],[.6,'#e2564f'],[.7,'#f79a45'],[.705,'#2b123a'],[1,'#07040f']]);tile(ctx,TEX.b,t*6,-80,9,.3*e);
     glowAt(ctx,960,730,800,'255,150,80',(.5+fl*.3)*e);ctx.save();ctx.beginPath();ctx.rect(0,0,W,760);ctx.clip();const sg=ctx.createLinearGradient(0,520,0,760);sg.addColorStop(0,'#fff3b8');sg.addColorStop(1,'#ff6a4a');ctx.fillStyle=sg;ctx.beginPath();ctx.arc(960,720,200,0,7);ctx.fill();ctx.restore();
     const R=rng(9);ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<110;i++){const y=765+R()*R()*320,sp=(y-760)/320,w=(30+R()*160)*(.4+sp),x=960+(R()-.5)*(260+sp*1500);ctx.fillStyle=`rgba(255,${170+R()*60|0},110,${(.5-sp*.35)*(.5+.5*Math.sin(t*2.4+i*1.7))*e})`;ctx.fillRect(x-w/2,y,w,2+sp*3)}ctx.restore();
