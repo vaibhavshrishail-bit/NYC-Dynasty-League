@@ -22,7 +22,7 @@ temple:{...base,metal:['#fbe6b8','#d9a862','#8a5c28','#e2b676','#4a2f12'],hi:'#f
   fx(ctx,t,a){if(t>6)motes(ctx,t,a,71,70,'#ffb866','#ffe2b0','#ff9a3c')}},
 eclipse:{...base,niche:'round',metal:['#ffffff','#ece4de','#9a2430','#f6cfc6','#2a070c'],hi:'#ffd9d0',mid:'#e0463e',glow:'#ff4a3a',flash:'255,90,70',tint1:[210,60,50],tint2:[70,60,95],nicheTop:'#220a0e',pale:'#fff3ee',wipe:'255,225,215',
   hon:['THE SURVIVOR','THE SECOND WIND','THE LAST STAND','THE COMEBACK','THE UNKILLABLE','ONE MORE DAY'],
-  glyph:[{d:'M97 86L64 48L50 88L74 80ZM103 86L136 48L150 88L126 80Z',f:'hi'},{d:'M92 104L48 78Q40 104 48 130ZM108 104L152 78Q160 104 152 130Z',f:'deep'},{d:'M89 91h22a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4h-22a4 4 0 0 1-4-4v-18a4 4 0 0 1 4-4z',f:'mid'},{d:'M100 131a5 5 0 1 0 .01 0zM100 147a5 5 0 1 0 .01 0z',f:'hi'}],
+  glyph:[{d:'M42 52H158L100 116Z',f:'hi'},{d:'M57 59H143L100 106Z',f:'ink'},{d:'M70 73H130L100 106Z',f:'deep'},{d:'M138 40L141.5 43L92 97L88.5 94Z',f:'hi'},{d:'M116 59a10.5 10.5 0 1 0 .01 0z',f:'hot'},{d:'M119 66a3.6 3.6 0 1 0 .01 0z',f:'mid'},{d:'M96.5 108h7v36h-7z',f:'hi'},{d:'M72 143Q100 136 128 143V150H72Z',f:'hi'}],
   scene(ctx,t,e,fl){sky(ctx,[[0,'#020204'],[.6,'#0a0508'],[.86,'#2a0a10'],[1,'#080305']]);const R=rng(66);
     for(let i=0;i<150;i++){const x=R()*W,y=R()*700,s=R();ctx.fillStyle=`rgba(255,235,230,${(.15+.55*s)*(.6+.4*Math.sin(t*1.7+i))*e})`;ctx.fillRect(x,y,1.4+s,1.4+s)}
     tile(ctx,TEX.b,t*8,0,8,.25*e);const cx=960,cy=540,pu=.5+.5*Math.sin(t*1.1);
