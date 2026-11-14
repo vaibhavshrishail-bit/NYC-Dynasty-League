@@ -84,7 +84,7 @@ function emblem(ctx,cx,cy,size,p,glow){
   ctx.lineWidth=3;draw(RING,0,.45,580);ctx.lineWidth=1;draw(RING2,.1,.5,525);
   ctx.lineWidth=2.2;GLY.forEach((g,i)=>draw(g.p,.15+i*.03,.55+i*.03,420));
   const f=seg(p,.55,1);if(f>0){ctx.setLineDash([]);ctx.globalAlpha=f;ctx.shadowBlur=8*glow;
-    for(const g of GLY){if(g.f==='ink'){ctx.fillStyle=T.ink;ctx.shadowBlur=0}else if(g.f==='hot'){ctx.fillStyle=T.hot;ctx.shadowColor=T.glow;ctx.shadowBlur=22*glow}else if(g.f==='mid'||g.f==='hi'){ctx.fillStyle=T[g.f];ctx.shadowColor=T.glow;ctx.shadowBlur=14*glow}else{ctx.fillStyle=metal(ctx,40,160);ctx.shadowColor=T.glow;ctx.shadowBlur=8*glow}
+    for(const g of GLY){if(g.f==='ink'){ctx.fillStyle=T.ink;ctx.shadowBlur=0}else if(g.f==='hot'){ctx.fillStyle=T.hot;ctx.shadowColor=T.glow;ctx.shadowBlur=22*glow}else if(g.f==='mid'||g.f==='hi'||g.f==='deep'){ctx.fillStyle=g.f==='deep'?T.metal[2]:T[g.f];ctx.shadowColor=T.glow;ctx.shadowBlur=14*glow}else{ctx.fillStyle=metal(ctx,40,160);ctx.shadowColor=T.glow;ctx.shadowBlur=8*glow}
       ctx.fill(g.p,g.eo?'evenodd':'nonzero')}
     ctx.fillStyle=T.mid;ctx.shadowBlur=4;laurel(ctx,f)}
   ctx.restore()}
