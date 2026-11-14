@@ -5,3 +5,4 @@ out/NYC_Dynasty_Cinematic_Universe_source.zip
 out/pantheon_audio.wav
 __pycache__/
 build/
+tests/last-run.json
