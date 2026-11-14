@@ -108,5 +108,7 @@ ${s?`<span class="pill ${s.type==='W'?'':'cold'}">${s.type==='W'?'Won':'Lost'} $
   $('st').textContent=`${c.season} · seeds 1–5 by record, seed 6 on points`;
   $('stand').innerHTML=order.map((f)=>`<li class="${f.seed===c.playoff_teams?'sixth':''}" style="display:grid;grid-template-columns:28px 1fr auto auto;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)"><span>${f.seed}</span><a href="franchise.html?f=${esc(f.slug)}" style="text-decoration:none">${esc(f.team_name)} <span class="note">· ${esc(f.manager)}</span>${stars(f)}</a><span>${esc(f.record)}</span><span class="note">${f.pf.toFixed(1)} PF</span></li>`).join('');
   $('foot').textContent=`${stamp(c)} Crests are original artwork made for this site.`;
+  // arriving with an anchor (the Teams tab uses #franchises): the sections are drawn after the data loads, so scroll once they exist
+  const toHash=()=>{if(location.hash.length>1){try{const e=document.querySelector(location.hash);if(e)e.scrollIntoView({block:'start'})}catch(e){}}};toHash();addEventListener('hashchange',toHash);
 }).catch((e)=>{console.error(e);document.getElementById('hero').innerHTML='<p class="loading">League data could not be loaded. Try again in a minute.</p>'});
 </script></body></html>
