@@ -80,6 +80,15 @@ async def run(p, eng):
     ok(f'{eng}: Back closes the inspector and stays on the page', await pg.locator('#pi').count() == 0 and 'franchise.html' in pg.url)
     await pg.goto(U + 'week.html#player=' + str(feat['player_id']), wait_until='load'); await pg.wait_for_selector('#pi #pin', timeout=10000)
     ok(f'{eng}: a shared player link opens the same player', (await pg.inner_text('#pin')).strip().lower() == rec['n'].lower()); await pg.keyboard.press('Escape')
+    broke = []
+    for page in ('', 'week.html', 'franchise.html?f=' + fv['slug'], 'playoffs.html', 'draft.html', 'rivalry.html', 'universe.html', 'timeline.html', 'archives.html'):
+        await pg.goto(U + page + '#player=' + str(feat['player_id']), wait_until='load'); 
+        try: await pg.wait_for_selector('#pi #pin', timeout=10000)
+        except Exception: broke.append(page + ' (no panel)'); continue
+        await pg.wait_for_timeout(600)
+        if 'could not be loaded' in await pg.inner_text('body'): broke.append(page + ' (page failed behind the panel)')
+        await pg.keyboard.press('Escape')
+    ok(f'{eng}: a player link works on every page and the page behind it still loads', not broke, '; '.join(broke))
     old = next(((f, n) for f in c['franchises'] for n in (f.get('former_names') or [])), None)
     await pg.locator('[data-search]:visible').first.click(); await pg.wait_for_selector('#srq')
     if old:

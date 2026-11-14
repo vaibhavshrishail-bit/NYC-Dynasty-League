@@ -57,6 +57,6 @@ loadLive().then(([c,L])=>{
      <p class="sm" style="margin-top:12px">Trades that moved picks are in the <a href="rivalry.html?layer=trades">trade ledger</a>.</p>`;
     $('K').querySelectorAll('[data-go]').forEach((b)=>b.onclick=()=>keepPlace(()=>{S.foc=+b.dataset.go;drawK()}))}
   function draw(){pk();drawG();drawR();drawK()}
-  draw();$('foot').textContent=stamp(c);if(location.hash)document.querySelector(location.hash)?.scrollIntoView();
+  draw();$('foot').textContent=stamp(c);if(/^#[\w-]+$/.test(location.hash))document.querySelector(location.hash)?.scrollIntoView();
 }).catch((e)=>{console.error(e);document.getElementById('G').innerHTML='<p>League data could not be loaded. Try again in a minute.</p>'});
 </script></body></html>
