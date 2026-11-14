@@ -78,7 +78,7 @@ function laurel(ctx,p){for(const sgn of[-1,1])for(let i=0;i<9;i++){if(i/9>p)brea
   ctx.save();ctx.translate(x,y);ctx.rotate(a+sgn*1.05);ctx.beginPath();ctx.ellipse(0,0,6.5,2.4,0,0,7);ctx.fill();ctx.restore()}}
 // Crest v2 (matches the website): dark field, metal rim, white keyline, laurel, glyph, and one gold star per championship.
 // p animates it on: the rim sweeps round, the field fades up, the glyph pops, the stars land.
-let CURT=CFG.theme,TITLES=CFG.titles||{};
+let CURT=CFG.theme,TITLES=Array.isArray(CFG.titles)?{[CFG.theme]:CFG.titles.length}:(CFG.titles||{}); // franchise films pass the list of title years; the documentary passes {theme: count}
 const STARP=new Path2D('M0-7.4L2.2-2.5 7.5-2 3.5 1.6 4.6 6.8 0 4.1-4.6 6.8-3.5 1.6-7.5-2-2.2-2.5Z');
 function emblem(ctx,cx,cy,size,p,glow){
   GLY=GLY||T.glyph.map(g=>({...g,p:new Path2D(g.d)}));

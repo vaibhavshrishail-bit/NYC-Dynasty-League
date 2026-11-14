@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '40 11 * * 3'   # Wednesdays 11:40 UTC: 6:40am Eastern in winter, 7:40am in summer
   workflow_dispatch:
+    inputs:
+      only:
+        description: 'Optional: render only these (comma-separated franchise slugs and/or "documentary"). The rest keep their current films.'
+        required: false
+        default: ''
 permissions:
   contents: write
   actions: write
@@ -22,11 +27,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: t
+        env:
+          ONLY: ${{ github.event.inputs.only }}
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import json
+          import json, os
           f = json.load(open('src/config/films.json'))
           t = list(f.get('second_edition', [])) + (['documentary'] if f.get('documentary_second_edition') else [])
+          only = [x.strip() for x in os.environ.get('ONLY', '').split(',') if x.strip()]
+          if only: t = [x for x in t if x in only]
           print('targets=' + json.dumps(t))
           PY
   render:
