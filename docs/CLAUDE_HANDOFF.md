@@ -255,3 +255,11 @@ Baseline for the audit: `1529ce1`. Each item was reproduced on that version befo
 | Race page said "every chart follows" but the gauntlet stayed current | Yes | The gauntlet is labelled as current and the claim is corrected. |
 
 Rank definitions now in force: metric = season total fantasy points under this league's scoring through the snapshot week; position = primary Sleeper position (DE/DT → DL, CB/S → DB, OLB/ILB → LB); ties ordered by player id; population as stated in `rank_basis`. Points-per-game, weekly and projection ranks are not shown anywhere yet.
+
+### After the first refresh with NFL-wide stats (14 November, 20:11 UTC)
+- `nfl_points.json` arrived for Weeks 1 to 9 (about 1,800 players a week). All 2,733 comparisons against the league's own player scores agreed exactly, so the local scoring matches Sleeper's and the rank population is now **all NFL players**.
+- Effect: a player's games before he was rostered now count. Example: Amani Hooker's Week 8 snapshot moved from DB18 (52.2 points while rostered) to DB1 (103.9 points in all games).
+
+### UX addendum (14 November): status
+- **Done**: optional "Which franchise is yours?" panel on the homepage (`mine()` in `site/index.html`). Remembered on the device, dismissible, `?f=` in a link wins. Shows my matchup (scored, expected final, players still to play, win chance with its basis), my stakes, my picks.
+- **Not started**: five-tab navigation with a League index, player inspector and search, game-day view tabs, rooting guide and scenario A/B, pick transfer chain, "since your last visit", native share.

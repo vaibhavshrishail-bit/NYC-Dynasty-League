@@ -5,6 +5,7 @@
 <div class="wrap show">
 <header class="top" style="padding-bottom:10px"><img class="lg-mark" src="assets/brand/logo-512.png" alt="NYC Dynasty League logo" width="132" height="132"><div><div class="k" id="sub">NYC Dynasty League</div><h1 id="wk">League Pulse</h1><div class="k" id="state" style="margin-top:8px"></div></div>
 <nav style="align-items:center"><label class="k" for="tm">Time machine</label><select class="sel" id="tm" aria-label="View the league as of a past week"></select></nav></header>
+<section id="mine" aria-label="Your franchise"></section>
 <section id="hero" aria-label="Top story"><p class="loading">Loading league data…</p></section>
 <section class="blk" id="thisweek"></section>
 <section class="blk two" id="race" style="gap:0 48px"></section>
@@ -27,7 +28,28 @@ loadLive().then(([c,L,WK,H])=>{
   const hero=(o)=>`<div class="hero2"><div class="k" style="text-align:center;margin-bottom:12px">${o.kicker}</div><div class="names"><a class="l" href="${fl(o.a)}">${emblem(th(o.a))}<div class="nm">${up(T(o.a).manager)}</div><div class="tm">${nm(o.a)}${o.ra?' · '+o.ra:''}</div></a>
     <div class="num"><i>${o.sa}</i><span>${o.mid}</span><b>${o.sb}</b></div><a class="r" href="${fl(o.b)}">${emblem(th(o.b))}<div class="nm">${up(T(o.b).manager)}</div><div class="tm">${nm(o.b)}${o.rb?' · '+o.rb:''}</div></a></div>
     <div class="hl">${o.hl}</div><p class="why">${o.why}</p><div class="cta">${o.cta}</div></div>`;
-  function render(asOf){
+  // ---- "My franchise": optional, remembered on this device only. A link with ?f= wins over the remembered choice. It is a view preference, not a login. ----
+  const qf=new URLSearchParams(location.search).get('f'),LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){return null}};
+  function mine(now){const el=$('mine'),slug=qf||myTeam.get(),f=slug&&c.franchises.find((x)=>x.slug===slug);
+    if(!now){el.innerHTML='';return}
+    if(!f){if(LS('nyc.pick.dismissed')){el.innerHTML='';return}
+      el.innerHTML=`<div class="mine pickme"><div><b>Which franchise is yours?</b><span>Optional. It puts your matchup, playoff picture and draft picks at the top on this device. It does not sign you in or change anything in Sleeper.</span></div><div class="mine-pk" role="group" aria-label="Choose your franchise">${[...c.franchises].sort((a,b)=>a.manager.localeCompare(b.manager)).map((x)=>`<button data-pickme="${x.slug}">${emblem(th(x.roster_id))}${esc(x.manager)}</button>`).join('')}<button data-pickme="" class="ghost">Not now</button></div></div>`;
+      el.querySelectorAll('[data-pickme]').forEach((b)=>b.onclick=()=>{if(b.dataset.pickme)myTeam.set(b.dataset.pickme);else LS('nyc.pick.dismissed','1');mine(true)});return}
+    const id=f.roster_id,gi=pv?pv.games.findIndex((g)=>g.a===id||g.b===id):-1,g=gi>=0?pv.games[gi]:null,me=g&&g.a===id?0:1,opp=g&&(me?g.a:g.b),lf=g&&g.live_forecast,lu=g&&(me?g.lineup_b:g.lineup_a),ou=g&&(me?g.lineup_a:g.lineup_b),left=(l)=>l.filter((p)=>!p.empty&&(p.game_state==='upcoming'||p.game_state==='live')).length;
+    const sim=liveSim[id],cert=CERT[id],firsts=f.future_picks.filter((p)=>p.round===1).sort((a,b)=>a.season-b.season),yr=firsts.length?Math.min(...firsts.map((p)=>+p.season)):null,lab=(k)=>'1.'+String(k).padStart(2,'0');
+    const slot=(o)=>{const s=liveSim[o];if(!s||!s.slot)return '';const top=s.slot.indexOf(Math.max(...s.slot));return s.miss>=.5?`most likely ${lab(top+1)}`:'a playoff pick (1.07–1.12)'};
+    const nextF=firsts.filter((p)=>+p.season===yr),ownGone=yr&&!nextF.some((p)=>p.original_roster===id);
+    el.innerHTML=`<div class="mine" style="--c:${th(id).hi}"><div class="mine-h">${emblem(th(id))}<div><span class="k">Your franchise${qf?' · from this link':''} · Week ${c.current_week} · ${c.week_in_progress?'in progress':'not started'}</span><b>${esc(f.team_name)}</b><span>${esc(f.manager)} · ${esc(f.record)} · ${ord(f.seed)} seed</span></div><button class="ghost" id="chg" aria-label="Change or clear your franchise">Change</button></div>
+      <div class="mine-g">
+      <a class="mine-c" href="${g?`week.html?w=${pv.week}#m${gi}`:'week.html'}"><span class="k">My matchup${g?` · v ${esc(T(opp).manager)}`:''}</span>${g?`
+        <div class="mine-n">${c.week_in_progress&&g.live?`<div><b>${f2(g.live[me])}–${f2(g.live[me?0:1])}</b><small>Scored so far</small></div>`:''}<div><b>${f2((lf?lf.expected:g.projected)[me])}–${f2((lf?lf.expected:g.projected)[me?0:1])}</b><small>${lf?(lf.status==='final'?'Final':'Expected final'):'Pregame projection'}</small></div><div><b>${p1((lf||g).win[me])}%</b><small>Win chance · ${lf?'live forecast':'lineup forecast'}</small></div></div>
+        <p>${c.week_in_progress?`Players still to play: ${left(lu)} for ${esc(f.manager)}, ${left(ou)} for ${esc(T(opp).manager)}. Expected final is points scored plus projections for those players; it is a forecast, not a promise.`:esc(g.headline[0])}</p><span class="go">Open matchup →</span>`:`<p>No matchup this week.</p>`}</a>
+      <a class="mine-c" href="playoffs.html?f=${f.slug}"><span class="k">My stakes</span><div class="mine-n"><div><b>${pct(sim.playoff,cert&&cert.playoff)}</b><small>${cert&&cert.playoff==='certain'?'Clinched (arithmetic)':cert&&cert.playoff==='impossible'?'Eliminated (arithmetic)':'Simulated playoff chance'}</small></div><div><b>${ord(f.seed)}</b><small>Seed today</small></div></div>
+        <p>${f.seed<=c.playoff_teams?'In a playoff spot today.':'Outside the six today.'} Seeds 1–5 go by record; seed 6 is the highest scorer left.</p><span class="go">Explore a scenario →</span></a>
+      <a class="mine-c" href="draft.html?f=${f.slug}"><span class="k">My picks${yr?` · ${yr} rookie draft`:''}</span><div class="mine-n"><div><b>${f.future_picks.filter((p)=>p.round===1).length}</b><small>First-round picks held</small></div><div><b>${f.future_picks.length}</b><small>Picks held, all rounds</small></div></div>
+        <p>${nextF.length?`${yr} firsts: ${nextF.map((p)=>`${p.original_roster===id?'own':esc(T(p.original_roster).manager)+"'s"} (${slot(p.original_roster)})`).join(', ')}.`:`No ${yr||'upcoming'} first-round pick.`}${ownGone?` Its own ${yr} first belongs to someone else.`:''}</p><span class="go">Open the Draft Room →</span></a></div></div>`;
+    $('chg').onclick=()=>{myTeam.set('');LS('nyc.team',null);LS('nyc.pick.dismissed',null);if(qf){history.replaceState(null,'','./')}location.reload()}}
+  function render(asOf){mine(!asOf);
     const now=!asOf,w=asOf||L.through_week,hs=H.weeks[w],prev=H.weeks[w-1],aw=WK.awards[w],wkd=L.weeks[w];
     $('tmbar').innerHTML=now?'':`<div class="tmbar"><span>TIME MACHINE · You are viewing the league as it stood after Week ${w}</span><button id="back">Return to current week</button></div>`;
     $('nowonly').style.display=now?'':'none';
