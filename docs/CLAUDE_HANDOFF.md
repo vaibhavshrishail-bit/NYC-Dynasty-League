@@ -320,3 +320,12 @@ Shown inside each matchup on `week.html` while the week is in progress (`WK.in_p
 - The pregame headline, story and "how each side wins" move into a "Pregame preview" fold during the week.
 - Limits: game states between full builds move by the clock; lineups are as of the last full build; the log starts when the page is opened.
 - Tests: values against data, counts, estimate labels, keyboard tabs, filter, update without reload/scroll/focus change, agreement across strip, chip and summary, deferred table, log wording, follow, 390px. Simulated Sleeper responses, Chromium only. Not yet observed during a real game window.
+
+## Spacing and dividers (Nov 15, 2026)
+
+Requested: pages felt crowded; roughly double the space between items and add light separation.
+- One block at the end of `site/assets/app.css` ("Rhythm layer"). Two sizes: `--gap-sec` (between sections, 30–46px, applied as margin + hairline + padding) and `--gap-item` (between cards in a group, 18–24px). Rules are prefixed with `body` so they override the older per-page rules without editing them.
+- Sections (`.blk`, `.band`, `.two`, `.fold`, `.fd`) get the larger rhythm and a hairline between them; two-column groups get a rule between columns on desktop and a divider when they stack on phones; card groups get wider gaps; rows that had nothing between them (playoff picture, roster list) get hairlines; body text line-height is 1.55.
+- Also fixed: the home panel's `.mine` rule was leaking onto Draft Room cards marked `.mine`, which made the gaps between draft cards uneven.
+- To tune the whole site, change the two variables. To exempt something, add a more specific rule after the block.
+- Pages are longer as a result (about 5–9% on phones).

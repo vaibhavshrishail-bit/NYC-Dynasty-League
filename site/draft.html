@@ -23,7 +23,7 @@ loadLive().then(([c,L])=>{
   const lab=(k)=>'1.'+String(k).padStart(2,'0');
   const rows=ids.map((id)=>{const f=T(id),s=scen[id],dist=s.slot.map((v,k)=>({slot:k+1,p:v})).filter((x)=>x.p>=.03),top=s.slot.indexOf(Math.max(...s.slot)),exp=s.slot.reduce((a,v,k)=>a+v*(k+1),0)+(1-s.miss)*9.5,now=f.seed>NP?12-f.seed+1:null,hold=H(yr,1,id)??id;
     return {id,f,s,dist,top,exp,now,holder:hold,lo:dist.length?dist[0].slot:null,hi:dist.length?dist[dist.length-1].slot:null,conf:s.miss<.5?(s.miss<.05?'Playoff pick':'Leaning playoff pick'):s.slot[top]>=.6?'Firm':s.slot[top]>=.35?'Likely':'Wide open'}}).sort((x,y)=>x.exp-y.exp);
-  function pk(){$('pk').innerHTML=`<button data-me="0" aria-pressed="${!S.me}">None</button>`+[...c.franchises].sort((a,b)=>a.manager.localeCompare(b.manager)).map((f)=>`<button data-me="${f.roster_id}" aria-pressed="${S.me===f.roster_id}">${esc(f.manager)}</button>`).join('');
+  function pk(){$('pk').innerHTML=`<button data-me="0" aria-pressed="${!S.me}">None</button>`+[...c.franchises].sort((a,b)=>a.manager.localeCompare(b.manager)).map((f)=>`<button data-me="${f.roster_id}" aria-pressed="${S.me===f.roster_id}">${emblem(th(f.roster_id))}${esc(f.manager)}</button>`).join('');
     $('pk').querySelectorAll('button').forEach((b)=>b.onclick=()=>keepPlace(()=>{S.me=+b.dataset.me||null;if(S.me)myTeam.set(T(S.me).slug);history.replaceState(null,'',`draft.html${S.me?`?f=${T(S.me).slug}`:''}${location.hash}`);draw()}))}
   // ---- round one: projected landing spots ----
   function drawG(){const sel=S.pick&&rows.find((r)=>r.id===S.pick),mine=(r)=>S.me&&(r.holder===S.me||r.id===S.me);

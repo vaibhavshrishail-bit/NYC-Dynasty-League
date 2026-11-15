@@ -517,3 +517,55 @@ dialog.pi{--card:#fbfaf7;--txt:#14171d;--dim:#565c68;--line:#dcd8cf;--line2:#aaa
 a.fol{display:block;text-decoration:none;color:var(--txt);border:2px solid var(--txt);border-left-width:8px;border-radius:10px;padding:10px 14px;margin:0 0 16px;background:var(--card,#fff)}a.fol .k{font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}a.fol .fs{display:flex;justify-content:space-between;gap:10px;font:400 clamp(22px,6vw,32px)/1.1 'Bebas Neue',sans-serif;margin:4px 0}a.fol .a{color:var(--bl)}a.fol .b{color:var(--rd);text-align:right}a.fol i{font-style:normal;color:var(--txt);border-radius:6px;padding:0 4px}a.fol small{font-size:14px;color:var(--dim)}a.fol:focus-visible{outline:3px solid var(--bl);outline-offset:2px}
 .chg{background:#ffe27a;color:#14171d!important;transition:background 2.2s ease-out}@media(prefers-reduced-motion:no-preference){.chg{animation:gdchg 2.4s ease-out}@keyframes gdchg{0%,70%{background:#ffd24a;color:#14171d}100%{background:transparent}}}@media(prefers-reduced-motion:reduce){.chg{transition:none;outline:2px solid #e3a800;background:transparent;color:inherit!important}}
 @media(max-width:640px){.gd-2{grid-template-columns:1fr;gap:16px}.gd-hd,.gd-r{padding:8px 8px;grid-template-columns:minmax(0,1fr) 84px minmax(0,1fr)}.gd-log li{grid-template-columns:70px minmax(0,1fr) auto}.gd-log li span:last-child{grid-column:2/-1;color:var(--dim);font-size:13.5px}}
+/* =====================================================================================================================
+   Rhythm layer (Nov 2026): more air between things and a hairline between sections, on every page.
+   Two sizes only: --gap-sec between sections, --gap-item between cards in a group. Rules are prefixed with `body`
+   so they win over the older per-page rules above without editing each of them.
+   ===================================================================================================================== */
+:root{--gap-sec:clamp(30px,4.4vw,46px);--gap-item:clamp(18px,2.2vw,24px);--hair:var(--line,var(--rule,rgba(128,128,128,.32)))}
+/* sections */
+body .blk{margin-top:var(--gap-sec);padding-top:var(--gap-sec);padding-bottom:0;border-top:1px solid var(--hair)}
+body .blk:first-child,body header+.blk,body .hero+.blk{margin-top:0;border-top:0}
+body .blk:empty,body #mine:empty,body #since:empty,body #fol:empty{display:none}
+body .band:not(.hero-w){padding:clamp(48px,7vw,88px) 0}
+body .blk>h3,body .sec{margin-bottom:22px;line-height:1.1}
+body .band .wrap>h2{margin-bottom:10px}
+body .fold{margin-top:36px}
+body .fd{margin-top:26px}
+body #F.wrap>.fd{margin-top:0}
+body .stand{padding-top:var(--gap-sec)}
+/* two-column groups: a rule between the columns, and real separation when they stack */
+body .two{gap:0 clamp(36px,5vw,72px)!important}
+@media(min-width:901px){body .two>*+*{border-left:1px solid var(--hair);padding-left:clamp(28px,4vw,56px)}body .two>.blk{margin-top:0;border-top:0;padding-top:0}body .two{margin-top:var(--gap-sec);padding-top:var(--gap-sec);border-top:1px solid var(--hair)}body .blk.two{padding-top:var(--gap-sec)}}
+@media(max-width:900px){body .two>*+*{margin-top:var(--gap-sec);padding-top:var(--gap-sec);border-top:1px solid var(--hair)}}
+/* groups of cards */
+body .strip,body .aw,body .ss,body .st-g,body .resg,body .rg,body .dboard,body .dr-boards,body .ra,body .big3,body .mine-g,body .sumg,body .tr-c,body .players,body .gl,body .libg,body .rg-x,body .tp,body .ab-ss,body .gd-nx{gap:var(--gap-item)}
+body main.grid{gap:var(--gap-item);padding-bottom:var(--gap-sec)}
+body .bk{gap:30px}body .mini{gap:14px}body .dr-g{gap:8px}body .pk-lad{gap:6px}body .gd-2{gap:0 36px}
+body .mx{margin-bottom:32px}
+body ol.rail>li{margin-bottom:24px}
+body .ss-more>a.ss-n{margin-bottom:var(--gap-item)}
+/* inside cards */
+body .aw>div{padding-top:20px;padding-bottom:20px}body .gm{padding:16px 16px}body .res{padding:10px 14px 2px}body #mine>.mine,body #since>.mine{padding:clamp(16px,3vw,24px);margin:6px 0 34px}body .mine-c{padding:16px 18px;gap:10px}
+body .rg-g{padding:16px}body .pl{padding:18px}body .tr{padding:16px}body .panel{padding:clamp(16px,2.6vw,22px)}body .dpick{padding:14px}
+/* rows that had nothing between them */
+body .odds{padding:9px 0;border-bottom:1px solid var(--hair)}
+body .rost>div{padding:7px 0;border-bottom:1px solid var(--hair)}
+body .pk2{margin-bottom:14px}
+/* text blocks */
+body .sm,body .note,body .lede,body .st{line-height:1.55}
+body .band p.sm{margin:16px 0 22px}
+body .lede{margin-bottom:22px}body .banner{margin-bottom:26px}body .tabs{margin-bottom:24px}body .subnav{margin-bottom:18px}
+body .blk>p.note{margin-top:16px}
+/* game-day view */
+body .gd-lead{margin:18px 2px 8px;line-height:1.5}body .gd-tabs{margin-top:20px}body .gd-body{padding-top:10px}
+body .gd-h{margin:30px 0 12px;padding-top:24px;border-top:1px solid var(--hair)}body .gd-body>.gd-h:first-child{border-top:0;padding-top:6px;margin-top:14px}
+body .gd-f{margin-top:14px;gap:8px}body .lu2{margin-top:22px}body .gd-2 h5{margin-bottom:6px;padding-bottom:6px}
+body .gd-foot{margin-top:30px;padding-top:20px;border-top:1px solid var(--hair)}body .gd{margin-bottom:34px}
+/* War Room */
+body .rg-m{margin:16px 0 24px}body .rg-own{margin-bottom:22px}body .ab{margin-top:var(--gap-sec);padding-top:var(--gap-sec)}body .rg-x{margin-top:28px}
+/* panels */
+body .pi-row{padding:16px 0}body .pi-stats{gap:12px;margin:10px 0 20px}body .pi-h{margin:28px 0 12px}body .pi-id{margin:20px 0}body .pc-chain li{padding:14px 0 20px 14px}
+body .mine.since li a{padding:14px 2px}
+@media(max-width:560px){body .gd-2{gap:28px}}
+body .dpick.mine{margin:0;border-top-width:1.5px;padding:14px}
