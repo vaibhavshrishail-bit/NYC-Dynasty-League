@@ -292,3 +292,11 @@ Both live in the War Room (`site/playoffs.html`, `drawR()`, section `#rooting`, 
 - **Scenario A/B.** Save the currently fixed results as A or B (kept in `sessionStorage` key `nyc.scen`, this tab only), then compare Now / A / B for the chosen franchise and, in a fold, for all twelve. Each column is an 8,000-season run with its own seed, so differences of about a point can be noise (stated on the page).
 - Known limit: both use the season-strength model for this week's games, not the live lineup forecast, so points already scored this week are not reflected.
 - Tests: regression checks that every other game is listed, each verdict matches its bars, tapping fixes the result, and a saved scenario survives a reset. Chromium only.
+
+## Pick history (Nov 14, 2026)
+
+- `scripts/build-canonical.mjs` writes `pick_chains` and `pick_chain_basis` into `canonical.json`: for each of the 144 future picks, the trades that moved it in time order (trades now carry `at`, Sleeper's completion timestamp), what every franchise received in each trade, and `complete`. A chain is complete only if it starts at the original franchise, each step leaves from where the last one delivered it, and it ends at the holder in Sleeper's traded-picks record. On Nov 14: 144 picks, 33 moved, 0 incomplete, from 105 trades (2022–2026). An incomplete chain is published as incomplete with a notice; nothing is filled in.
+- `openPick(key)` in `app.js` opens the history from any element with `data-chain="<season>-<round>-<original roster>"`: franchise pick boards, the Draft Room every-round grid and round-one pick detail, and "Full history" in the rivalry picks layer. Players in a trade open the player inspector.
+- If a franchise had a different manager in the trade's season, the step says who ran it then.
+- Not included: where a pick will fall (that is the Draft Room's simulated board), pick values, or any judgement of who won a trade.
+- Tests: chain integrity against current holders, dialog content, 390px fit, focus return, untraded-pick wording. Chromium only.
