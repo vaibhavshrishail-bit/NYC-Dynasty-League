@@ -162,6 +162,13 @@ function sCards(ctx,t,A,CARDS,warm){
 const NICHES={arch:'M-300 380 V-120 A300 300 0 0 1 300 -120 V380 Z',rect:'M-290 380 V-410 H290 V380 Z',hex:'M0 -430 L300 -260 V210 L0 380 L-300 210 V-260 Z',round:'M0 -410 a395 395 0 1 0 .01 0z',
   shield:'M-290 -410 H290 V120 Q290 300 0 380 Q-290 300 -290 120 Z'};
 let NP;const pad2=n=>String(n).padStart(2,'0');
+// Team patch on player shots: the approved original emblems (CFG.badges, from src/nfl-badges/badges.json), pre-rendered as images.
+const BIMG={};
+function loadBadges(){return Promise.all(Object.entries(CFG.badges||{}).map(([k,b])=>new Promise((res)=>{const im=new Image();im.onload=im.onerror=()=>res();BIMG[k]=im;
+  im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="240" height="240">${b.emblem.replaceAll('currentColor',b.e).replaceAll('var(--p)',b.p).replaceAll('var(--s)',b.s)}</svg>`)})))}
+function teamPatch(ctx,tm,cx,cy,h,alpha){const b=(CFG.badges||{})[tm];if(!b||alpha<=0)return;const w=h*.875;ctx.save();ctx.globalAlpha*=alpha;ctx.shadowColor='rgba(0,0,0,.65)';ctx.shadowBlur=26;ctx.fillStyle=b.p;ctx.beginPath();ctx.roundRect(cx-w/2,cy-h/2,w,h,h*.125);ctx.fill();
+  ctx.shadowBlur=0;ctx.lineWidth=h*.035;ctx.strokeStyle=b.ring;ctx.stroke();const im=BIMG[tm],z=h*.52;if(im&&im.naturalWidth)ctx.drawImage(im,cx-z/2,cy-h*.41,z,z);
+  ctx.font=`400 ${Math.round(h*.2)}px '${b.font}'`;ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.letterSpacing='2px';ctx.fillStyle=b.t;ctx.fillText(tm,cx,cy+h*.385);ctx.letterSpacing='0px';ctx.restore()}
 function sPlayer(ctx,t,i){
   const pl=CFG.players[i],PDi=pDur(i),kq=Math.max(1,1.9/PDi),lt=(t-pStart(i))*kq,PD=PDi*kq,p=lt/PD,side=i%2?1:-1,inn=eoe(seg(lt,0,.55)),out=seg(lt,PD-.14*kq,PD);
   (T.back||T.scene)(ctx,T.back?t*.35+i*3.3:t,.55,0);
@@ -181,6 +188,7 @@ function sPlayer(ctx,t,i){
   ctx.fillStyle=metal(ctx,405,505);ctx.font=nf.replace('%',fs);ctx.textAlign=al;ctx.fillText(pl.l,xx,500);
   const lw=eo(seg(lt,.25,.8))*520;ctx.fillStyle=T.mid;ctx.shadowBlur=0;ctx.fillRect(al==='left'?xx:xx-lw,528,lw,3);
   ctx.globalAlpha=seg(lt,.35,.7);text(ctx,pl.pos+'   ·   '+pl.tm,xx,576,`600 30px ${SANS}`,T.txt,6,al);
+  teamPatch(ctx,pl.tm,al==='left'?xx+716:xx-716,664,236,seg(lt,.35,.7)*(1-out));
   // points per start: the headline stat, counts up
   const cu=eo(seg(lt,.4,1.1)),val=(pl.ppg*cu).toFixed(1);ctx.font=`600 150px ${SANS}`;ctx.letterSpacing='2px';const vw=ctx.measureText(pl.ppg.toFixed(1)).width;ctx.letterSpacing='0px';
   ctx.shadowColor=T.glow;ctx.shadowBlur=24;text(ctx,val,al==='left'?xx:xx-230,716,`600 150px ${SANS}`,T.hi,2,al);ctx.shadowColor='#000';ctx.shadowBlur=20;

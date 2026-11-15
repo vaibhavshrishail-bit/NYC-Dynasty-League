@@ -107,6 +107,8 @@ def v2_plan(c):
     bar=4*B;bb=lambda t:int(round(t/bar));sect=[(0,max(1,bb(a2[0])),'intro'),(bb(a2[0]),max(1,bb(ps[0])-bb(a2[0])),'light'),(bb(ps[0]),max(1,bb(l0)-bb(ps[0])),'full'),(bb(l0),max(1,int(math.ceil((dur-l0)/bar))),'outro')]
     return {'dur':dur,'m':[round(x,4) for x in m],'mom':mom,'sections':sect,'bpm':round(60/B,3),'hits':[round(x,4) for x in a2[:-1]+ps[:-1]+m],'credit':(mus or {}).get('credit',''),'beat':round(B,5),'a2':[round(x,4) for x in a2],'cards':cards,'ps':[round(x,4) for x in ps],'c0':round(c0,4),'l0':round(l0,4),'payoff':{'big':f"{c['record'].replace('–','-')}  ·  {pc} TO MAKE THE PLAYOFFS",'sub':f"THROUGH WEEK {can['through_week']}  ·  {c['season']}  ·  SIMULATED FROM LEAGUE RESULTS"}}
 def html(c,audio=None):
+    bd=J(ROOT+'/src/nfl-badges/badges.json') if os.path.exists(ROOT+'/src/nfl-badges/badges.json') else {}   # team patches for the player shots
+    c=dict(c);c['badges']={p['tm']:{k:bd[p['tm']][k] for k in ('emblem','font','p','s','e','t','ring')} for p in c.get('players',[]) if p.get('tm') in bd}
     s=open(E+'/shell.html').read().replace('/*FONTS*/',open(E+'/fonts.css').read()).replace('/*CORE*/',open(E+'/core.js').read()).replace('/*THEMES*/',open(E+'/themes.js').read())
     s=s.replace('/*TITLE*/',c['team_display']).replace('/*CFG*/',json.dumps(c)).replace('/*AUDIO*/','data:audio/mp4;base64,'+base64.b64encode(open(audio,'rb').read()).decode() if audio else '')
     os.makedirs(B,exist_ok=True);p=f"{B}/{c['slug']}.html";open(p,'w').write(s);return p

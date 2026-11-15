@@ -92,6 +92,14 @@ async def run(p, eng):
     ok(f'{eng}: a franchise picked on one page is selected on every other page, in the same picker with crests', not bad, '; '.join(bad))
     await pg.goto(U + 'rivalry.html?a=' + c['franchises'][0]['slug'] + '&b=' + c['franchises'][1]['slug'], wait_until='load'); await pg.wait_for_selector('#card', timeout=20000); await pg.wait_for_timeout(1500)
     ok(f'{eng}: the rivalry card paints at full width with content to the bottom edge', await pg.evaluate("(()=>{const cv=document.getElementById('card'),x=cv.getContext('2d');if(cv.width!==1080||cv.height<1200)return false;const d=x.getImageData(540,cv.height-6,1,1).data,t=x.getImageData(540,66,1,1).data;return d[3]===255&&(d[0]+d[1]+d[2])>60&&t[3]===255})()"))
+    # ---- team tags and patches (approved original set) ----
+    BD = json.load(open(ROOT + '/src/nfl-badges/badges.json')); appjs = open(ROOT + '/site/assets/app.js').read()
+    ok(f'{eng}: all 32 teams have a badge and the site copy matches the approved set', len(BD) == 32 and all(json.dumps(v['emblem'])[1:-1] in appjs for v in BD.values()))
+    await pg.goto(U + 'franchise.html?f=' + c['franchises'][0]['slug'], wait_until='load'); await pg.wait_for_selector('.pl .nb', timeout=20000); await pg.wait_for_timeout(800)
+    tg = await pg.evaluate("(()=>{const e=document.querySelector('.pl .nb');return [e.textContent.trim(),getComputedStyle(e).fontFamily.split(',')[0].replace(/[\"']/g,''),e.querySelector('svg,img')?1:0]})()")
+    ok(f'{eng}: beside a player name the tag is the abbreviation alone, in that team\'s typeface', tg[0] in BD and tg[1] == BD[tg[0]]['font'] and tg[2] == 0, str(tg))
+    await pg.locator('.pl[data-pid]').first.click(); await pg.wait_for_selector('#pi .np svg', timeout=10000)
+    ok(f'{eng}: the player panel shows the large patch with its emblem and a text name for screen readers', await pg.locator('#pi .np svg').count() == 1 and bool(await pg.get_attribute('#pi .np', 'aria-label'))); await pg.keyboard.press('Escape')
     # ---- pick history ----
     PC = c.get('pick_chains') or {}; cur = {f"{pk['season']}-{pk['round']}-{pk['original_roster']}": f['roster_id'] for f in c['franchises'] for pk in f['future_picks']}
     ok(f'{eng}: every future pick has a chain that ends at its current holder', set(PC) == set(cur) and all(PC[k]['holder'] == cur[k] and (PC[k]['steps'][-1]['to'] if PC[k]['steps'] else PC[k]['original']) == cur[k] for k in PC if PC[k]['complete']))

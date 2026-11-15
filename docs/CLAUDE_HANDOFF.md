@@ -353,3 +353,10 @@ All twelve franchise pages now share one header layout: back link, previous/next
 - `src/nfl-badges/build_review.py` holds 32 original emblems (city and fan identity, never a club's mascot or mark), a typeface per team from six open-licence faces (Graduate, Russo One, Alfa Slab One, Righteous, Rye, Staatliches; SIL OFL, to be self-hosted from the `@fontsource` packages), and colour rules. It writes `src/nfl-badges/badges.json` and a review sheet (`review-sheet.png`).
 - Agreed with the commissioner: large patch (emblem + abbreviation) for films and feature spots; beside player names only the abbreviation in the team's typeface on its colours.
 - Awaiting approval of the full set before wiring into `nflBadge()` and the film engine.
+
+## Team badges approved and wired in (Nov 15, 2026)
+
+- The commissioner approved the 32-team set (`src/nfl-badges/badges.json`, review sheet beside it). His changes: Cincinnati claw marks, Dallas ten-gallon hat, Chargers power plug, Minnesota longship, Denver mountain peaks in solid black. Chicago uses the city-flag star (the Bean is a copyrighted sculpture) and Kansas City the fountain (a headdress was declined).
+- **Site:** `python3 src/nfl-badges/apply.py` writes the `NFL_BADGES` block into `site/assets/app.js`. `nflBadge()` is the small tag (abbreviation only, team typeface, team colours) used beside player names everywhere it was used before; `nflPatch()` is the large patch with the emblem, used in the player inspector header. `badgeCanvas()` in `matchup.js` uses the same typeface on the matchup poster. Six typefaces are self-hosted in `site/assets/fonts/` (SIL OFL, notice file included).
+- **Films:** `teamPatch()` in `src/engine/core.js` draws the patch on each player shot; `build_cinematics.py` passes the needed badges in `CFG.badges`; the fonts are embedded in `src/engine/fonts.css`. Verified on local stills. The published films change at the next render (Wednesday, or run the "render-films" workflow by hand). The documentary does not show patches.
+- To change a badge: edit `build_review.py`, run it, run `apply.py`, commit.

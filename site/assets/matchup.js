@@ -33,8 +33,8 @@ function timelineHTML(g, sel, A, B, width) {
 }
 
 // ---- Poster: 2520 × 5400 PNG (drawn at 1260 × 2700, scaled 2×) ----
-function badgeCanvas(x, abbr, cx, cy, h) { const t = nflTeam(abbr), w = h * 2.1; x.save(); x.fillStyle = t.primary; x.strokeStyle = t.secondary; x.lineWidth = Math.max(2, h * .1); x.beginPath(); x.roundRect(cx - w / 2, cy - h / 2, w, h, h * .28); x.fill(); x.stroke();
-  x.fillStyle = t.text || '#fff'; x.font = `700 ${Math.round(h * .62)}px 'Barlow Condensed'`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(t.abbr, cx, cy + 1); x.restore(); }
+function badgeCanvas(x, abbr, cx, cy, h) { const t = nflTeam(abbr), k = (typeof NFL_BADGES !== 'undefined' && NFL_BADGES[t.abbr]) || null, w = h * 2.1; x.save(); x.fillStyle = k ? k.p : t.primary; x.strokeStyle = k ? k.ring : t.secondary; x.lineWidth = Math.max(2, h * .1); x.beginPath(); x.roundRect(cx - w / 2, cy - h / 2, w, h, h * .28); x.fill(); x.stroke();
+  x.fillStyle = k ? k.t : (t.text || '#fff'); x.font = k ? `400 ${Math.round(h * .56)}px '${k.font}','Barlow Condensed'` : `700 ${Math.round(h * .62)}px 'Barlow Condensed'`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(t.abbr, cx, cy + 1); x.restore(); }
 function posterTall(g, ctx) {
   const { T, th, c, week } = ctx, A = T(g.a), B = T(g.b), cv = document.createElement('canvas'), SC = 2, W = 1260, H = 2700; cv.width = W * SC; cv.height = H * SC; const x = cv.getContext('2d'); x.scale(SC, SC);
   const BL = '#4db8f0', RD = '#ff6b84', f2 = (v) => v.toFixed(2), U = (s) => String(s).toUpperCase();
