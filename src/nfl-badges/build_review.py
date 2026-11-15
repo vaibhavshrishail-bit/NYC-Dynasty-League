@@ -16,7 +16,7 @@ E = {
  'CIN': ('Tiger claw marks', 'alfa', f'<g fill="{C}"><path transform="translate(-2 0) scale(1) rotate(14 30 50)" d="M30 6C42 34 42 64 24 96C50 70 56 36 30 6Z"/><path transform="translate(22 0) scale(1) rotate(14 30 50)" d="M30 6C42 34 42 64 24 96C50 70 56 36 30 6Z"/><path transform="translate(46 0) scale(1) rotate(14 30 50)" d="M30 6C42 34 42 64 24 96C50 70 56 36 30 6Z"/></g>'),
  'CLE': ('Rock and roll guitar', 'graduate', f'<g fill="{C}"><ellipse cx="36" cy="68" rx="22" ry="18"/><ellipse cx="50" cy="48" rx="14" ry="12"/><rect x="74" y="8" width="16" height="12" rx="3" transform="rotate(-42 82 14)"/></g><path d="M56 42L84 14" stroke="{C}" stroke-width="8" stroke-linecap="round"/><circle cx="40" cy="62" r="7" fill="{P}"/><rect x="20" y="74" width="16" height="4" rx="2" fill="{P}" transform="rotate(-42 28 76)"/>'),
  'DAL': ('Ten-gallon hat', 'rye', f'<g fill="{C}"><path d="M2 60C10 86 90 86 98 60C86 72 68 75 50 75C32 75 14 72 2 60Z"/><path d="M25 68C22 42 28 16 40 16C46 16 46 25 50 25C54 25 54 16 60 16C72 16 78 42 75 68C60 73 40 73 25 68Z"/></g><path d="M26 58C40 64 60 64 74 58" stroke="{P}" stroke-width="4.5" fill="none"/>'),
- 'DEN': ('Bucking horse', 'rye', f'<path fill="{C}" d="M24 34L26 25L31 33C38 32 45 36 49 40C57 39 65 34 72 28C78 19 86 16 90 5C94 16 89 26 82 32C85 34 89 33 91 30L95 19L99 22L95 39C91 44 86 44 82 42L84 46C87 49 91 49 93 46L96 39L100 42L96 55C91 59 84 57 78 53C71 61 59 65 49 64L51 77L48 93H41L43 78L41 67L37 67L34 80L35 94H28L27 80L28 65C24 62 22 58 22 54L16 68C14 73 8 73 5 69C3 65 4 61 8 58L19 40Z"/>'),
+ 'DEN': ('Front Range peaks', 'rye', f'<path fill="{C}" d="M4 84L33 30L47 54L63 20L96 84Z"/>'),
  'DET': ('Motor City gear', 'russo', f'<g fill="{C}"><circle cx="50" cy="50" r="27"/>{rays(8,43,10,14,18)}</g><circle cx="50" cy="50" r="12" fill="{P}"/>'),
  'GB':  ('Cheese wedge', 'graduate', f'<path fill="{C}" d="M10 68L88 34V76H10Z"/><path fill="{C}" opacity=".65" d="M10 68L88 34L58 28Z"/><g fill="{P}"><circle cx="70" cy="57" r="7"/><circle cx="45" cy="67" r="5"/><circle cx="80" cy="70" r="3.5"/><circle cx="27" cy="70" r="3"/></g>'),
  'HOU': ('Space City rocket', 'russo', f'<path fill="{C}" d="M50 6C63 20 66 42 63 62H37C34 42 37 20 50 6Z"/><path fill="{C}" d="M37 48L22 70H38ZM63 48L78 70H62Z"/><path fill="{C}" opacity=".7" d="M41 66H59L50 94Z"/><circle cx="50" cy="32" r="7" fill="{P}"/>'),
@@ -53,6 +53,7 @@ out={}
 for ab,(what,font,svg) in sorted(E.items()):
     p,s=cols[ab][0],cols[ab][1]
     e=s if contrast(p,s)>=3 else '#ffffff'          # emblem colour: the second colour when it stands out on the first, else white
+    e={'DEN':'#0b0b0b'}.get(ab,e)                     # commissioner's choice: Denver's peaks are solid black
     t='#ffffff' if contrast(p,'#ffffff')>=4.5 else '#101010'
     ring=s if contrast(p,s)>=1.6 else '#ffffff'
     out[ab]={'name':names.get(ab,ab),'emblem':svg,'what':what,'font':FONTS[font],'p':p,'s':s,'e':e,'t':t,'ring':ring}
