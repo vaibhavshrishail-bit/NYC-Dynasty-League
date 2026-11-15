@@ -53,7 +53,12 @@ loadLive().then(([c,L,WK])=>{const RB=c.rank_basis||{},rkT=`Season rank at the p
  <section class="blk"><details class="ro"><summary>Current roster (${tm.roster.length})</summary><div class="rost">${tm.roster.map((p)=>`<div>${esc(p.name)} <em>${esc(p.position)} · ${esc(p.nfl_team)}${p.starter?' · starter':p.taxi?' · taxi':p.ir?' · IR':''}</em></div>`).join('')}</div></details></section>
  <footer>${esc(stamp(c))}</footer>
 </div>`;
-  themeVars(document.getElementById('hero'),th);franchiseBar(document.getElementById('fb'),c,{value:f.roster_id,onPick:(id)=>{if(id)location.href='franchise.html?f='+c.byRoster[id].slug}});document.querySelectorAll('.pl,.weeks').forEach((e)=>themeVars(e,th));
+  themeVars(document.getElementById('hero'),th);// one header layout for all twelve: crest left, text right, the name on at most two lines. Each theme keeps its own typeface;
+  // the size is fitted so wide faces (Cinzel, Orbitron) and narrow ones (Bebas) come out the same visual height.
+  const fitName=()=>{const h1=document.querySelector('#hero .id h1');if(!h1)return;const sc={'Cinzel':.84,'Bebas Neue':1.22,'Orbitron':.72}[th.font]||1,max=Math.round(Math.min(84,Math.max(30,innerWidth*.085))*sc);
+    for(let z=max;z>=18;z-=1){h1.style.setProperty('font-size',z+'px','important');const lh=parseFloat(getComputedStyle(h1).lineHeight)||z*1.05;if(h1.scrollWidth<=h1.clientWidth+1&&h1.getBoundingClientRect().height<=lh*2+2)break}};
+  document.fonts.ready.then(()=>document.fonts.load(`${th.weight} 40px '${th.font}'`)).then(fitName).catch(fitName);fitName();addEventListener('resize',fitName);
+  franchiseBar(document.getElementById('fb'),c,{value:f.roster_id,onPick:(id)=>{if(id)location.href='franchise.html?f='+c.byRoster[id].slug}});document.querySelectorAll('.pl,.weeks').forEach((e)=>themeVars(e,th));
   loadEditions().then((ed)=>{if(ed.franchise_second_edition.includes(f.slug)){window._film=`cinematics/${f.slug}-v2.mp4`;document.getElementById('v').poster=`cinematics/${f.slug}-v2.jpg`}});
   document.getElementById('play').onclick=()=>{const box=document.getElementById('cine'),v=document.getElementById('v');box.style.display='block';if(!v.src)v.src=window._film||`cinematics/${f.slug}.mp4`;v.currentTime=0;v.play().catch(()=>{});box.scrollIntoView({behavior:'smooth',block:'center'})};
 }).catch(()=>{document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});
