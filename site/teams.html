@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="assets/brand/logo-64.png"><link rel="apple-touch-icon" href="assets/brand/logo-192.png"><meta property="og:image" content="https://vaibhavshrishail-bit.github.io/NYC-Dynasty-League/assets/brand/logo-512.png">
+<title>Teams — NYC Dynasty League</title><meta name="description" content="All twelve franchises of the NYC Dynasty League: record, points, streak and a page for each.">
+<link rel="stylesheet" href="assets/app.css">
+</head><body class="wr">
+<div id="nav"></div>
+<section class="band dark hero-w"><div class="wrap"><div class="k" id="sub">NYC Dynasty League</div><h1 style="font:400 clamp(44px,8vw,84px)/1 'Bebas Neue',sans-serif;margin:6px 0 8px;color:#f2f4f8">Teams</h1>
+<p style="color:#dfe7f3;max-width:38em;font-size:18px;margin:0 0 6px">All twelve franchises in standings order. Open one for its season, players, picks and film. Choosing yours here makes this tab open straight to it.</p><div id="pk"></div></div><div style="height:clamp(20px,3vw,36px)"></div></section>
+<div class="wrap show"><main class="grid" id="grid" aria-label="Franchises"></main><footer id="foot"></footer></div>
+<script src="assets/app.js"></script><script>
+document.getElementById('nav').innerHTML=nav('Franchises');
+loadLeague().then((c)=>{const $=(id)=>document.getElementById(id);$('sub').textContent=`${c.league_name} · ${c.season} · through Week ${c.through_week}`;
+  // picking here opens that franchise; the Teams tab then goes straight to it (clear with "None" on any page)
+  franchiseBar($('pk'),c,{value:null,none:'All twelve',onPick:(id)=>{if(id)location.href='franchise.html?f='+c.byRoster[id].slug;else{document.getElementById('nav').innerHTML=nav('Franchises')}}});
+  $('grid').innerHTML=c.standings.map((id,i)=>franchiseCard(c,c.byRoster[id],i)).join('');$('foot').textContent=stamp(c);
+}).catch((e)=>{console.error(e);document.getElementById('grid').textContent='League data could not be loaded. Try again shortly.'});
+</script></body></html>

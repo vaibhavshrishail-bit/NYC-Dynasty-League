@@ -612,3 +612,47 @@ body .pi-id .np{margin-right:2px}
 /* fixed slot around a team tag so names line up in lists; tags keep their own widths */
 .nbs{display:inline-block;width:3.45em;vertical-align:middle;white-space:nowrap}body .nbs .nb{margin-right:0}
 body .sr-r{grid-template-columns:56px minmax(0,1fr)}body .sr-r .nbs{width:auto}body .sr-r>svg.em{justify-self:start}
+/* =========== Pulse, Nov 15: a league-coloured masthead, crests on the scoreboard and tables, cards for the two tables =========== */
+body.wr .top.mast{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 24px;align-items:end;margin:clamp(14px,3vw,28px) 0 var(--gap-item);padding:clamp(18px,3.4vw,34px) clamp(16px,3vw,34px) calc(clamp(18px,3.4vw,34px) + 12px);border-radius:16px;overflow:hidden;color:#f2f4f8;background:#0b1220 repeating-linear-gradient(115deg,rgba(255,255,255,.035) 0 2px,transparent 2px 26px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+body.wr .top.mast::before{content:'';position:absolute;inset:0;background:radial-gradient(120% 140% at 0% 0%,rgba(47,111,224,.38),transparent 55%),radial-gradient(120% 140% at 100% 100%,rgba(216,31,68,.30),transparent 55%);pointer-events:none}
+body.wr .top.mast>*{position:relative}
+body.wr .mast-id{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(12px,2.4vw,24px);align-items:center}
+body.wr .mast .lg-mark{width:clamp(76px,15vw,128px);margin:0;box-shadow:0 0 0 3px rgba(255,255,255,.14),0 6px 22px rgba(0,0,0,.5)}
+body.wr .mast .k{color:#b9c6da;letter-spacing:.14em;font-size:clamp(11.5px,2.9vw,14px);line-height:1.5}body.wr .mast h1{color:#fff;margin:2px 0 6px;font-size:clamp(46px,9vw,96px);line-height:.95}
+body.wr .mast #state{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;color:#dfe7f3}
+body.wr .mast nav{align-items:center;gap:10px}body.wr .mast nav .k{color:#b9c6da}body.wr .mast .sel{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.3)}body.wr .mast .sel option{color:#14171d}
+body.wr .mast .tri{position:absolute;left:0;right:0;bottom:0;height:12px;background:linear-gradient(#d81f44 0 4px,#f2f4f8 4px 8px,#2f6fe0 8px 12px)}
+@media(max-width:640px){body.wr .top.mast{grid-template-columns:1fr}}
+/* section headings carry the league's three colours */
+body.wr .blk>.sec::before,body.wr .two>div>.sec::before{content:'';display:block;width:44px;height:6px;margin-bottom:12px;border-radius:3px;background:linear-gradient(90deg,#d81f44 0 33.3%,#c9d2e0 33.3% 66.6%,#2f6fe0 66.6%)}
+/* scoreboard */
+body .gm.gm2{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;padding:12px 12px;border-radius:12px;border:1px solid var(--line);border-left:6px solid var(--ca);border-right:6px solid var(--cb);background:var(--card)}
+body .gm2 .l,body .gm2 .r{display:flex;align-items:center;gap:9px;min-width:0}body .gm2 .r{justify-content:flex-end;text-align:right}body .gm2 svg.em{width:40px;height:40px;flex:none}
+body .gm2 b{display:block;font-size:22px;color:var(--txt)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}body .gm2 small{display:block;color:var(--dim);font-size:13px}body .gm2 span{min-width:0}
+body .gm2 .c{display:grid;grid-template-columns:auto auto auto;column-gap:5px;justify-content:center;align-items:baseline;font:400 22px/1 'Bebas Neue',sans-serif;font-variant-numeric:tabular-nums;color:var(--dim);text-align:center}
+body .gm2 .c .ld{color:var(--txt);font-size:26px}body .gm2 .c i{font-style:normal;opacity:.6}body .gm2 .c small{grid-column:1/-1;margin-top:5px;font:600 11.5px 'Barlow Condensed',sans-serif;letter-spacing:.14em}
+body .gm2 .c small.lv{justify-self:center;background:#d81f44;color:#fff;border-radius:9px;padding:2px 9px}
+body .strip{grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
+/* the two tables as cards */
+body .two.cards2{gap:var(--gap-item)!important;border-top:0;padding-top:0}body .two.cards2>div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:clamp(16px,2.6vw,24px);border-left:1px solid var(--line)!important;margin-top:0!important}
+@media(max-width:900px){body .two.cards2>div+div{border-top:1px solid var(--line);padding-top:clamp(16px,2.6vw,24px)}}
+body .odds a{display:flex;align-items:center;gap:8px}body .odds a em{font:400 20px 'Bebas Neue',sans-serif;font-style:normal;color:var(--dim);min-width:18px}body .odds svg.em{width:28px;height:28px;flex:none}body .odds .bar{height:12px;border-radius:6px;overflow:hidden}body .odds .bar i{border-radius:6px}
+body .pr li{grid-template-columns:24px 26px minmax(0,1fr) auto;align-items:center}body .pr li>span:first-child{font:400 22px 'Bebas Neue',sans-serif}body .pr li a{display:flex;align-items:center;gap:9px;min-width:0}body .pr li a>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}body .pr svg.em{width:30px;height:30px;flex:none}
+body .pr .lab{border-radius:10px;padding:3px 9px;font-size:11.5px;letter-spacing:.1em;background:rgba(0,0,0,.06);white-space:nowrap}body .pr .lab:empty{display:none}
+body .pr .lab.Dominant{background:#f6e7b0;color:#6b4e00}body .pr .lab.Rising{background:#d7efdf;color:#0f5a32}body .pr .lab.Falling{background:#f8d9dc;color:#8f1626}
+/* the twelve */
+.twelve{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px}.twelve a{display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:var(--txt);padding:12px 6px;border:1px solid var(--line);border-top:4px solid var(--c);border-radius:12px;background:var(--card)}.twelve svg.em{width:54px;height:54px}.twelve b{font:400 19px/1 'Bebas Neue',sans-serif;letter-spacing:.03em;margin-top:4px}.twelve small{font-size:13px;color:var(--dim)}.twelve a:focus-visible{outline:3px solid var(--bl);outline-offset:2px}
+body .fbar-h{margin-bottom:14px}
+/* scoreboard card: one row per franchise, like a scoreboard */
+body .gm.sb2{display:grid;grid-template-columns:1fr;gap:0;padding:10px 14px 8px;border-radius:12px;border:1px solid var(--line);background:var(--card);min-height:0}
+body .sb2 .st{justify-self:start;font:600 11.5px 'Barlow Condensed',sans-serif;letter-spacing:.14em;color:var(--dim);margin-bottom:4px}body .sb2 .st.lv{background:#d81f44;color:#fff;border-radius:9px;padding:2px 9px}
+body .sb2 .sbr{display:grid;grid-template-columns:38px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:7px 0 7px 10px;border-left:5px solid var(--c);margin:3px 0}
+body .sb2 svg.em{width:36px;height:36px}
+body .sb2 b{font:400 23px/1 'Bebas Neue',sans-serif;letter-spacing:.02em;color:var(--dim)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}body .sb2 small{font-size:13.5px;color:var(--dim)}
+body .sb2 i{font:400 26px/1 'Bebas Neue',sans-serif;font-style:normal;font-variant-numeric:tabular-nums;color:var(--dim);min-width:68px;text-align:right}
+body .sb2 .sbr.ld b,body .sb2 .sbr.ld i{color:var(--txt)!important}body .sb2 .sbr.ld i{font-size:30px}
+body.wr #thisweek{margin-top:0;border-top:0;padding-top:6px}body.wr #hero{margin-top:var(--gap-sec)}body.wr #mine>.mine{border-top:5px solid var(--c)}
+.twelve+p{margin-top:26px}
+body .nb.nbt{font-size:max(.8em,12px)}
+body .odds{grid-template-columns:minmax(0,1.5fr) 48px minmax(44px,1fr)}body .odds a{white-space:normal;overflow:visible;flex-wrap:wrap;row-gap:0}body .odds a .note{white-space:nowrap}
+body .pr li a>span{white-space:normal;overflow:visible;line-height:1.2}body .pr li a .note{display:block;font-size:13.5px}body .pr li{padding:4px 0}

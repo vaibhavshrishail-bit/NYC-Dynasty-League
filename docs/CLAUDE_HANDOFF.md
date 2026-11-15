@@ -364,3 +364,8 @@ All twelve franchise pages now share one header layout: back link, previous/next
 ## Names aligned beside team tags (Nov 15, 2026)
 
 Team tags differ in width because each team has its own typeface. `nflBadge()` now wraps the tag in `.nbs`, a fixed-width slot (3.45em: the widest tag plus a gap), so the text after a tag starts at the same x in every row (lineups, timeline windows, franchise player cards, awards, search). The tags themselves are unchanged. Measured: one distinct name x-position per list.
+
+## Pulse restyle and a real Teams page (Nov 15, 2026)
+
+- **Teams tab.** New `site/teams.html`: the twelve franchise cards (moved off Pulse; `franchiseCard()` in `app.js`), with the picker. `nav()` sends Teams to `teams.html` when no franchise is remembered and to that franchise's page when one is; both show the tab as selected. "← All franchises" on a franchise page goes to `teams.html`.
+- **Pulse (`index.html`).** Navy masthead with the league logo and the red/white/blue rule (`.top.mast`); scoreboard first, one card per game with a row per franchise (crest, record, score, leader emphasised; `.sb2`/`.sbr`); playoff picture and power rankings as two cards with crests, coloured momentum pills; a tri-colour tick on each section heading; "The twelve" crest grid in place of the big franchise cards. Order: masthead, picker, my franchise, since last visit, this week, matchup of the week, tables, rivalry spotlight, awards, season so far, the twelve, films, standings.

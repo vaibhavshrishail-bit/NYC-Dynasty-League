@@ -92,6 +92,15 @@ async def run(p, eng):
     ok(f'{eng}: a franchise picked on one page is selected on every other page, in the same picker with crests', not bad, '; '.join(bad))
     await pg.goto(U + 'rivalry.html?a=' + c['franchises'][0]['slug'] + '&b=' + c['franchises'][1]['slug'], wait_until='load'); await pg.wait_for_selector('#card', timeout=20000); await pg.wait_for_timeout(1500)
     ok(f'{eng}: the rivalry card paints at full width with content to the bottom edge', await pg.evaluate("(()=>{const cv=document.getElementById('card'),x=cv.getContext('2d');if(cv.width!==1080||cv.height<1200)return false;const d=x.getImageData(540,cv.height-6,1,1).data,t=x.getImageData(540,66,1,1).data;return d[3]===255&&(d[0]+d[1]+d[2])>60&&t[3]===255})()"))
+    # ---- Teams tab: its own page, shown as selected; with a remembered franchise it opens that franchise ----
+    await pg.evaluate("localStorage.removeItem('nyc.team')"); await pg.goto(U + 'index.html', wait_until='load'); await pg.wait_for_selector('.tabbar a', timeout=20000)
+    await pg.locator('.tabbar a', has_text='Teams').click(); await pg.wait_for_selector('#grid a.card', timeout=20000)
+    ok(f'{eng}: with no franchise chosen, Teams opens its own page with all twelve and the tab shows as selected', 'teams.html' in pg.url and await pg.locator('#grid a.card').count() == 12 and (await pg.locator('.tabbar a[aria-current=page]').inner_text()).strip() == 'Teams')
+    await pg.locator('#pk .pk button[data-fid="%d"]' % c['franchises'][2]['roster_id']).click(); await pg.wait_for_selector('#hero .id h1', timeout=20000)
+    await pg.goto(U + 'index.html', wait_until='load'); await pg.wait_for_selector('.tabbar a'); await pg.locator('.tabbar a', has_text='Teams').click(); await pg.wait_for_selector('#hero .id h1', timeout=20000)
+    ok(f'{eng}: with a franchise chosen, Teams opens that franchise and the tab shows as selected', ('f=' + c['franchises'][2]['slug']) in pg.url and (await pg.locator('.tabbar a[aria-current=page]').inner_text()).strip() == 'Teams')
+    await pg.goto(U + 'index.html', wait_until='load'); await pg.wait_for_selector('#thisweek .sb2', timeout=20000); await pg.wait_for_timeout(600)
+    ok(f'{eng}: Pulse draws its masthead, a scoreboard row for every franchise with crest and score, and the twelve', await pg.locator('.top.mast').count() == 1 and await pg.locator('#thisweek .sbr svg').count() == 12 and await pg.locator('#grid a svg').count() == 12 and 'could not be loaded' not in await pg.inner_text('body'))
     # ---- team tags and patches (approved original set) ----
     BD = json.load(open(ROOT + '/src/nfl-badges/badges.json')); appjs = open(ROOT + '/site/assets/app.js').read()
     ok(f'{eng}: all 32 teams have a badge and the site copy matches the approved set', len(BD) == 32 and all(json.dumps(v['emblem'])[1:-1] in appjs for v in BD.values()))
