@@ -79,6 +79,19 @@ async def run(p, eng):
         ok(f'{eng}: a saved scenario stays in the comparison after the live scenario is reset', await pg.locator('#compare .cmp').count() >= 1 and await pg.locator('#compare [data-ld=A]').count() == 1 and await pg.locator('#state .sb').count() == 0)
         ok(f'{eng}: rooting guide and comparison fit a 390px screen', await pg.evaluate("document.documentElement.scrollWidth<=innerWidth+1"))
         await pg.locator('#compare [data-cl=A]').click()
+    # ---- one franchise choice across every page ----
+    pick = c['franchises'][3]; await pg.goto(U + 'draft.html', wait_until='load'); await pg.wait_for_selector('#pk .pk button', timeout=20000)
+    await pg.locator(f'#pk .pk button[data-fid="{pick["roster_id"]}"]').click(); await pg.wait_for_timeout(300); bad = []
+    for page, box in (('index.html', '#fbm'), ('week.html', '#fbw'), ('playoffs.html', '#pk'), ('draft.html', '#pk'), ('franchise.html', '#fb'), ('rivalry.html', '#fb'), ('universe.html', '#fc'), ('timeline.html', '#mef')):
+        await pg.goto(U + page, wait_until='load')
+        try: await pg.wait_for_selector(box + ' .pk [aria-pressed=true]', timeout=20000)
+        except Exception: bad.append(page + ' (no picker)'); continue
+        got = (await pg.locator(box + ' .pk [aria-pressed=true]').first.inner_text()).strip()
+        if got != pick['manager']: bad.append(f'{page} shows {got}')
+        if await pg.locator(box + ' .pk button svg').count() != 12: bad.append(page + ' (crests missing)')
+    ok(f'{eng}: a franchise picked on one page is selected on every other page, in the same picker with crests', not bad, '; '.join(bad))
+    await pg.goto(U + 'rivalry.html?a=' + c['franchises'][0]['slug'] + '&b=' + c['franchises'][1]['slug'], wait_until='load'); await pg.wait_for_selector('#card', timeout=20000); await pg.wait_for_timeout(1500)
+    ok(f'{eng}: the rivalry card paints at full width with content to the bottom edge', await pg.evaluate("(()=>{const cv=document.getElementById('card'),x=cv.getContext('2d');if(cv.width!==1080||cv.height<1200)return false;const d=x.getImageData(540,cv.height-6,1,1).data,t=x.getImageData(540,66,1,1).data;return d[3]===255&&(d[0]+d[1]+d[2])>60&&t[3]===255})()"))
     # ---- pick history ----
     PC = c.get('pick_chains') or {}; cur = {f"{pk['season']}-{pk['round']}-{pk['original_roster']}": f['roster_id'] for f in c['franchises'] for pk in f['future_picks']}
     ok(f'{eng}: every future pick has a chain that ends at its current holder', set(PC) == set(cur) and all(PC[k]['holder'] == cur[k] and (PC[k]['steps'][-1]['to'] if PC[k]['steps'] else PC[k]['original']) == cur[k] for k in PC if PC[k]['complete']))

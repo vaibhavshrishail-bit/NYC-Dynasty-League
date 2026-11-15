@@ -6,7 +6,7 @@
 <section class="band dark hero-w"><div class="wrap">
  <div class="tagrow" id="tags"><span>NYC Dynasty League</span></div><h1>Playoff War Room</h1>
  <p style="color:#dfe7f3;max-width:38em">Pick your franchise. See how likely it is to make the six-team playoff, how it got here, and what a win or a loss this week would change.</p>
- <div class="q" id="pkq">1 · Choose your franchise</div><div class="pk" id="pk" role="group" aria-labelledby="pkq"></div>
+ <div id="pk"></div>
  <div id="A"><p style="color:#b6c0d0;padding:30px 0">Running 8,000 simulated seasons…</p></div>
 </div><div style="height:clamp(24px,4vw,48px)"></div></section>
 <section class="band"><div class="wrap" id="B"></div></section>
@@ -173,7 +173,7 @@ loadLive().then(([c,L,WK,H])=>{
 }
   const open=new Set(),keep=()=>document.querySelectorAll('details[data-f]').forEach((d)=>d.open?open.add(d.dataset.f):open.delete(d.dataset.f));
   function tags(){$('tags').innerHTML=`<span>NYC Dynasty League · ${c.season}</span>${c.week_in_progress?`<span class="tg live">Week ${cw} live</span>`:''}<span class="tg fin">Final through Week ${L.through_week}</span><span class="tg sim">Odds simulated</span><span>Updated ${new Date(c.generated_at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>`}
-  function pk(){const el=$('pk'),sl=el.scrollLeft,first=!el.children.length;el.innerHTML=ids.map((id)=>`<button data-id="${id}" aria-pressed="${id===S.me}">${emblem(th(id))}${M(id)}</button>`).join('');el.querySelectorAll('button').forEach((b)=>b.onclick=()=>select(+b.dataset.id));const on=el.querySelector('[aria-pressed=true]');el.scrollLeft=sl;if(on&&el.scrollWidth>el.clientWidth){const l=on.offsetLeft-el.offsetLeft;if(first||l<sl||l+on.clientWidth>sl+el.clientWidth)el.scrollLeft=l-el.clientWidth/2+on.clientWidth/2}}
+  function pk(){franchiseBar($('pk'),c,{value:S.me,onPick:(id)=>{if(id)select(id)}});return;const el=$('pk'),sl=el.scrollLeft,first=!el.children.length;el.innerHTML=ids.map((id)=>`<button data-id="${id}" aria-pressed="${id===S.me}">${emblem(th(id))}${M(id)}</button>`).join('');el.querySelectorAll('button').forEach((b)=>b.onclick=()=>select(+b.dataset.id));const on=el.querySelector('[aria-pressed=true]');el.scrollLeft=sl;if(on&&el.scrollWidth>el.clientWidth){const l=on.offsetLeft-el.offsetLeft;if(first||l<sl||l+on.clientWidth>sl+el.clientWidth)el.scrollLeft=l-el.clientWidth/2+on.clientWidth/2}}
   function select(id){keep();S.me=id;myTeam.set(T(id).slug);history.replaceState(null,'',`playoffs.html?f=${T(id).slug}${location.hash}`);draw()}
   function draw(){keepPlace(()=>{keep();scen=nF()?simulate(c,L,S.forced):base;setState();tags();pk();drawA();drawB();drawR();drawC();drawD();drawE();drawG();drawF()})}
   draw();if(location.hash==='#draft')$('draft').scrollIntoView();let wn=narrow();let rw=innerWidth;addEventListener('resize',()=>{if(narrow()!==wn||(narrow()&&Math.abs(innerWidth-rw)>20)){wn=narrow();rw=innerWidth;drawA()}});addEventListener('hashchange',()=>{if(location.hash==='#draft')$('draft').scrollIntoView()});

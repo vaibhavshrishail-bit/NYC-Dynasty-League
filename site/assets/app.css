@@ -569,3 +569,22 @@ body .pi-row{padding:16px 0}body .pi-stats{gap:12px;margin:10px 0 20px}body .pi-
 body .mine.since li a{padding:14px 2px}
 @media(max-width:560px){body .gd-2{gap:28px}}
 body .dpick.mine{margin:0;border-top-width:1.5px;padding:14px}
+/* rhythm layer, second pass: spots the first pass missed */
+body #nowonly>.blk:first-child{margin-top:var(--gap-sec);border-top:1px solid var(--hair)}
+body .blk>.sec:not(:first-child){margin-top:var(--gap-sec)!important;padding-top:var(--gap-sec);border-top:1px solid var(--hair)}
+body p:has(>.btn){display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+body .aw{grid-auto-rows:auto;align-items:start}
+body .ss-more>summary{margin-top:6px}
+body .st-t{padding:14px 14px}
+/* ---- shared franchise picker ---- */
+body .fbar{margin:14px 0 6px}body .fbar .q{margin:0 0 2px}
+body .fbar .pk{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;margin:0 -20px;padding:10px 20px 12px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+body .fbar .pk button{all:unset;box-sizing:border-box;cursor:pointer;flex:0 0 auto;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 16px 0 6px;border-radius:26px;border:1.5px solid #33465f;font:500 17px 'Barlow Condensed',sans-serif;color:#dfe7f3;white-space:nowrap}
+body .fbar .pk button[data-fid="0"]{padding:0 18px}body .fbar .pk button svg{width:36px;height:36px;flex:none}
+body .fbar .pk button[aria-pressed=true]{background:#f2f4f8;color:#0f1b2d;border-color:#f2f4f8;font-weight:600}
+body .fbar .pk button:focus-visible{outline:3px solid #ffd24a;outline-offset:2px}
+body .fbar.light .q{color:var(--gn2,var(--gn))}body .fbar.light .pk button{border-color:var(--line2,#aaa59a);color:var(--txt);background:var(--card,transparent)}
+body .fbar.light .pk button[aria-pressed=true]{background:var(--invbg,#14171d);color:var(--invfg,#fff);border-color:var(--invbg,#14171d)}body .fbar.light .pk button:focus-visible{outline-color:var(--bl,#0b5cad)}
+body .fbar-h{font-size:14.5px;color:var(--dim);margin:0 0 26px;line-height:1.5;max-width:60ch}
+@media(min-width:900px){body .fbar .pk{flex-wrap:wrap;overflow:visible;margin:0;padding:10px 0 12px}}
+body .hero .fbar{margin:6px 0 18px}

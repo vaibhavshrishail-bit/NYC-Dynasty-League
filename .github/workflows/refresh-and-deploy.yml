@@ -64,6 +64,12 @@ jobs:
         run: |
           if git fetch --depth=1 origin films 2>/dev/null; then git archive FETCH_HEAD | tar -x; ls site/cinematics | grep -c -- '-v2.mp4' || true; else echo "no films branch yet"; fi
       - uses: actions/configure-pages@v5
+      - name: Version the stylesheet and script links
+        # Phones were keeping an old app.css after a deploy. Each deploy now links assets as file?v=<commit>, so a new deploy is always fetched.
+        run: |
+          V=${GITHUB_SHA::8}
+          sed -i -E "s#(assets/[A-Za-z0-9_-]+\.(css|js))\"#\1?v=${V}\"#g" site/*.html site/*/index.html
+          grep -c "?v=${V}" site/index.html
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }
       - id: deployment

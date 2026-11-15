@@ -6,7 +6,7 @@ document.getElementById('nav').innerHTML=nav('Franchises');
 loadLive().then(([c,L,WK])=>{const RB=c.rank_basis||{},rkT=`Season rank at the position by total fantasy points in this league's scoring, among ${RB.population||'league players'}, through Week ${RB.through_week??c.through_week}`;
   // This week's game uses the same lineup forecast as the Matchups page; later weeks have no lineups yet, so they use season strength.
   const pvG=(opp,week)=>{const pv=WK&&WK.preview;if(!pv||pv.week!==week)return null;const g=pv.games.find((x)=>(x.a===id&&x.b===opp)||(x.b===id&&x.a===opp));const w=g&&(g.live_forecast||g).win;return w?(g.a===id?w[0]:w[1]):null};
-  const q=new URLSearchParams(location.search).get('f')||'',legacy={pantheon:'vaibhav','the-pantheon':'vaibhav',varun:'nishant'};
+  const q=new URLSearchParams(location.search).get('f')||myTeam.get()||'',legacy={pantheon:'vaibhav','the-pantheon':'vaibhav',varun:'nishant'};
   const f=c.franchises.find((x)=>x.slug===(legacy[q]||q)||String(x.roster_id)===q);
   if(!f){location.replace('./');return}
   const th=c.themes[f.theme],name=(id)=>c.byRoster[id]?.team_name||'—',link=(id)=>`<a href="franchise.html?f=${esc(c.byRoster[id].slug)}">${esc(name(id))}</a>`;
@@ -22,6 +22,7 @@ loadLive().then(([c,L,WK])=>{const RB=c.rank_basis||{},rkT=`Season rank at the p
   document.getElementById('page').innerHTML=`
 <header class="hero" id="hero"><div class="wrap">
  <div class="bar"><a href="./#franchises">← All franchises</a><span><a href="franchise.html?f=${esc(prev.slug)}">‹ ${esc(prev.team_name)}</a><a href="franchise.html?f=${esc(next.slug)}">${esc(next.team_name)} ›</a></span></div>
+ <div id="fb"></div>
  <div class="id">${emblem(th)}<div><div class="k">${esc(f.manager)}${stars(f)} · ${f.in_playoff_position?ord(f.seed)+' seed':ord(f.seed)+' in the standings'}${f.titles.length?` · Champion ${f.titles.join(', ')}`:''}</div>
   <h1 style="${fontOf(th)}">${esc(f.team_name)}</h1>${f.former_names.length?`<div class="was">Formerly ${esc(f.former_names.join(', '))}</div>`:''}</div></div>
  <div class="stats"><div><b>${esc(f.record)}</b><span>${c.season} record</span></div><div><b>${f.pf.toFixed(1)}</b><span>Points for · ${ord(f.points_rank)}</span></div><div><b>${f.pa.toFixed(1)}</b><span>Points against</span></div>
@@ -52,7 +53,7 @@ loadLive().then(([c,L,WK])=>{const RB=c.rank_basis||{},rkT=`Season rank at the p
  <section class="blk"><details class="ro"><summary>Current roster (${tm.roster.length})</summary><div class="rost">${tm.roster.map((p)=>`<div>${esc(p.name)} <em>${esc(p.position)} · ${esc(p.nfl_team)}${p.starter?' · starter':p.taxi?' · taxi':p.ir?' · IR':''}</em></div>`).join('')}</div></details></section>
  <footer>${esc(stamp(c))}</footer>
 </div>`;
-  themeVars(document.getElementById('hero'),th);document.querySelectorAll('.pl,.weeks').forEach((e)=>themeVars(e,th));
+  themeVars(document.getElementById('hero'),th);franchiseBar(document.getElementById('fb'),c,{value:f.roster_id,onPick:(id)=>{if(id)location.href='franchise.html?f='+c.byRoster[id].slug}});document.querySelectorAll('.pl,.weeks').forEach((e)=>themeVars(e,th));
   loadEditions().then((ed)=>{if(ed.franchise_second_edition.includes(f.slug)){window._film=`cinematics/${f.slug}-v2.mp4`;document.getElementById('v').poster=`cinematics/${f.slug}-v2.jpg`}});
   document.getElementById('play').onclick=()=>{const box=document.getElementById('cine'),v=document.getElementById('v');box.style.display='block';if(!v.src)v.src=window._film||`cinematics/${f.slug}.mp4`;v.currentTime=0;v.play().catch(()=>{});box.scrollIntoView({behavior:'smooth',block:'center'})};
 }).catch(()=>{document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});

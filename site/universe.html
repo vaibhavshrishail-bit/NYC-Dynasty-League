@@ -8,7 +8,7 @@ input[type=range]{width:100%;accent-color:var(--txt)}.gt{border-collapse:separat
 .story{border-left:3px solid var(--txt);padding:8px 14px;margin:12px 0;font-size:18px;max-width:none}</style></head><body class="wr">
 <div id="nav"></div><div class="wrap" style="padding-top:24px;padding-bottom:50px"><div class="k">Playoff war room</div><h1 class="h-page">The race so far</h1><div id="sn"></div>
 <p class="lede">How every franchise's chance of making the six has moved. <b>1.</b> Pick a franchise. <b>2.</b> Pick a week. Both charts follow; the schedule gauntlet below always shows the current schedule.</p>
-<div class="fc" id="fc" role="group" aria-label="Franchise"></div>
+<div id="fc"></div>
 <p style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;max-width:640px"><button class="btn" id="pw" aria-label="Previous week">◀</button><input type="range" id="wk" min="1" step="1" aria-label="Week"><button class="btn" id="nw" aria-label="Next week">▶</button></p><p class="k" id="wkl" style="color:var(--hi);font-size:18px;margin:-6px 0 0"></p>
 <div id="page"></div><footer id="foot"></footer></div>
 <script src="assets/app.js"></script><script>
@@ -17,7 +17,7 @@ loadLive().then(([c,L,WK,H])=>{
   const T=(id)=>c.byRoster[id],th=(id)=>c.themes[T(id).theme],ids=c.standings,weeks=Object.keys(H.weeks).map(Number).sort((a,b)=>a-b),W=weeks[weeks.length-1];
   const q=new URLSearchParams(location.search);document.getElementById('sn').innerHTML=subnav('The race so far');const narrow=()=>innerWidth<1100;let wasNarrow=narrow();let sel=(c.franchises.find((f)=>f.slug===(q.get('f')||myTeam.get()))||{}).roster_id||null,wk=weeks.includes(+q.get('w'))?+q.get('w'):W;
   const rg=document.getElementById('wk');rg.max=W;rg.value=wk;
-  document.getElementById('fc').innerHTML=ids.map((id)=>`<button data-id="${id}" aria-pressed="false" style="--c:${th(id).hi};--g:${th(id).flash}">${emblem(th(id))}${esc(T(id).manager)}</button>`).join('');
+  
   const PRE=H.preseason||null,P0=PRE?0:weeks[0];const X=(w,x0,x1)=>x0+(W>P0?(w-P0)/(W-P0):.5)*(x1-x0);
   function lines(vals,yf,opts){ // vals: id -> [value per week]
     const nr=narrow(),lab=opts.labels&&!nr,Wd=nr?Math.max(288,Math.min(document.documentElement.clientWidth-40,1000)):1000,Hh=nr?Math.round(opts.h*.72):opts.h,x0=nr?38:46,x1=Wd-(lab?170:12),y0=22,y1=Hh-34;let s=`<svg class="chart" viewBox="0 0 ${Wd} ${Hh}" role="img" aria-label="${opts.label}">`;
@@ -40,7 +40,7 @@ loadLive().then(([c,L,WK,H])=>{
   const game=(id,w)=>{const r=T(id).results.find((x)=>x.week===w);return r?`${r.result==='W'?'beat':'lost to'} ${T(r.opp).manager} ${r.pf.toFixed(2)}–${r.pa.toFixed(2)}`:''};
   function draw(){keepPlace(_draw)}
   function _draw(){rg.value=wk;document.getElementById('wkl').textContent=`After Week ${wk}${sel?' · following '+T(sel).manager:' · all twelve'}`;myTeam.set(sel?T(sel).slug:null);history.replaceState(null,'',`universe.html?w=${wk}${sel?'&f='+T(sel).slug:''}`);
-    document.querySelectorAll('#fc button').forEach((b)=>b.setAttribute('aria-pressed',String(+b.dataset.id===sel)));
+    franchiseBar(document.getElementById('fc'),c,{value:sel,none:'All twelve',light:true,onPick:(id)=>{sel=id;draw()}});
     const i=weeks.indexOf(wk),hw=H.weeks[wk],byOdds=[...ids].sort((a,b)=>odds[b][i]-odds[a][i]||hw.seeds.indexOf(a)-hw.seeds.indexOf(b));
     const focus=sel||marks[wk]||null,story=focus?`<p class="story" style="border-color:${th(focus).hi}"><b style="color:${th(focus).hi}">${esc(T(focus).manager)}, Week ${wk}:</b> ${game(focus,wk)}. Playoff chance ${i?pct(odds[focus][i-1])+' → ':''}${pct(odds[focus][i])}; power ranking ${i?ord(rank[focus][i-1])+' → ':''}${ord(rank[focus][i])}; record ${hw.records[focus].w}–${hw.records[focus].l}. <a href="week.html?w=${wk}">Week ${wk} recap →</a></p>`:'';
     const gw=Object.keys(L.schedule).map(Number),ppgs=ids.map((id)=>L.teams[id].ppg),mn=Math.min(...ppgs),mx=Math.max(...ppgs),heat=(v)=>{const t=(v-mn)/(mx-mn);return `hsl(${Math.round(150-150*t)} ${55+t*20}% ${22+t*14}%)`};
@@ -57,7 +57,7 @@ loadLive().then(([c,L,WK,H])=>{
   <p class="note">"Bye" counts that franchise's Week ${L.through_week} starters whose NFL team is off that week. This describes the schedule; it is not lineup advice. Tap a cell for the rivalry file.</p></section>`;
     document.querySelectorAll('.hit,.pt').forEach((p)=>p.onclick=()=>{sel=+p.dataset.id;wk=+p.dataset.w;draw()});document.querySelectorAll('.col').forEach((p)=>p.onclick=()=>{wk=+p.dataset.w;draw()});document.querySelectorAll('.side .row,.gt th.t').forEach((r)=>r.onclick=()=>{sel=sel===+r.dataset.id?null:+r.dataset.id;draw()});
     document.querySelectorAll('[data-save]').forEach((b)=>exportButton(b,()=>{const pw=+b.dataset.save;return exportSvgPng(document.querySelectorAll('svg.chart')[pw],{title:`NYC Dynasty League · ${pw?'Power rankings':'Playoff chance'} · ${PRE&&!pw?'preseason':'Week '+weeks[0]} to Week ${W}${sel?' · '+T(sel).manager+' highlighted':''}`,name:pw?'power-rankings.png':'playoff-race.png',css:'.hit,.col{display:none}'})}))}
-  document.getElementById('fc').onclick=(e)=>{const b=e.target.closest('button');if(!b)return;sel=sel===+b.dataset.id?null:+b.dataset.id;draw()};rg.oninput=()=>{wk=+rg.value;draw()};document.getElementById('pw').onclick=()=>{const i=weeks.indexOf(wk);if(i>0){wk=weeks[i-1];draw()}};document.getElementById('nw').onclick=()=>{const i=weeks.indexOf(wk);if(i<weeks.length-1){wk=weeks[i+1];draw()}};addEventListener('resize',()=>{if(narrow()!==wasNarrow){wasNarrow=narrow();draw()}});
+  rg.oninput=()=>{wk=+rg.value;draw()};document.getElementById('pw').onclick=()=>{const i=weeks.indexOf(wk);if(i>0){wk=weeks[i-1];draw()}};document.getElementById('nw').onclick=()=>{const i=weeks.indexOf(wk);if(i<weeks.length-1){wk=weeks[i+1];draw()}};addEventListener('resize',()=>{if(narrow()!==wasNarrow){wasNarrow=narrow();draw()}});
   draw();document.getElementById('foot').textContent=stamp(c);
 }).catch((e)=>{console.error(e);document.getElementById('page').textContent='League data could not be loaded. Try again shortly.'});
 </script></body></html>

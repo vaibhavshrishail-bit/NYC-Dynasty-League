@@ -170,8 +170,8 @@ const loadEditions = (base = '') => fetch(base + 'cinematics/editions.json', { c
 // (anything carrying data-pid), from search, or from a link ending #player=<id>. It always shows CURRENT information and says so;
 // when it was opened from a past week (data-pweek), it also shows the rank as it stood after that week.
 // =====================================================================================================================
-let _PL = null; const loadPlayers = () => (_PL ||= Promise.all([fetch((document.querySelector('script[src$="app.js"]').getAttribute('src').replace('assets/app.js', '')) + 'data/player_log.json', { cache: 'no-cache' }).then((r) => r.json()), loadLeague(), fetch((document.querySelector('script[src$="app.js"]').getAttribute('src').replace('assets/app.js', '')) + 'data/weekly.json', { cache: 'no-cache' }).then((r) => r.json()).catch(() => null)]).catch((e) => { _PL = null; throw e; }));
-const _base = () => document.querySelector('script[src$="app.js"]').getAttribute('src').replace('assets/app.js', '');
+let _PL = null; const loadPlayers = () => (_PL ||= Promise.all([fetch((document.querySelector('script[src*="assets/app.js"]').getAttribute('src').replace(/assets\/app\.js.*$/, '')) + 'data/player_log.json', { cache: 'no-cache' }).then((r) => r.json()), loadLeague(), fetch((document.querySelector('script[src*="assets/app.js"]').getAttribute('src').replace(/assets\/app\.js.*$/, '')) + 'data/weekly.json', { cache: 'no-cache' }).then((r) => r.json()).catch(() => null)]).catch((e) => { _PL = null; throw e; }));
+const _base = () => document.querySelector('script[src*="assets/app.js"]').getAttribute('src').replace(/assets\/app\.js.*$/, '');
 let _piOpener = null, _piPushed = false;
 function closePlayer(fromPop) { const d = document.getElementById('pi'); if (!d) return; d.remove(); document.documentElement.style.overflow = ''; if (_piPushed && !fromPop) { _piPushed = false; history.back(); } _piPushed = false; if (_piOpener && document.contains(_piOpener)) _piOpener.focus({ preventScroll: true }); _piOpener = null; }
 async function openPlayer(pid, { week = null, push = true } = {}) { if (!pid) return; const prev = document.getElementById('pi'); if (prev) { prev.remove(); } else _piOpener = document.activeElement;
@@ -280,3 +280,15 @@ async function openPick(key) { const opener = document.activeElement, old = docu
     <p class="pi-act">${ch.holder !== ch.original ? `<a class="b2" href="${base}rivalry.html?a=${T(ch.holder).slug}&b=${T(ch.original).slug}">${M(ch.holder)} v ${M(ch.original)}</a> ` : ''}<a class="b2" href="${base}rivalry.html?layer=trades">Trade ledger</a> <a class="b2" href="${base}draft.html?f=${T(ch.holder).slug}">Draft Room</a></p>`;
   d.querySelector('#pcx').onclick = close; d.querySelector('#pcx').focus(); d.querySelectorAll('[data-pid]').forEach((e) => e.addEventListener('click', () => d.remove())); }
 addEventListener('click', (e) => { const t = e.target.closest && e.target.closest('[data-chain]'); if (!t || e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); e.stopPropagation(); openPick(t.dataset.chain); }, true);
+
+// =====================================================================================================================
+// One franchise picker for every page (crest + manager, same order everywhere). Picking on any page stores the choice on this
+// device (localStorage nyc.team), and every other page opens on that franchise. A link that carries ?f= still wins for that view.
+// o: { value: roster id or null, onPick(id|null), none: label for a "no franchise" pill (omit to require one), label, light }
+// =====================================================================================================================
+function franchiseBar(el, c, o = {}) { if (!el) return; const cur = o.value ?? null, old = el.querySelector('.pk'), sl = old ? old.scrollLeft : null, list = [...c.franchises].sort((x, y) => x.manager.localeCompare(y.manager));
+  el.classList.add('fbar'); el.classList.toggle('light', !!o.light);
+  el.innerHTML = `<div class="q" id="${el.id}q">${esc(o.label || 'Choose your franchise')}</div><div class="pk" role="group" aria-labelledby="${el.id}q">${o.none ? `<button data-fid="0" aria-pressed="${!cur}">${esc(o.none)}</button>` : ''}${list.map((f) => `<button data-fid="${f.roster_id}" aria-pressed="${cur === f.roster_id}">${emblem(c.themes[f.theme])}${esc(f.manager)}</button>`).join('')}</div>`;
+  const pk = el.querySelector('.pk'), on = pk.querySelector('[aria-pressed=true]'); if (sl != null) pk.scrollLeft = sl;
+  if (on && pk.scrollWidth > pk.clientWidth) { const l = on.offsetLeft - pk.offsetLeft; if (sl == null || l < pk.scrollLeft || l + on.clientWidth > pk.scrollLeft + pk.clientWidth) pk.scrollLeft = l - pk.clientWidth / 2 + on.clientWidth / 2; }
+  pk.querySelectorAll('button').forEach((b) => b.onclick = () => { const id = +b.dataset.fid || null; myTeam.set(id ? c.byRoster[id].slug : ''); if (o.onPick) o.onPick(id); }); }
