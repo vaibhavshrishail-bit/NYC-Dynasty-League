@@ -6,6 +6,7 @@
 <header class="top" style="padding-bottom:10px"><img class="lg-mark" src="assets/brand/logo-512.png" alt="NYC Dynasty League logo" width="132" height="132"><div><div class="k" id="sub">NYC Dynasty League</div><h1 id="wk">League Pulse</h1><div class="k" id="state" style="margin-top:8px"></div></div>
 <nav style="align-items:center"><label class="k" for="tm">Time machine</label><select class="sel" id="tm" aria-label="View the league as of a past week"></select></nav></header>
 <section id="mine" aria-label="Your franchise"></section>
+<section id="since" aria-label="Since your last visit"></section>
 <section id="hero" aria-label="Top story"><p class="loading">Loading league data…</p></section>
 <section class="blk" id="thisweek"></section>
 <section class="blk two" id="race" style="gap:0 48px"></section>
@@ -30,7 +31,30 @@ loadLive().then(([c,L,WK,H])=>{
     <div class="hl">${o.hl}</div><p class="why">${o.why}</p><div class="cta">${o.cta}</div></div>`;
   // ---- "My franchise": optional, remembered on this device only. A link with ?f= wins over the remembered choice. It is a view preference, not a login. ----
   const qf=new URLSearchParams(location.search).get('f'),LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){return null}};
-  function mine(now){const el=$('mine'),slug=qf||myTeam.get(),f=slug&&c.franchises.find((x)=>x.slug===slug);
+  // ---- "Since your last visit": compares what this device saw last time with now. Stored on this device only (localStorage 'nyc.seen').
+  // A visit starts when the page is opened more than 3 hours after the previous visit began. Nothing is shown on a first visit or when nothing changed. ----
+  function since(now){const el=$('since');if(!el)return;if(!now){el.innerHTML='';return}
+    const snap={at:Date.now(),week:c.through_week,data:c.generated_at,seeds:Object.fromEntries(c.franchises.map((f)=>[f.roster_id,f.seed])),odds:Object.fromEntries(c.franchises.map((f)=>[f.roster_id,Math.round(liveSim[f.roster_id].playoff*1000)/1000]))};
+    let st=null;try{st=JSON.parse(LS('nyc.seen')||'null')}catch(e){}
+    if(!st||!st.cur||typeof st.cur.at!=='number'){LS('nyc.seen',JSON.stringify({prev:null,cur:snap}));el.innerHTML='';return}
+    st=snap.at-st.cur.at>3*36e5?{prev:st.cur,cur:snap}:{prev:st.prev,cur:{...snap,at:st.cur.at}};LS('nyc.seen',JSON.stringify(st));
+    const p=st.prev;if(!p||p.week==null||!p.seeds||!p.odds){el.innerHTML='';return}
+    const slug=qf||myTeam.get(),f=slug&&c.franchises.find((x)=>x.slug===slug),id=f&&f.roster_id,items=[],pc=(x)=>x<.005?'<1%':x>.995?'>99%':Math.round(x*100)+'%',M=(x)=>esc(T(x).manager);
+    for(let w=p.week+1;w<=c.through_week;w++){const r=f&&(f.results||[]).find((x)=>x.week===w);
+      items.push(r?`<a href="week.html?w=${w}"><b>Week ${w} is final.</b> ${M(id)} ${r.result==='W'?'beat':r.result==='L'?'lost to':'tied'} ${M(r.opp)}, ${f2(r.pf)}–${f2(r.pa)}.</a>`:`<a href="week.html?w=${w}"><b>Week ${w} is final.</b> Read the recap.</a>`)}
+    if(f){const s0=p.seeds[id],o0=p.odds[id],o1=snap.odds[id];
+      if(s0&&s0!==f.seed)items.push(`<a href="playoffs.html?f=${f.slug}"><b>${M(id)} moved from ${ord(s0)} to ${ord(f.seed)}</b> in the standings.</a>`);
+      if(o0!=null&&Math.abs(o1-o0)>=.03)items.push(`<a href="playoffs.html?f=${f.slug}"><b>${M(id)}'s playoff chance went from ${pc(o0)} to ${pc(o1)}.</b> <small>Simulated</small></a>`)}
+    const mv=c.franchises.map((x)=>({x,d:snap.odds[x.roster_id]-(p.odds[x.roster_id]??snap.odds[x.roster_id])})).filter((m)=>m.x.roster_id!==id&&Math.abs(m.d)>=.08).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d))[0];
+    if(mv)items.push(`<a href="playoffs.html?f=${mv.x.slug}"><b>Biggest move${f?' elsewhere':''}: ${esc(mv.x.manager)}'s playoff chance went from ${pc(p.odds[mv.x.roster_id])} to ${pc(snap.odds[mv.x.roster_id])}.</b> <small>Simulated</small></a>`);
+    const nt=(c.trades||[]).filter((t)=>t.at&&t.at>p.at);
+    if(nt.length)items.push(`<a href="rivalry.html?layer=trades"><b>${nt.length} new trade${nt.length===1?'':'s'}:</b> ${nt.slice(0,3).map((t)=>t.rosters.map(M).join(' and ')).join('; ')}${nt.length>3?'; and more':''}.</a>`);
+    const paint=()=>{if(!items.length){el.innerHTML='';return}
+      el.innerHTML=`<div class="mine since"><div class="since-h"><div><b>Since your last visit</b><span>${new Date(p.at).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})} · remembered on this device only</span></div><button class="ghost" id="sdis" aria-label="Dismiss the since your last visit list">Dismiss</button></div><ul>${items.map((i)=>`<li>${i}</li>`).join('')}</ul></div>`;
+      $('sdis').onclick=()=>{st.prev=null;LS('nyc.seen',JSON.stringify(st));el.innerHTML=''}};
+    paint();
+    loadEditions().then((ed)=>{const t=ed&&ed.rendered_at&&Date.parse(ed.rendered_at);if(t&&t>p.at&&!items.some((i)=>i.includes('documentary/'))){items.push(`<a href="documentary/"><b>New films.</b> The season documentary and franchise films were re-rendered${ed.documentary&&ed.documentary.through_week?` through Week ${ed.documentary.through_week}`:''}.</a>`);paint()}}).catch(()=>{})}
+  function mine(now){since(now);const el=$('mine'),slug=qf||myTeam.get(),f=slug&&c.franchises.find((x)=>x.slug===slug);
     if(!now){el.innerHTML='';return}
     if(!f){if(LS('nyc.pick.dismissed')){el.innerHTML='';return}
       el.innerHTML=`<div class="mine pickme"><div><b>Which franchise is yours?</b><span>Optional. It puts your matchup, playoff picture and draft picks at the top on this device. It does not sign you in or change anything in Sleeper.</span></div><div class="mine-pk" role="group" aria-label="Choose your franchise">${[...c.franchises].sort((a,b)=>a.manager.localeCompare(b.manager)).map((x)=>`<button data-pickme="${x.slug}">${emblem(th(x.roster_id))}${esc(x.manager)}</button>`).join('')}<button data-pickme="" class="ghost">Not now</button></div></div>`;

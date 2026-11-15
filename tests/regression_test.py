@@ -95,6 +95,16 @@ async def run(p, eng):
     if never:
         await pg.goto(U + 'franchise.html?f=' + next(f['slug'] for f in c['franchises'] if f['roster_id'] == PC[never]['holder']), wait_until='load'); await pg.wait_for_selector(f'[data-chain="{never}"]', timeout=20000); await pg.locator(f'[data-chain="{never}"]').first.click(); await pg.wait_for_selector('#pc #pch')
         ok(f'{eng}: an untraded pick says so instead of showing an empty chain', 'never traded' in (await pg.inner_text('#pc')).lower()); await pg.keyboard.press('Escape')
+    # ---- since your last visit (simulated earlier visit; nothing depends on the clock of a real visit) ----
+    me0 = c['franchises'][0]; await pg.evaluate("localStorage.removeItem('nyc.seen')"); await pg.goto(U + 'index.html?f=' + me0['slug'], wait_until='load'); await pg.wait_for_selector('#mine .mine', timeout=20000); await pg.wait_for_timeout(400)
+    ok(f'{eng}: a first visit shows no since-your-last-visit list', await pg.inner_html('#since') == '')
+    seen = json.loads(await pg.evaluate("localStorage.getItem('nyc.seen')")); old = dict(seen['cur']); old['at'] -= 5 * 86400000; old['week'] -= 1
+    await pg.evaluate("s=>localStorage.setItem('nyc.seen',s)", json.dumps({'prev': None, 'cur': old})); await pg.reload(wait_until='load'); await pg.wait_for_selector('#since .since', timeout=20000)
+    res = next(r for r in me0['results'] if r['week'] == c['through_week']); txt = await pg.inner_text('#since')
+    ok(f'{eng}: a return visit lists the week that finished, with that franchise\'s real result', f"Week {c['through_week']} is final" in txt and f"{res['pf']:.2f}" in txt and f"{res['pa']:.2f}" in txt and 'this device only' in txt, txt[:200])
+    ok(f'{eng}: unchanged standings and odds are not reported as changes', 'moved from' not in txt and 'playoff chance went' not in txt, txt[:300])
+    await pg.click('#sdis'); await pg.reload(wait_until='load'); await pg.wait_for_selector('#mine .mine'); await pg.wait_for_timeout(400)
+    ok(f'{eng}: dismissing the list keeps it dismissed', await pg.inner_html('#since') == '')
     # ---- player inspector and search ----
     PL = json.load(open(ROOT + '/site/data/player_log.json')); fv = c['franchises'][0]; feat = fv['featured'][0]
     await pg.goto(U + 'franchise.html?f=' + fv['slug'], wait_until='load'); await pg.wait_for_selector('.pl[data-pid]', timeout=20000)

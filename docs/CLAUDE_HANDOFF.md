@@ -300,3 +300,9 @@ Both live in the War Room (`site/playoffs.html`, `drawR()`, section `#rooting`, 
 - If a franchise had a different manager in the trade's season, the step says who ran it then.
 - Not included: where a pick will fall (that is the Draft Room's simulated board), pick values, or any judgement of who won a trade.
 - Tests: chain integrity against current holders, dialog content, 390px fit, focus return, untraded-pick wording. Chromium only.
+
+## Since your last visit, and sharing (Nov 14, 2026)
+
+- Homepage section `#since` (`since(now)` in `site/index.html`), under the my-franchise panel. `localStorage['nyc.seen'] = {prev, cur}`; each is `{at, week, data, seeds, odds}`. A new visit begins when the page opens more than 3 hours after the previous visit began; `prev` is then what the device saw last time. Nothing leaves the device.
+- Lists only real differences: weeks that became final (with the chosen franchise's result), a seed change, a playoff-chance change of 3+ points for the chosen franchise, the biggest move elsewhere (8+ points), trades completed since (`trade.at`), and a film re-render (`editions.json.rendered_at`). Odds lines are tagged Simulated. First visits, unchanged data and the time machine show nothing. Dismiss clears `prev`.
+- Player inspector: "Share this player" uses the device share sheet where the browser has one (`navigator.share`), otherwise copies the link. The share sheet itself was not exercised in tests (Chromium on Linux has none).
