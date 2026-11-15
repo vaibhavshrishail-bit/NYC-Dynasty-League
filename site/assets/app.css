@@ -605,8 +605,10 @@ body .hero .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130p
 body .hero .bar span{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px}body .hero .bar span a{overflow-wrap:anywhere}body .hero .bar span a:last-child{text-align:right}
 /* ---- team tags and patches (approved set, Nov 2026) ---- */
 body .nb.nbt{min-width:3.1em;height:1.8em;padding:0 .5em;border-radius:.4em;font-size:.8em;font-weight:400;letter-spacing:.05em;line-height:1;background:var(--p);color:var(--t);box-shadow:inset 0 0 0 2px var(--s),0 0 0 1px rgba(0,0,0,.28);text-shadow:none;margin-right:7px}
-body .gd-l .nb.nbt,body .gd-p .nb.nbt{font-size:.74em}
 .np{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:64px;height:74px;border-radius:11px;background:var(--p);border:3px solid var(--ring);box-sizing:border-box;flex:none;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
 .np svg{width:36px;height:36px;display:block}.np b{font-size:15px;font-weight:400;line-height:1;letter-spacing:.04em}
 .np.lg{width:112px;height:128px;border-radius:16px;border-width:4px}.np.lg svg{width:66px;height:66px}.np.lg b{font-size:26px}
 body .pi-id .np{margin-right:2px}
+/* fixed slot around a team tag so names line up in lists; tags keep their own widths */
+.nbs{display:inline-block;width:3.45em;vertical-align:middle;white-space:nowrap}body .nbs .nb{margin-right:0}
+body .sr-r{grid-template-columns:56px minmax(0,1fr)}body .sr-r .nbs{width:auto}body .sr-r>svg.em{justify-self:start}

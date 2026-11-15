@@ -360,3 +360,7 @@ All twelve franchise pages now share one header layout: back link, previous/next
 - **Site:** `python3 src/nfl-badges/apply.py` writes the `NFL_BADGES` block into `site/assets/app.js`. `nflBadge()` is the small tag (abbreviation only, team typeface, team colours) used beside player names everywhere it was used before; `nflPatch()` is the large patch with the emblem, used in the player inspector header. `badgeCanvas()` in `matchup.js` uses the same typeface on the matchup poster. Six typefaces are self-hosted in `site/assets/fonts/` (SIL OFL, notice file included).
 - **Films:** `teamPatch()` in `src/engine/core.js` draws the patch on each player shot; `build_cinematics.py` passes the needed badges in `CFG.badges`; the fonts are embedded in `src/engine/fonts.css`. Verified on local stills. The published films change at the next render (Wednesday, or run the "render-films" workflow by hand). The documentary does not show patches.
 - To change a badge: edit `build_review.py`, run it, run `apply.py`, commit.
+
+## Names aligned beside team tags (Nov 15, 2026)
+
+Team tags differ in width because each team has its own typeface. `nflBadge()` now wraps the tag in `.nbs`, a fixed-width slot (3.45em: the widest tag plus a gap), so the text after a tag starts at the same x in every row (lineups, timeline windows, franchise player cards, awards, search). The tags themselves are unchanged. Measured: one distinct name x-position per list.
