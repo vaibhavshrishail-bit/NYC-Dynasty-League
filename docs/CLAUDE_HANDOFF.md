@@ -306,3 +306,17 @@ Both live in the War Room (`site/playoffs.html`, `drawR()`, section `#rooting`, 
 - Homepage section `#since` (`since(now)` in `site/index.html`), under the my-franchise panel. `localStorage['nyc.seen'] = {prev, cur}`; each is `{at, week, data, seeds, odds}`. A new visit begins when the page opens more than 3 hours after the previous visit began; `prev` is then what the device saw last time. Nothing leaves the device.
 - Lists only real differences: weeks that became final (with the chosen franchise's result), a seed change, a playoff-chance change of 3+ points for the chosen franchise, the biggest move elsewhere (8+ points), trades completed since (`trade.at`), and a film re-render (`editions.json.rendered_at`). Odds lines are tagged Simulated. First visits, unchanged data and the time machine show nothing. Dismiss clears `prev`.
 - Player inspector: "Share this player" uses the device share sheet where the browser has one (`navigator.share`), otherwise copies the link. The share sheet itself was not exercised in tests (Chromium on Linux has none).
+
+## Game-day view (Nov 15, 2026)
+
+Shown inside each matchup on `week.html` while the week is in progress (`WK.in_progress`); before kickoff the page is unchanged. Code: `site/assets/gameday.js` (`gameDayHTML`, `gdStats`, view state `GD[i]`) and the handlers in `preview()` in `week.html`.
+- **Strip:** Scored · Expected final (with a "likely" range of about two outcomes in three, from `live_sd` × √unplayed share) · Players remaining (to play / playing / done, plus projected points yet to start). Definitions sit in a fold under the strip. Expected final and win chance are labelled estimates.
+- **Overview:** who leads, starters yet to finish (largest projection first), the next kickoff window, and the windows still to come with each side's projected points.
+- **Lineups:** both lineups with filters by game state and position.
+- **Timeline:** the existing kickoff-window chart, pregame versus current win chance, and a score-update log.
+- **Score-update log:** Sleeper gives running totals only. `_liveLog()` in `app.js` records differences between two readings of a team's total (sessionStorage, this tab). A drop is labelled a stat correction. Nothing describes a play.
+- **Updates in place:** `startLivePoll` calls `window.onLiveScores` (set by `week.html`) instead of offering a reload. Numbers change where they are, changed numbers get a brief highlight (an outline instead when reduced motion is on), the viewport is re-anchored and keyboard focus is kept. If the Lineups tab of an open matchup is on screen, the table is left alone and an "Update the table" control appears. A hidden status line announces changes for the followed matchup only.
+- **Follow:** `localStorage['nyc.follow']`; defaults to the remembered franchise's matchup. A card at the top carries its score and opens it. Matchups are not reordered, so `#m<n>` links stay valid.
+- The pregame headline, story and "how each side wins" move into a "Pregame preview" fold during the week.
+- Limits: game states between full builds move by the clock; lineups are as of the last full build; the log starts when the page is opened.
+- Tests: values against data, counts, estimate labels, keyboard tabs, filter, update without reload/scroll/focus change, agreement across strip, chip and summary, deferred table, log wording, follow, 390px. Simulated Sleeper responses, Chromium only. Not yet observed during a real game window.
