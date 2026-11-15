@@ -54,9 +54,11 @@ loadLive().then(([c,L,WK])=>{const RB=c.rank_basis||{},rkT=`Season rank at the p
  <footer>${esc(stamp(c))}</footer>
 </div>`;
   themeVars(document.getElementById('hero'),th);// one header layout for all twelve: crest left, text right, the name on at most two lines. Each theme keeps its own typeface;
-  // the size is fitted so wide faces (Cinzel, Orbitron) and narrow ones (Bebas) come out the same visual height.
-  const fitName=()=>{const h1=document.querySelector('#hero .id h1');if(!h1)return;const sc={'Cinzel':.84,'Bebas Neue':1.22,'Orbitron':.72}[th.font]||1,max=Math.round(Math.min(84,Math.max(30,innerWidth*.085))*sc);
-    for(let z=max;z>=18;z-=1){h1.style.setProperty('font-size',z+'px','important');const lh=parseFloat(getComputedStyle(h1).lineHeight)||z*1.05;if(h1.scrollWidth<=h1.clientWidth+1&&h1.getBoundingClientRect().height<=lh*2+2)break}};
+  // the reference is Advaith's page (Cinzel at the base size); narrow Bebas is set larger and wide Orbitron smaller so all read the same height.
+  const fitName=()=>{const h1=document.querySelector('#hero .id h1');if(!h1)return;const sc={'Cinzel':1,'Bebas Neue':1.2,'Orbitron':.84}[th.font]||1,max=Math.round(Math.min(84,Math.max(34,innerWidth*.062))*sc),set=(z)=>h1.style.setProperty('font-size',z+'px','important'),lines=()=>Math.round(h1.getBoundingClientRect().height/(parseFloat(getComputedStyle(h1).lineHeight)||1)),fits=()=>h1.scrollWidth<=h1.clientWidth+1;
+    // one line if it can be had at 82% of the base size or more (as on Advaith's page); otherwise two lines at the largest size that fits
+    for(let z=max;z>=Math.round(max*.82);z--){set(z);if(fits()&&lines()<=1)return}
+    for(let z=max;z>=18;z--){set(z);if(fits()&&lines()<=2)return}};
   document.fonts.ready.then(()=>document.fonts.load(`${th.weight} 40px '${th.font}'`)).then(fitName).catch(fitName);fitName();addEventListener('resize',fitName);
   franchiseBar(document.getElementById('fb'),c,{value:f.roster_id,onPick:(id)=>{if(id)location.href='franchise.html?f='+c.byRoster[id].slug}});document.querySelectorAll('.pl,.weeks').forEach((e)=>themeVars(e,th));
   loadEditions().then((ed)=>{if(ed.franchise_second_edition.includes(f.slug)){window._film=`cinematics/${f.slug}-v2.mp4`;document.getElementById('v').poster=`cinematics/${f.slug}-v2.jpg`}});
