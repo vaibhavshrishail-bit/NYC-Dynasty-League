@@ -347,3 +347,9 @@ Requested: pages felt crowded; roughly double the space between items and add li
 ## Franchise header consistency (Nov 15, 2026)
 
 All twelve franchise pages now share one header layout: back link, previous/next in two equal columns, picker, crest left (same size) with the kicker and name to its right, stats grid, cinematic button. Each theme keeps its own typeface. The name is fitted by `fitName()` in `franchise.html` to at most two lines with a per-typeface scale (Cinzel 1, Bebas 1.36, Orbitron .84; Advaith's page is the reference the commissioner chose) so they read as the same height. Cause of the old mismatch: `fontOf()` sets `font-size` in em on the h1 itself, which resolves against the parent's size, so Bebas and Orbitron names rendered at about 19px.
+
+## Original NFL team badges: review set (Nov 15, 2026) — NOT on the site yet
+
+- `src/nfl-badges/build_review.py` holds 32 original emblems (city and fan identity, never a club's mascot or mark), a typeface per team from six open-licence faces (Graduate, Russo One, Alfa Slab One, Righteous, Rye, Staatliches; SIL OFL, to be self-hosted from the `@fontsource` packages), and colour rules. It writes `src/nfl-badges/badges.json` and a review sheet (`review-sheet.png`).
+- Agreed with the commissioner: large patch (emblem + abbreviation) for films and feature spots; beside player names only the abbreviation in the team's typeface on its colours.
+- Awaiting approval of the full set before wiring into `nflBadge()` and the film engine.
