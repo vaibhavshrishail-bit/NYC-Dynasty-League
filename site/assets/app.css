@@ -588,3 +588,8 @@ body .fbar.light .pk button[aria-pressed=true]{background:var(--invbg,#14171d);c
 body .fbar-h{font-size:14.5px;color:var(--dim);margin:0 0 26px;line-height:1.5;max-width:60ch}
 @media(min-width:900px){body .fbar .pk{flex-wrap:wrap;overflow:visible;margin:0;padding:10px 0 12px}}
 body .hero .fbar{margin:6px 0 18px}
+body .gd-tabs{grid-template-columns:repeat(2,1fr)}
+/* team badge: abbreviation on the team's colours with a stripe in its second colour (original artwork, not a team mark) */
+body .nb{min-width:3.2em;height:1.75em;padding:0 .45em 0 .85em;border-radius:.38em;font-size:.84em;font-weight:700;letter-spacing:.06em;background:var(--p);box-shadow:inset .5em 0 0 var(--s),inset 0 -.14em 0 rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.3);margin-right:7px}
+body .pi-id .nb{font-size:1.15em}body .gd-l .nb,body .gd-p .nb{font-size:.8em}
+.dlrow{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin:0 0 16px;font-size:14.5px;color:var(--dim)}.dlrow button{all:unset;cursor:pointer;min-height:40px;display:inline-flex;align-items:center;gap:6px;color:var(--bl);font-weight:600;text-decoration:underline;text-underline-offset:3px}.dlrow button:focus-visible{outline:3px solid var(--bl);outline-offset:2px;border-radius:4px}.dlrow button[disabled]{opacity:.6;text-decoration:none;cursor:default}.dlrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}

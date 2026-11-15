@@ -140,9 +140,9 @@ async function exportSvgPng(svgEl, { title = '', name = 'chart.png', bg = '#0f1b
     x.drawImage(img, 0, top, cv.width, Math.round(h * k)); const px = x.getImageData(Math.round(cv.width / 2), top + 4, 1, 1).data; if (!cv.width || !cv.height || px[3] === 0) throw new Error('The exported image came out empty');
     return { how: await savePng(cv, name), width: cv.width, height: cv.height }; } finally { URL.revokeObjectURL(url); } }
 // wire a button to an export with visible progress, success and failure states
-function exportButton(btn, run) { const label = btn.textContent; btn.onclick = async () => { if (btn.disabled) return; btn.disabled = true; btn.textContent = 'Preparing image…'; btn.setAttribute('aria-live', 'polite');
-  try { const r = await run(); btn.textContent = r && r.how === 'viewer' ? 'Opened: press and hold the image to save it' : `Saved${r && r.width ? ` (${r.width} × ${r.height})` : ''}`; } catch (e) { console.error(e); btn.textContent = 'Could not save. Tap to try again'; }
-  btn.disabled = false; setTimeout(() => { if (!btn.disabled) btn.textContent = label; }, 6000); }; }
+function exportButton(btn, run) { const label = btn.innerHTML; btn.onclick = async () => { if (btn.disabled) return; btn.disabled = true; btn.textContent = 'Preparing image…'; btn.setAttribute('aria-live', 'polite');
+  try { const r = await run(); btn.textContent = r && r.how === 'viewer' ? 'Opened: press and hold the image to save it' : `Saved${r && r.width ? ` (${r.width} × ${r.height})` : ''}`; } catch (e) { console.error(e); btn.textContent = /not met/.test(e.message || '') ? e.message : 'Could not save. Tap to try again'; }
+  btn.disabled = false; setTimeout(() => { if (!btn.disabled) btn.innerHTML = label; }, 6000); }; }
 addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[data-lb]'); if (a) { e.preventDefault(); openLightbox(a.getAttribute('href'), a.dataset.lb); } });
 
 // One weekly award from weekly.json awards[w].list: the winner is a player or a position group, with jersey tokens for who it was.

@@ -180,7 +180,7 @@ async def run(p, eng):
                 ok(f'{eng}: the score bar names the source and time', 'Sleeper' in await p2.inner_text('#livebar'))
             await cx2.close()
         # ---- game-day view ----
-        cx3 = await b.new_context(viewport={'width': 390, 'height': 844}); st3 = {'bump': 0}
+        cx3 = await b.new_context(viewport={'width': 390, 'height': 844}, accept_downloads=True); st3 = {'bump': 0}
         async def h3(route, request, st3=st3): await route.fulfill(status=200, content_type='application/json', body=body(st3['bump']))
         await cx3.route('**/api.sleeper.app/**', h3); p3 = await cx3.new_page(); e3 = []; p3.on('pageerror', lambda e: e3.append(str(e)))
         await p3.goto(U + 'week.html#m0', wait_until='load'); await p3.wait_for_selector('#gd0 .gd-top', timeout=20000); await p3.wait_for_timeout(300)
@@ -189,7 +189,7 @@ async def run(p, eng):
         cntA = {s_: sum(1 for x in g['lineup_a'] if not x.get('empty') and x.get('game_state') == s_) for s_ in ('upcoming', 'live', 'final')}; remtxt = await p3.inner_text('#gd0 .gd-r.rem .a')
         ok(f'{eng}: players-remaining counts match the lineup states and show projected points, not just a count', remtxt.startswith(str(cntA['upcoming']) + ' to play') and f"{cntA['final']} done" in remtxt and 'projected' in remtxt, remtxt)
         ok(f'{eng}: expected final and win chance are labelled as estimates', 'estimate' in (await p3.inner_text('#gd0 .gd-top')).lower() and 'estimates' in (await p3.inner_text('#gd0 .gd-lead')).lower())
-        await p3.locator('#gdt0-overview').focus(); await p3.keyboard.press('ArrowRight'); await p3.wait_for_timeout(150)
+        await p3.locator('#gdt0-timeline').focus(); await p3.keyboard.press('ArrowRight'); await p3.wait_for_timeout(150)
         ok(f'{eng}: game-day tabs work from the keyboard', await p3.get_attribute('#gdt0-lineups', 'aria-selected') == 'true' and await p3.evaluate("document.activeElement.id") == 'gdt0-lineups')
         await p3.click('#gd0 [data-gdfs=final]'); await p3.wait_for_timeout(150); allfin = sum(1 for l in ('lineup_a', 'lineup_b') for x in g[l] if not x.get('empty') and x.get('game_state') == 'final')
         ok(f'{eng}: the lineup filter shows exactly the players in that state', await p3.locator('#gd0 .gd-l').count() == allfin)
@@ -200,6 +200,15 @@ async def run(p, eng):
         ok(f'{eng}: a table being read is not re-sorted under the reader; an Update control is offered', await p3.locator('#gd0 .gd-pend [data-gdapply]').count() == 1)
         await p3.click('#gd0 [data-gdapply]'); st3['bump'] = 6.0; await p3.evaluate('window._liveCheck()'); await p3.wait_for_timeout(500); await p3.click('#gdt0-timeline'); await p3.wait_for_timeout(200); lg = await p3.inner_text('#gd0 .gd-log')
         ok(f'{eng}: the update log records changes in totals, and a drop is called a stat correction, not a play', '+7.50' in lg and '−1.50' in lg and 'stat correction' in lg and 'not plays' in await p3.inner_text('#gd0 .gd-body'), lg[:200])
+        ok(f'{eng}: game-day opens on Timeline, with Lineups second and no Overview tab', [t.strip().lower() for t in await p3.locator('#gd0 [role=tab]').all_inner_texts()] == ['timeline', 'lineups'])
+        try:
+            async with p3.expect_download(timeout=30000) as d1: await p3.click('#m0 [data-dlposter]')
+            f1 = await (await d1.value).path()
+            async with p3.expect_download(timeout=30000) as d2: await p3.click('#m0 [data-dlrival]')
+            f2 = await (await d2.value).path(); import struct
+            dims = [struct.unpack('>II', open(f, 'rb').read(24)[16:24]) for f in (f1, f2)]
+            ok(f'{eng}: the matchup image and the rivalry card both download from inside a matchup as real PNGs', dims[0][0] >= 1080 and dims[1][0] == 1080 and dims[1][1] >= 1200, str(dims))
+        except Exception as e: ok(f'{eng}: the matchup image and the rivalry card both download from inside a matchup as real PNGs', False, str(e)[:160])
         await p3.click('#gd0 [data-gdfollow]'); await p3.wait_for_timeout(200)
         ok(f'{eng}: Follow keeps the matchup at the top with the same score', await p3.locator('#fol a.fol').count() == 1 and f'{g["live"][0] + 6:.2f}' in await p3.inner_text('#fol'))
         ok(f'{eng}: game-day view fits a 390px screen with no page errors', await p3.evaluate('document.documentElement.scrollWidth<=innerWidth+1') and not e3, '; '.join(e3)[:200]); await cx3.close()
