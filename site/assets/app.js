@@ -307,3 +307,15 @@ function franchiseCard(c, f, i = 0) { const t = c.themes[f.theme], s = f.streak;
 <h2 style="${fontOf(t)}"><span style="width:100%">${esc(f.team_name)}</span></h2><div class="mgr">${esc(f.manager)}${typeof stars === 'function' ? stars(f) : ''}</div><div class="nums"><div><b>${esc(f.record)}</b><span>${c.season} record</span></div><div><b>${f.pf.toFixed(1)}</b><span>Points for · ${ord(f.points_rank)}</span></div></div>
 <div class="dots">${f.results.map((r) => `<i class="${r.result || ''}" title="Week ${r.week}: ${r.result} ${r.pf}–${r.pa}"></i>`).join('')}</div>
 ${s ? `<span class="pill ${s.type === 'W' ? '' : 'cold'}">${s.type === 'W' ? 'Won' : 'Lost'} ${s.length} straight</span>` : ''}</a>`; }
+
+// Momentum labels describe scoring trend only (last three weeks against the franchise's own average), so they are worded that way: an 0–9 team can be "Scoring up".
+const momLabel = (l) => ({ Rising: 'Scoring up', Falling: 'Scoring down' }[l] || l);
+
+// "Jump to" row for long pages: built from the page's own section headings, placed under the masthead. Call after the page has rendered; safe to call again.
+function jumpIndex(min = 4) { const old = document.getElementById('jump'); if (old) old.remove();
+  const hs = [...document.querySelectorAll('.blk > h3:first-child, .blk > .sec, .two > div > .sec, .band:not(.hero-w) .wrap > h2, .wrap > section > h3:first-child')].filter((h) => h.getBoundingClientRect().height > 0 && !h.closest('dialog,details:not([open])'));
+  if (hs.length < min) return; const label = (h) => [...h.childNodes].filter((n) => n.nodeType === 3 || (n.nodeType === 1 && n.tagName !== 'SMALL')).map((n) => n.textContent).join('').trim();
+  const items = hs.map((h, i) => { const t = label(h); if (!t) return ''; if (!h.id) h.id = 'sec-' + t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + (document.getElementById('sec-' + t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) ? '-' + i : ''); return `<a href="#${h.id}">${esc(t)}</a>`; }).filter(Boolean);
+  const nav = document.createElement('nav'); nav.id = 'jump'; nav.className = 'jump'; nav.setAttribute('aria-label', 'Sections on this page'); nav.innerHTML = `<span>Jump to</span>${items.join('')}`;
+  const host = document.querySelector('section.band.dark.hero-w, header.hero'); if (!host) return; host.insertAdjacentElement('afterend', nav);
+  nav.onclick = (e) => { const l = e.target.closest('a'); if (!l) return; e.preventDefault(); const t = document.getElementById(l.getAttribute('href').slice(1)); if (t) { t.scrollIntoView({ block: 'start' }); t.setAttribute('tabindex', '-1'); t.focus({ preventScroll: true }); } }; }

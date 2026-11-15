@@ -379,3 +379,16 @@ Team tags differ in width because each team has its own typeface. `nflBadge()` n
 ## Timeline windows show scored and projected (Nov 15, 2026)
 
 In the Timeline tab, a kickoff window that has started (in progress or final) now shows points scored as the large number with "proj" beneath, per player and per side; the summary says "in progress", scored so far and the window's projection. The chart counts the larger of scored and projected for a window in progress (same rule as the expected final). Upcoming windows still show projections, labelled. Added Sunday-morning rebuilds (13:00–16:59 UTC) for early kickoffs. Regression tests that compare the page with built data now hold the page clock at build time.
+
+## Review fixes (Nov 15, 2026) — see docs/SITE_REVIEW_2026-11-15.md
+
+1. Timeline: in-progress season tile reads "Week 17 · Title game still to come".
+2. Momentum labels shown as "Scoring up"/"Scoring down" (`momLabel()` in app.js; data labels unchanged) with the rule in "How this is ranked".
+3. Pulse my-franchise panel is one compact strip of three rows on phones (`.strip3`).
+4. Pick-board cells are 44px (were 38px): Draft Room and franchise pages.
+5. Archives: all-time table and final standings show six rows on phones with "Show all twelve"; trades beyond the latest five fold; darker gold stars; larger tap area on inline links. 14.2 → 9.5 phone screens.
+6. Story-kind chips darkened for light backgrounds; labels under 12px raised to 12.5px.
+7. `jumpIndex()` in app.js adds a "Jump to" row under the masthead on Pulse, Playoffs, franchise pages and Archives, built from the page's own section headings.
+8. Race page gauntlet colours darkened (white text now passes 4.5:1).
+9. Safari/iPhone: still untested by the builder.
+Re-measured: small tap targets Draft 178 → 1, Archives 48 → 2, franchise 18 → 0; contrast failures Race 30 → 0, Pulse 3 → 0.

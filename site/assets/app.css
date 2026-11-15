@@ -677,3 +677,20 @@ body .res,body .aw>div,body .panel,body .st-t,body .dpick,body .tr-c>*,body .gm,
 body .aw>div{border-radius:0 0 12px 12px}body .st-t{border-radius:0 0 12px 12px}
 body.dark .doc{padding-top:clamp(18px,3vw,30px)}
 .pv{text-align:right;font-variant-numeric:tabular-nums}.pv small{display:block;font:500 12.5px 'Barlow Condensed',sans-serif;color:var(--dim,#b6c0d0);letter-spacing:0;opacity:.85}.tlp h5 .pv small{font-size:12px;color:inherit;opacity:.8}
+/* ---- review fixes, Nov 15 ---- */
+body .mine-g.strip3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+body .strip3 .mine-c{padding:12px 14px;gap:2px;display:flex;flex-direction:column;min-height:0}body .strip3 .mine-c b{font:400 clamp(24px,5vw,32px)/1.05 'Bebas Neue',sans-serif;font-variant-numeric:tabular-nums}body .strip3 .mine-c small{font-size:13.5px;color:var(--dim);line-height:1.35}body .strip3 .mine-c .k{font-size:12px}
+@media(max-width:640px){body .mine-g.strip3{grid-template-columns:1fr;gap:0}body .strip3 .mine-c{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:baseline;border:0;border-top:1px solid var(--line);border-radius:0;padding:10px 2px;background:none}body .strip3 .mine-c .k{grid-column:1}body .strip3 .mine-c b{grid-column:2;grid-row:1/3;align-self:center;text-align:right}body .strip3 .mine-c small{grid-column:1}}
+body #mine>.mine{padding-bottom:10px;margin-bottom:22px}
+body .pc{width:44px;height:44px}body .pc svg.em{width:32px;height:32px}body .pk-c{gap:6px;padding:5px}
+body.wr:not(.dark) .blk .stars,body .tw .stars{color:#8a6100;text-shadow:none}
+body .note a,body p.sm a{display:inline-block;padding:9px 4px;margin:-9px 0}body .libg+p.note a,body details.fold p.note a{padding:11px 8px;margin:-6px 0}
+body .ss-k{color:color-mix(in srgb,var(--ac,var(--gn)) 42%,#14171d)}
+body input[type=range]{min-height:44px}
+.jump{display:flex;gap:8px;align-items:center;overflow-x:auto;padding:10px clamp(16px,4vw,48px);background:var(--card,#fbfaf7);border-bottom:1px solid var(--line);scrollbar-width:none;-webkit-overflow-scrolling:touch;max-width:100%}.jump::-webkit-scrollbar{display:none}
+.jump span{flex:none;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.jump a{flex:none;min-height:40px;display:inline-flex;align-items:center;padding:0 13px;border:1.5px solid var(--line2,#aaa59a);border-radius:20px;font:600 14.5px 'Barlow Condensed',sans-serif;color:var(--txt);text-decoration:none;white-space:nowrap;background:var(--card,#fff)}.jump a:focus-visible{outline:3px solid var(--bl);outline-offset:2px}
+:target,[id^=sec-]{scroll-margin-top:14px}
+.only-m{display:none}@media(max-width:760px){.only-m{display:block}.clip6:not(.all) tr.more{display:none}}
+@media(max-width:760px){.clipn:not(.all) tr:nth-child(n+8){display:none}}
+body .pr .lab,body .sb2 .st,body .gm2 .c small{font-size:12.5px;letter-spacing:.08em}body.wr .mast .k{font-size:clamp(12px,2.9vw,14px)}body .band.dark.hero-w .k{font-size:clamp(12px,2.9vw,14px)}

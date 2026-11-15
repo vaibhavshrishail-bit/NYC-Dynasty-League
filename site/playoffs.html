@@ -177,6 +177,6 @@ loadLive().then(([c,L,WK,H])=>{
   function select(id){keep();S.me=id;myTeam.set(T(id).slug);history.replaceState(null,'',`playoffs.html?f=${T(id).slug}${location.hash}`);draw()}
   function draw(){keepPlace(()=>{keep();scen=nF()?simulate(c,L,S.forced):base;setState();tags();pk();drawA();drawB();drawR();drawC();drawD();drawE();drawG();drawF()})}
   draw();if(location.hash==='#draft')$('draft').scrollIntoView();let wn=narrow();let rw=innerWidth;addEventListener('resize',()=>{if(narrow()!==wn||(narrow()&&Math.abs(innerWidth-rw)>20)){wn=narrow();rw=innerWidth;drawA()}});addEventListener('hashchange',()=>{if(location.hash==='#draft')$('draft').scrollIntoView()});
-  $('foot').textContent=stamp(c);
+  $('foot').textContent=stamp(c);jumpIndex();
 }).catch((e)=>{console.error(e);document.getElementById('A').innerHTML='<p style="color:#fff">League data could not be loaded. Try again in a minute.</p>'});
 </script></body></html>
