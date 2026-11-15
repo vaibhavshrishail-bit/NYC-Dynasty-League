@@ -1,10 +1,12 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="../assets/brand/logo-64.png"><link rel="apple-touch-icon" href="../assets/brand/logo-192.png"><meta property="og:image" content="https://vaibhavshrishail-bit.github.io/NYC-Dynasty-League/assets/brand/logo-512.png">
 <title>The 2026 Season So Far — NYC Dynasty League</title><link rel="stylesheet" href="../assets/app.css">
 <style>.doc{max-width:1200px;margin:0 auto;padding:28px clamp(16px,4vw,48px) 60px}.doc video{width:100%;aspect-ratio:16/9;background:var(--invfg);display:block;border:1px solid var(--line2)}
-.doc h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(30px,5.4vw,60px);margin:14px 0 18px;line-height:1}.ch{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.ch button{font-size:14px;padding:8px 12px}</style></head><body class="wr dark">
-<div class="doc"><a class="k" href="../" style="text-decoration:none">← League Pulse</a> &nbsp; <a class="k" href="../archives.html" style="text-decoration:none">Archives</a><h1>The 2026 season so far</h1>
+.doc h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(30px,5.4vw,60px);margin:14px 0 18px;line-height:1}.ch{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.ch button{font-size:14px;padding:8px 12px}.doc video{border-radius:12px}.doc .note{color:#b9c6da}</style></head><body class="wr dark">
+<div id="nav"></div><section class="band dark hero-w mastb"><div class="wrap"><div class="k">Films · <a href="../cinematics/" style="color:inherit">Franchise cinematics</a> · <a href="../archives.html" style="color:inherit">Archives</a></div><h1>The 2026 season so far</h1></div></section>
+<div class="doc">
 <video id="v" controls playsinline preload="metadata" poster="season-2026.jpg" src="season-2026.mp4"></video>
 <div class="ch" id="ch"></div><p class="note" id="n"></p></div>
+<script src="../assets/app.js"></script><script>document.getElementById('nav').innerHTML=nav('Archives','../');</script>
 <script>
 // The newest edition is listed in ../cinematics/editions.json by the weekly film workflow; the first edition is the fallback.
 fetch('../cinematics/editions.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).catch(()=>null).then(ed=>{const file=(ed&&ed.documentary&&ed.documentary.file)||'season-2026',v=document.getElementById('v');

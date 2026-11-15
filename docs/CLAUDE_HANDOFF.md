@@ -369,3 +369,9 @@ Team tags differ in width because each team has its own typeface. `nflBadge()` n
 
 - **Teams tab.** New `site/teams.html`: the twelve franchise cards (moved off Pulse; `franchiseCard()` in `app.js`), with the picker. `nav()` sends Teams to `teams.html` when no franchise is remembered and to that franchise's page when one is; both show the tab as selected. "← All franchises" on a franchise page goes to `teams.html`.
 - **Pulse (`index.html`).** Navy masthead with the league logo and the red/white/blue rule (`.top.mast`); scoreboard first, one card per game with a row per franchise (crest, record, score, leader emphasised; `.sb2`/`.sbr`); playoff picture and power rankings as two cards with crests, coloured momentum pills; a tri-colour tick on each section heading; "The twelve" crest grid in place of the big franchise cards. Order: masthead, picker, my franchise, since last visit, this week, matchup of the week, tables, rivalry spotlight, awards, season so far, the twelve, films, standings.
+
+## One look across every page (Nov 15, 2026)
+
+- **Masthead:** every page opens with the same band (`section.band.dark.hero-w`, class `mastb` where newly added): navy with the blue and red league glows, Bebas title, and the red/white/blue rule. Applied to Pulse, Matchups, Playoffs, Draft, Teams, Rivals, The race so far, Timeline, Archives, and both film pages. Franchise pages keep their own colours and take the same rule under the header.
+- **Section headings** carry the three-colour tick on every page; cards share a 12px radius.
+- **Film pages** (`cinematics/`, `documentary/`) now use `app.css` and the site navigation (`nav('Archives','../')`) instead of bare back links. Cinematics cards use class `cc` (not `card`, which has a glow pseudo-element in app.css).

@@ -656,3 +656,23 @@ body.wr #thisweek{margin-top:0;border-top:0;padding-top:6px}body.wr #hero{margin
 body .nb.nbt{font-size:max(.8em,12px)}
 body .odds{grid-template-columns:minmax(0,1.5fr) 48px minmax(44px,1fr)}body .odds a{white-space:normal;overflow:visible;flex-wrap:wrap;row-gap:0}body .odds a .note{white-space:nowrap}
 body .pr li a>span{white-space:normal;overflow:visible;line-height:1.2}body .pr li a .note{display:block;font-size:13.5px}body .pr li{padding:4px 0}
+/* =========== One masthead for every page: navy band, league glows, red/white/blue rule (Nov 15) =========== */
+body .band.dark.hero-w{position:relative;padding:clamp(22px,4vw,44px) 0 calc(clamp(18px,3vw,34px) + 12px);background:#0b1220 repeating-linear-gradient(115deg,rgba(255,255,255,.03) 0 2px,transparent 2px 26px);overflow:hidden}
+body .band.dark.hero-w::before{content:'';position:absolute;inset:0;background:radial-gradient(90% 130% at 0% 0%,rgba(47,111,224,.34),transparent 58%),radial-gradient(90% 130% at 100% 100%,rgba(216,31,68,.26),transparent 58%);pointer-events:none}
+body .band.dark.hero-w::after{content:'';position:absolute;left:0;right:0;bottom:0;height:12px;background:linear-gradient(#d81f44 0 4px,#f2f4f8 4px 8px,#2f6fe0 8px 12px)}
+body .band.dark.hero-w>.wrap{position:relative}body .band.dark.hero-w>div[style*="height"]{display:none}
+body .band.dark.hero-w h1{font:400 clamp(44px,8vw,88px)/.95 'Bebas Neue',sans-serif;letter-spacing:.015em;color:#fff;margin:4px 0 8px}
+body .band.dark.hero-w .k{color:#b9c6da;letter-spacing:.14em;font-size:clamp(11.5px,2.9vw,14px);line-height:1.5}
+body .band.dark.hero-w .lede,body .band.dark.hero-w p{color:#dfe7f3;max-width:42em}body .band.dark.hero-w .lede{font-size:clamp(16px,2.2vw,19px);margin:0 0 4px;line-height:1.5}
+body .band.dark.hero-w a.b2{display:inline-flex;align-items:center;min-height:44px;text-decoration:none}
+/* Pulse masthead inside the band: no card of its own */
+body.wr .mastb .top.mast{margin:0;padding:0;border-radius:0;background:none;box-shadow:none;overflow:visible}body.wr .mastb .top.mast::before{display:none}body.wr .mastb .top.mast .tri{display:none}
+body.wr .mastb+.wrap,body .mastb+.wrap{padding-top:clamp(18px,3vw,30px)!important}
+/* franchise pages keep their own colours and take the same rule */
+body header.hero{position:relative;padding-bottom:calc(var(--gap-item) + 12px)}body header.hero::after{content:'';position:absolute;left:0;right:0;bottom:0;height:12px;background:linear-gradient(#d81f44 0 4px,#f2f4f8 4px 8px,#2f6fe0 8px 12px)}
+/* section headings: the three-colour tick on every page */
+body .blk>.sec::before,body .blk>h3:first-child::before,body .two>div>.sec::before,body .band:not(.hero-w) .wrap>.q:first-child::before,body .wrap>section>h3:first-child::before{content:'';display:block;width:44px;height:6px;margin-bottom:12px;border-radius:3px;background:linear-gradient(90deg,#d81f44 0 33.3%,#c9d2e0 33.3% 66.6%,#2f6fe0 66.6%)}
+/* one card shape */
+body .res,body .aw>div,body .panel,body .st-t,body .dpick,body .tr-c>*,body .gm,body .mine-c,body .film,body .ss-n,body .rail li>*{border-radius:12px}
+body .aw>div{border-radius:0 0 12px 12px}body .st-t{border-radius:0 0 12px 12px}
+body.dark .doc{padding-top:clamp(18px,3vw,30px)}

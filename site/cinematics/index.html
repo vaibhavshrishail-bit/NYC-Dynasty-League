@@ -1,34 +1,28 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="../assets/brand/logo-64.png"><link rel="apple-touch-icon" href="../assets/brand/logo-192.png"><meta property="og:image" content="https://vaibhavshrishail-bit.github.io/NYC-Dynasty-League/assets/brand/logo-512.png">
 <title>Franchise Cinematics — NYC Dynasty League</title>
+<link rel="stylesheet" href="../assets/app.css">
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}
-body{margin:0;background:#0b0c10;color:#e9e4d6;font-family:Georgia,'Times New Roman',serif;padding:5vh 5vw 8vh}
-header{max-width:1280px;margin:0 auto 28px}
-a.back{font:600 12px system-ui,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#b89b5e;text-decoration:none}
-h1{font-size:clamp(32px,6vw,60px);font-weight:400;margin:14px 0 8px;line-height:1.05}
-p.s{color:#9a968a;margin:0;font-size:17px;max-width:62ch}
-#stage{max-width:1280px;margin:0 auto 28px;display:none}
-#stage video{width:100%;aspect-ratio:16/9;background:var(--invfg);display:block}
-#stage h2{font-weight:400;font-size:24px;margin:14px 0 2px}#stage p{margin:0;color:#9a968a;font:14px system-ui,sans-serif}
-#grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
-button.card{all:unset;cursor:pointer;display:block;background:#12131a;border:1px solid #2a2b31}
-button.card:hover,button.card:focus-visible{border-color:#b89b5e}
-button.card img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
-button.card div{padding:12px 14px 14px}
-button.card b{display:block;font-weight:400;font-size:19px}
-button.card span{font:13px system-ui,sans-serif;color:#9a968a}
-footer{max-width:1280px;margin:32px auto 0;font:13px system-ui,sans-serif;color:#6c6a63}
+.cine{max-width:1200px;margin:0 auto;padding:clamp(18px,3vw,30px) clamp(16px,4vw,48px) 60px;color:#e9eef7}
+#stage{margin:0 0 28px;display:none}#stage video{width:100%;aspect-ratio:16/9;background:#000;display:block;border-radius:12px}
+#stage h2{font:400 30px/1.1 'Bebas Neue',sans-serif;margin:14px 0 2px}#stage p{margin:0;color:#b9c6da;font-size:15px}#vl{color:#8fc0ff!important;font:600 15px 'Barlow Condensed',sans-serif!important}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:var(--gap-item,20px)}
+button.cc{all:unset;box-sizing:border-box;cursor:pointer;display:block;background:#111a2c;border:1px solid rgba(255,255,255,.14);border-radius:12px;overflow:hidden;opacity:1;animation:none}
+button.cc:hover,button.cc:focus-visible{border-color:#ffd24a;outline:none}
+button.cc img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}button.cc div{padding:12px 14px 14px}
+button.cc b{display:block;font:400 24px/1.1 'Bebas Neue',sans-serif;letter-spacing:.02em;color:#fff}button.cc span{font-size:14.5px;color:#b9c6da}
+.cine footer{margin:32px 0 0;font-size:14px;color:#8fa0b8}
 </style></head><body class="wr dark">
-<header><a class="back" href="../">← League Pulse</a> &nbsp; <a class="back" href="../archives.html">Archives</a><h1>Franchise Cinematics</h1>
-<p class="s">Twelve franchises, twelve films. Each features the players who have scored the most while starting for that franchise this season, shown in their NFL team colours.</p></header>
-<section id="stage"><video id="v" controls playsinline preload="none"></video><h2 id="vt"></h2><p id="vs"></p><a id="vl" href="../" style="display:block;margin-top:8px;color:#b89b5e;font:14px system-ui,sans-serif"></a></section>
+<div id="nav"></div><section class="band dark hero-w mastb"><div class="wrap"><div class="k">Films · <a href="../documentary/" style="color:inherit">Season documentary</a> · <a href="../archives.html" style="color:inherit">Archives</a></div><h1>Franchise cinematics</h1>
+<p class="lede">Twelve franchises, twelve films. Each features the players who have scored the most while starting for that franchise this season, shown in their NFL team colours.</p></div></section>
+<div class="cine"><section id="stage"><video id="v" controls playsinline preload="none"></video><h2 id="vt"></h2><p id="vs"></p><a id="vl" href="../" style="display:block;margin-top:8px;color:#b89b5e;font:14px system-ui,sans-serif"></a></section>
 <main id="grid"></main>
-<footer id="foot"></footer>
+<footer id="foot"></footer></div>
+<script src="../assets/app.js"></script><script>document.getElementById('nav').innerHTML=nav('Archives','../');</script>
 <script>
 Promise.all([fetch('manifest.json').then(r=>r.json()),fetch('editions.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).catch(()=>null)]).then(([m,ed])=>{const V2=new Set((ed&&ed.franchise_second_edition)||[]),file=(f)=>f.slug+(V2.has(f.slug)?'-v2':'');
   const g=document.getElementById('grid'),st=document.getElementById('stage'),v=document.getElementById('v');
   const order=[...m.franchises].sort((a,b)=>a.seed-b.seed);
-  for(const f of order){const b=document.createElement('button');b.className='card';
+  for(const f of order){const b=document.createElement('button');b.className='cc';
     const img=document.createElement('img');img.src=file(f)+'.jpg';img.alt=f.team_display+' cinematic';img.loading='lazy';
     const d=document.createElement('div'),t=document.createElement('b'),s=document.createElement('span');t.textContent=f.team_display;s.textContent=f.manager+' · '+f.record;d.append(t,s);b.append(img,d);
     b.onclick=()=>{const vl=document.getElementById('vl');vl.href='../franchise.html?f='+f.slug;vl.textContent='Open the '+f.team_display+' franchise page →';vl.setAttribute('aria-label','Open the '+f.team_display+' franchise page');st.dataset.slug=f.slug;st.style.display='block';v.poster=file(f)+'.jpg';v.src=file(f)+'.mp4';document.getElementById('vt').textContent=f.team_display;
