@@ -375,3 +375,7 @@ Team tags differ in width because each team has its own typeface. `nflBadge()` n
 - **Masthead:** every page opens with the same band (`section.band.dark.hero-w`, class `mastb` where newly added): navy with the blue and red league glows, Bebas title, and the red/white/blue rule. Applied to Pulse, Matchups, Playoffs, Draft, Teams, Rivals, The race so far, Timeline, Archives, and both film pages. Franchise pages keep their own colours and take the same rule under the header.
 - **Section headings** carry the three-colour tick on every page; cards share a 12px radius.
 - **Film pages** (`cinematics/`, `documentary/`) now use `app.css` and the site navigation (`nav('Archives','../')`) instead of bare back links. Cinematics cards use class `cc` (not `card`, which has a glow pseudo-element in app.css).
+
+## Timeline windows show scored and projected (Nov 15, 2026)
+
+In the Timeline tab, a kickoff window that has started (in progress or final) now shows points scored as the large number with "proj" beneath, per player and per side; the summary says "in progress", scored so far and the window's projection. The chart counts the larger of scored and projected for a window in progress (same rule as the expected final). Upcoming windows still show projections, labelled. Added Sunday-morning rebuilds (13:00–16:59 UTC) for early kickoffs. Regression tests that compare the page with built data now hold the page clock at build time.

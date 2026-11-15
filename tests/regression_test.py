@@ -177,6 +177,8 @@ async def run(p, eng):
             ok(f'{eng}: opened from a past week, the inspector separates that week from current information', await pg.locator('.pi-hist').count() == 1 and f'Week {aw}' in await pg.inner_text('.pi-hist')); await pg.keyboard.press('Escape')
     # ---- game-day scores: simulated Sleeper responses, so this does not depend on real games ----
     if g and c.get('week_in_progress'):
+        # these checks compare the page with the built data, so the page's clock is held at build time (game states otherwise advance by the clock)
+        import datetime; FREEZE = 'Date.now=()=>%d' % int(datetime.datetime.fromisoformat(c['generated_at'].replace('Z', '+00:00')).timestamp() * 1000)
         def body(bump):
             out = []
             for gm in pv['games']:
@@ -187,7 +189,7 @@ async def run(p, eng):
             return json.dumps(out)
         JS = "fetch('data/weekly.json').then(r=>r.json()).then(async w=>{const c=(await loadAll())[0];const f=(w)=>JSON.stringify(w.preview.games.map(g=>[g.live.map(x=>Math.round(x*100)/100),g.live_forecast&&[g.live_forecast.expected,g.live_forecast.win]]));const b=f(w);await overlayLive(c,w);return [b,f(w),w.preview.games[0].live[0]]})"
         for bump, label in ((0, 'same'), (7.5, 'more')):
-            cx2 = await b.new_context(viewport={'width': 390, 'height': 844}); st = {'n': 0}
+            cx2 = await b.new_context(viewport={'width': 390, 'height': 844}); st = {'n': 0}; await cx2.add_init_script(FREEZE)
             async def h(route, request, bump=bump, st=st): st['n'] += 1; await route.fulfill(status=200, content_type='application/json', body=body(bump))
             await cx2.route('**/api.sleeper.app/**', h); p2 = await cx2.new_page(); await p2.goto(U + 'week.html', wait_until='load'); await p2.wait_for_selector('#livebar', timeout=20000)
             r = await p2.evaluate(JS)
@@ -199,7 +201,7 @@ async def run(p, eng):
         # ---- game-day view ----
         cx3 = await b.new_context(viewport={'width': 390, 'height': 844}, accept_downloads=True); st3 = {'bump': 0}
         async def h3(route, request, st3=st3): await route.fulfill(status=200, content_type='application/json', body=body(st3['bump']))
-        await cx3.route('**/api.sleeper.app/**', h3); p3 = await cx3.new_page(); e3 = []; p3.on('pageerror', lambda e: e3.append(str(e)))
+        await cx3.add_init_script(FREEZE); await cx3.route('**/api.sleeper.app/**', h3); p3 = await cx3.new_page(); e3 = []; p3.on('pageerror', lambda e: e3.append(str(e)))
         await p3.goto(U + 'week.html#m0', wait_until='load'); await p3.wait_for_selector('#gd0 .gd-top', timeout=20000); await p3.wait_for_timeout(300)
         lf = g.get('live_forecast') or {}; exp = lf.get('expected') or g['projected']; num = lambda sel: p3.evaluate(f"parseFloat(document.querySelector('{sel}').firstChild.textContent)")
         ok(f'{eng}: game-day strip shows the same scored and expected totals as the data', abs(await num('#gd0 [data-v=sa]') - g['live'][0]) < .006 and abs(await num('#gd0 [data-v=sb]') - g['live'][1]) < .006 and abs(await num('#gd0 [data-v=ea]') - exp[0]) < .006 and abs(await num('#gd0 [data-v=eb]') - exp[1]) < .006)
@@ -226,6 +228,10 @@ async def run(p, eng):
             dims = [struct.unpack('>II', open(f, 'rb').read(24)[16:24]) for f in (f1, f2)]
             ok(f'{eng}: the matchup image and the rivalry card both download from inside a matchup as real PNGs', dims[0][0] >= 1080 and dims[1][0] == 1080 and dims[1][1] >= 1200, str(dims))
         except Exception as e: ok(f'{eng}: the matchup image and the rivalry card both download from inside a matchup as real PNGs', False, str(e)[:160])
+        wi = next((k for k, x in enumerate(g['timeline']['windows']) if x['state'] != 'upcoming' and (x['a']['players'] or x['b']['players'])), None)
+        if wi is not None:
+            await p3.locator(f'#gd0 [data-tw="{wi}"]').click(); await p3.wait_for_timeout(200); rows = await p3.locator('#gd0 .tlp .pr2 .pv').all_inner_texts()
+            ok(f'{eng}: in a window that has started, every player shows points scored and the projection', bool(rows) and all('proj' in r and r.strip()[0].isdigit() for r in rows), str(rows[:3]))
         await p3.click('#gd0 [data-gdfollow]'); await p3.wait_for_timeout(200)
         ok(f'{eng}: Follow keeps the matchup at the top with the same score', await p3.locator('#fol a.fol').count() == 1 and f'{g["live"][0] + 6:.2f}' in await p3.inner_text('#fol'))
         ok(f'{eng}: game-day view fits a 390px screen with no page errors', await p3.evaluate('document.documentElement.scrollWidth<=innerWidth+1') and not e3, '; '.join(e3)[:200]); await cx3.close()

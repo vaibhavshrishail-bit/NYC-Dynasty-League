@@ -676,3 +676,4 @@ body .blk>.sec::before,body .blk>h3:first-child::before,body .two>div>.sec::befo
 body .res,body .aw>div,body .panel,body .st-t,body .dpick,body .tr-c>*,body .gm,body .mine-c,body .film,body .ss-n,body .rail li>*{border-radius:12px}
 body .aw>div{border-radius:0 0 12px 12px}body .st-t{border-radius:0 0 12px 12px}
 body.dark .doc{padding-top:clamp(18px,3vw,30px)}
+.pv{text-align:right;font-variant-numeric:tabular-nums}.pv small{display:block;font:500 12.5px 'Barlow Condensed',sans-serif;color:var(--dim,#b6c0d0);letter-spacing:0;opacity:.85}.tlp h5 .pv small{font-size:12px;color:inherit;opacity:.8}
