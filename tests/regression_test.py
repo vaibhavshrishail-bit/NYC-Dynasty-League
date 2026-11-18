@@ -62,7 +62,7 @@ async def run(p, eng):
         await pg.goto(U + 'franchise.html?f=' + fa['slug'], wait_until='load'); await pg.wait_for_selector('small.basis', timeout=20000)
         cell = await pg.evaluate("(()=>{const s=[...document.querySelectorAll('small.basis')].find(x=>/lineup forecast/.test(x.textContent));return s?s.parentElement.textContent:''})()")
         num = ''.join(ch for ch in cell.split('lineup')[0] if ch.isdigit() or ch in '<>.')
-        exp = '>99' if want > .995 else '<1' if want < .005 else str(round(want * 100))   # the page's own rounding rule
+        exp = '>99' if want > .995 else '<1' if want < .005 else str(int(want * 100 + 0.5))   # the page's own rounding rule (halves round up, as in JavaScript)
         ok(f'{eng}: franchise page shows the same win chance as Matchups for this week', num == exp, f'page {cell!r} vs matchups {want}')
     # ---- rooting guide and scenario compare ----
     L_ = json.load(open(ROOT + '/site/data/league.json')); gms = L_['schedule'].get(str(L_['current_week'])) or []
