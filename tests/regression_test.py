@@ -101,6 +101,12 @@ async def run(p, eng):
     ok(f'{eng}: with a franchise chosen, Teams opens that franchise and the tab shows as selected', ('f=' + c['franchises'][2]['slug']) in pg.url and (await pg.locator('.tabbar a[aria-current=page]').inner_text()).strip() == 'Teams')
     await pg.goto(U + 'index.html', wait_until='load'); await pg.wait_for_selector('#thisweek .sb2', timeout=20000); await pg.wait_for_timeout(600)
     ok(f'{eng}: Pulse draws its masthead, a scoreboard row for every franchise with crest and score, and the twelve', await pg.locator('.top.mast').count() == 1 and await pg.locator('#thisweek .sbr svg').count() == 12 and await pg.locator('#grid a svg').count() == 12 and 'could not be loaded' not in await pg.inner_text('body'))
+    # ---- league bulletin ----
+    import datetime as _dt; today = _dt.datetime.now(_dt.timezone(_dt.timedelta(hours=-5))).strftime('%Y-%m-%d')
+    live_n = [n for n in c.get('notices', []) if not (n.get('show_from') and today < n['show_from']) and not ((n.get('show_until') or n.get('date')) and today > (n.get('show_until') or n.get('date')))]
+    await pg.goto(U + 'index.html', wait_until='load'); await pg.wait_for_selector('#thisweek', timeout=20000); await pg.wait_for_timeout(1200)
+    btxt = await pg.inner_text('#bulletin')
+    ok(f'{eng}: Pulse shows every current league notice from the commissioner\'s file, above everything else', await pg.locator('#bulletin .bl.ev').count() == len(live_n) and all(n['title'] in btxt for n in live_n))
     # ---- team tags and patches (approved original set) ----
     BD = json.load(open(ROOT + '/src/nfl-badges/badges.json')); appjs = open(ROOT + '/site/assets/app.js').read()
     ok(f'{eng}: all 32 teams have a badge and the site copy matches the approved set', len(BD) == 32 and all(json.dumps(v['emblem'])[1:-1] in appjs for v in BD.values()))

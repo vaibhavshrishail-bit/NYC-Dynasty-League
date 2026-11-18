@@ -396,3 +396,8 @@ Re-measured: small tap targets Draft 178 → 1, Archives 48 → 2, franchise 18 
 ## Nov 18, 2026
 - Pulse: the rivalry spotlight no longer repeats the matchup of the week; it picks a different rivalry game from the slate or is omitted.
 - Films: the Wednesday 11:40 UTC schedule had not fired by 13:27 UTC on Nov 18 (GitHub delays scheduled runs; the 6-hourly refresh was also running over an hour late). Added a backstop step in `refresh-and-deploy.yml` ("Re-render the films if a new week has finished"): when `canonical.through_week` is ahead of `editions.json` and no render is queued or running, it dispatches `render-films.yml`.
+
+## League bulletin at the top of Pulse (Nov 18, 2026)
+- **Notices:** `src/config/announcements.json` (instructions inside the file). `build-canonical.mjs` copies valid entries to `canonical.notices`; `bulletin()` in `index.html` shows them above the franchise picker with a countdown. A dated notice disappears the day after its date; `show_from`/`show_until` override. Current entry: league event, Dec 6 2026, location to be announced.
+- **Trades (automatic):** any trade completed in the last 7 days (newest three) appears there with what each side received, linking to the trade ledger. Marked "Major trade" by rule: a first-round pick moves, or a player ranked top 12 at his position this season.
+- Hidden in time-machine views. To edit without Claude: open the file on github.com, pencil icon, change, commit.

@@ -5,6 +5,7 @@
 <section class="band dark hero-w mastb"><div class="wrap"><header class="top mast"><div class="mast-id"><img class="lg-mark" src="assets/brand/logo-512.png" alt="NYC Dynasty League logo" width="132" height="132"><div><div class="k" id="sub">NYC Dynasty League</div><h1 id="wk">League Pulse</h1><div class="k" id="state"></div></div></div>
 <nav><label class="k" for="tm">Time machine</label><select class="sel" id="tm" aria-label="View the league as of a past week"></select></nav></header></div></section>
 <div class="wrap show">
+<section id="bulletin" aria-label="League bulletin"></section>
 <section id="mine" aria-label="Your franchise"></section>
 <section id="since" aria-label="Since your last visit"></section>
 <section class="blk" id="thisweek"></section>
@@ -54,7 +55,18 @@ loadLive().then(([c,L,WK,H])=>{
       $('sdis').onclick=()=>{st.prev=null;LS('nyc.seen',JSON.stringify(st));el.innerHTML=''}};
     paint();
     loadEditions().then((ed)=>{const t=ed&&ed.rendered_at&&Date.parse(ed.rendered_at);if(t&&t>p.at&&!items.some((i)=>i.includes('documentary/'))){items.push(`<a href="documentary/"><b>New films.</b> The season documentary and franchise films were re-rendered${ed.documentary&&ed.documentary.through_week?` through Week ${ed.documentary.through_week}`:''}.</a>`);paint()}}).catch(()=>{})}
-  function mine(now){setTimeout(jumpIndex,0);since(now);const el=$('mine'),slug=qf||myTeam.get(),f=slug&&c.franchises.find((x)=>x.slug===slug);
+  // ---- League bulletin: the commissioner's notices (src/config/announcements.json) and trades completed in the last 7 days. Shown only in the live view.
+  // A trade is marked MAJOR by rule: it moves a first-round pick, or a player ranked in the top 12 at his position this season. ----
+  function bulletin(now){const el=$('bulletin');if(!now){el.innerHTML='';return}const t0=Date.now(),day=864e5,iso=(d)=>new Date(d).toLocaleDateString('en-CA',{timeZone:'America/New_York'}),today=iso(t0),items=[];
+    for(const n of c.notices||[]){if(n.show_from&&today<n.show_from)continue;const until=n.show_until||n.date;if(until&&today>until)continue;
+      let when='',cd='';if(n.date){const d=new Date(n.date+'T12:00:00');when=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});const k=Math.round((Date.parse(n.date+'T12:00:00Z')-Date.parse(today+'T12:00:00Z'))/day);cd=k===0?'Today':k===1?'Tomorrow':`In ${k} days`}
+      items.push(`<${n.link?`a href="${esc(n.link)}" target="_blank" rel="noopener"`:'div'} class="bl ev"><span class="bl-k">${esc(n.kind==='event'?'League event':'League notice')}${cd?` · ${cd}`:''}</span><b>${esc(n.title)}${when?` · ${when}`:''}</b><small>${[n.time&&esc(n.time),n.location&&`Location: ${esc(n.location)}`,n.details&&esc(n.details)].filter(Boolean).join(' · ')}</small></${n.link?'a':'div'}>`)}
+    const top12=(p)=>{const r=(c.player_ranks||{})[p.player_id],m=r&&/(\d+)$/.exec(r);return m&&+m[1]<=12};
+    for(const t of [...(c.trades||[])].filter((x)=>x.at&&t0-x.at<7*day).sort((x,y)=>y.at-x.at).slice(0,3)){const major=t.picks.some((p)=>p.round===1)||t.players.some(top12),ago=Math.floor((t0-t.at)/day);
+      const got=(r)=>[...t.players.filter((p)=>p.to_roster===r).map((p)=>`${esc(p.name)}${(c.player_ranks||{})[p.player_id]?` (${esc(c.player_ranks[p.player_id])})`:''}`),...t.picks.filter((p)=>p.to_roster===r).map((p)=>`${p.season} ${ord(p.round)}${p.original_roster!==r?` (${M(p.original_roster)}'s)`:''}`)].join(', ')||'nothing listed';
+      items.push(`<a class="bl tr ${major?'maj':''}" href="rivalry.html?layer=trades"><span class="bl-k">${major?'Major trade':'Trade'} · ${ago===0?'today':ago===1?'yesterday':ago+' days ago'}</span><b>${t.rosters.map(M).join(' and ')}</b><small>${t.rosters.map((r)=>`${M(r)} gets ${got(r)}`).join(' · ')}</small></a>`)}
+    el.innerHTML=items.length?`<div class="bls">${items.join('')}</div>`:''}
+  function mine(now){setTimeout(jumpIndex,0);since(now);bulletin(now);const el=$('mine'),slug=qf||myTeam.get(),f=slug&&c.franchises.find((x)=>x.slug===slug);
     if(!now){el.innerHTML='';return}
     const bar=()=>franchiseBar($('fbm'),c,{value:f?f.roster_id:null,none:'None',light:true,onPick:()=>{if(qf){location.href='./';return}mine(true)}});
     if(!f){el.innerHTML=`<div id="fbm"></div><p class="fbar-h">Optional. Puts your matchup, playoff odds and picks first on every page. Remembered on this device only.</p>`;bar();return}
@@ -114,9 +126,10 @@ loadLive().then(([c,L,WK,H])=>{
       ${sh.heartbreak?tile('CRUELEST LOSS',M(sh.heartbreak.roster_id),`Scored ${f2(sh.heartbreak.points)}, lost to ${M(sh.heartbreak.opp)}`,sh.heartbreak.week):''}${sh.longest_win_streak?tile('LONGEST WIN STREAK',sh.longest_win_streak.length+' straight',`${M(sh.longest_win_streak.roster_id)}, Weeks ${sh.longest_win_streak.from}–${sh.longest_win_streak.to}`,sh.longest_win_streak.to):''}
       ${sh.top_starters&&sh.top_starters[0]?tile('MOST POINTS AS A STARTER',esc(sh.top_starters[0].name),`${f2(sh.top_starters[0].points)} in ${sh.top_starters[0].starts} starts · then ${sh.top_starters.slice(1,3).map((p)=>esc(p.name)+' '+p.points.toFixed(1)).join(', ')}`,0):''}${sh.top_defender_season?tile('TOP DEFENDER',esc(sh.top_defender_season.name),`${f2(sh.top_defender_season.points)} in ${sh.top_defender_season.starts} starts for ${M(sh.top_defender_season.roster_id)}`,0):''}
       ${sh.most_awards&&sh.most_awards.n>1?tile('MOST WEEKLY AWARDS',esc(sh.most_awards.name),`${sh.most_awards.n} solo awards for ${M(sh.most_awards.roster_id)}`,0):''}${sh.most_weekly_highs?tile('MOST WEEKLY HIGH SCORES',M(sh.most_weekly_highs.roster_id),`Top score of the week ${sh.most_weekly_highs.n} time${sh.most_weekly_highs.n>1?'s':''}`,0):''}</div>`:'';
-    const bk=$('back');if(bk)bk.onclick=()=>{tm.value='0';render(0);scrollTo({top:0,behavior:'instant'})};
+    const bk=$('back');if(bk)bk.onclick=()=>{const y=tm.getBoundingClientRect().top;tm.value='0';render(0);const d=tm.getBoundingClientRect().top-y;if(Math.abs(d)>1)scrollBy(0,d);tm.focus({preventScroll:true})};
   }
-  tm.onchange=()=>keepPlace(()=>render(+tm.value));render(0);
+  tm.onchange=()=>{const y=tm.getBoundingClientRect().top;render(+tm.value);const d=tm.getBoundingClientRect().top-y;if(Math.abs(d)>1)scrollBy(0,d)};render(0);   // keep the control itself where it was
+
   const order=c.standings.map((id)=>c.byRoster[id]);
   // the twelve as a compact crest strip; the full cards live on the Teams page
   $('grid').innerHTML=c.standings.map((id)=>{const f=T(id);return `<a href="franchise.html?f=${esc(f.slug)}" style="--c:${th(id).hi}" aria-label="${esc(f.team_name)}, ${esc(f.manager)}, ${esc(f.record)}">${emblem(th(id))}<b>${esc(f.manager)}</b><small>${esc(f.record)}</small></a>`}).join('');

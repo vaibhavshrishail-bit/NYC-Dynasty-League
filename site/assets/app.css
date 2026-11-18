@@ -694,3 +694,9 @@ body input[type=range]{min-height:44px}
 .only-m{display:none}@media(max-width:760px){.only-m{display:block}.clip6:not(.all) tr.more{display:none}}
 @media(max-width:760px){.clipn:not(.all) tr:nth-child(n+8){display:none}}
 body .pr .lab,body .sb2 .st,body .gm2 .c small{font-size:12.5px;letter-spacing:.08em}body.wr .mast .k{font-size:clamp(12px,2.9vw,14px)}body .band.dark.hero-w .k{font-size:clamp(12px,2.9vw,14px)}
+/* ---- league bulletin (top of Pulse) ---- */
+.bls{display:grid;gap:10px;margin:0 0 22px}.bl{display:block;text-decoration:none;color:var(--txt);background:var(--card);border:1px solid var(--line);border-left:8px solid #2f6fe0;border-radius:12px;padding:12px 16px}
+.bl.ev{border-left-color:#d81f44;background:#fff7f1}.bl.tr.maj{border-left-color:#c79200;background:#fffaea}
+.bl-k{display:block;font:600 12.5px 'Barlow Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}.bl.ev .bl-k{color:#a3152f}.bl.tr.maj .bl-k{color:#7a5800}
+.bl b{display:block;font:400 clamp(24px,5.6vw,32px)/1.08 'Bebas Neue',sans-serif;letter-spacing:.02em;margin:3px 0 2px}.bl small{display:block;font-size:15px;color:var(--dim);line-height:1.4}a.bl:focus-visible{outline:3px solid var(--bl);outline-offset:2px}
+.bls{margin-top:6px}

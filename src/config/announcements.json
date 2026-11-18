@@ -1,0 +1,12 @@
+{
+  "_how_to_edit": "League notices shown at the top of the Pulse page. Edit this file on GitHub (pencil icon), commit, and the site updates within a few minutes. Each notice needs a title. Optional: date (YYYY-MM-DD, shown as a countdown), time, location, details, link, show_from and show_until (YYYY-MM-DD; a dated notice disappears by itself the day after its date). Remove a notice by deleting its block. Trades are added automatically and do not belong here.",
+  "notices": [
+    {
+      "kind": "event",
+      "title": "League event",
+      "date": "2026-12-06",
+      "location": "To be announced",
+      "details": "Save the date. Location and time to follow."
+    }
+  ]
+}

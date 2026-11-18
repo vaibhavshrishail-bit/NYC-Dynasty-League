@@ -146,6 +146,8 @@ for (const r of [...rosters].sort((a, b) => a.roster_id - b.roster_id)) {
     h2h: Object.fromEntries(Object.entries(h2h[r.roster_id] || {}).map(([k, v]) => [k, v])),
     seasons: history.map((h) => { const x = h.teams.find((q) => q.roster_id === r.roster_id); return { season: h.season, wins: x.wins, losses: x.losses, pf: x.pf, champion: h.champion_roster === r.roster_id, runner_up: h.runner_up_roster === r.roster_id, toilet_bowl: h.toilet_bowl_roster === r.roster_id, same_owner: x.owner_id === r.owner_id, handle: x.handle }; }) });
 }
+// League notices for the top of Pulse: the commissioner's file. Malformed entries are dropped, never guessed at.
+const notices = await J('src/config/announcements.json').then((x) => (x.notices || []).filter((n) => n && typeof n.title === 'string' && n.title.trim() && (!n.date || /^\d{4}-\d{2}-\d{2}$/.test(n.date))).map((n) => ({ kind: n.kind || 'notice', title: n.title.trim(), date: n.date || null, time: n.time || null, location: n.location || null, details: n.details || null, link: /^https?:\/\//.test(n.link || '') ? n.link : null, show_from: n.show_from || null, show_until: n.show_until || null }))).catch(() => []);
 const punishments = await J('src/config/punishments.json').then((x) => Object.fromEntries(Object.entries(x).filter(([k]) => /^\d{4}$/.test(k)))).catch(() => ({}));
 const slugs = franchises.map((f) => f.slug); if (new Set(slugs).size !== slugs.length) problems.push('duplicate slugs');
 const trades = []; for (const [w, list] of Object.entries(tx)) for (const t of list) if (t.type === 'trade' && t.status === 'complete')
@@ -159,6 +161,7 @@ const tradeSeasons = idx.seasons.map((s) => Number(s.season)).filter((se) => Str
 if (problems.length) { console.error('IDENTITY RECONCILIATION FAILED:\n - ' + problems.join('\n - ')); process.exit(1); }
 const out = { generated_at: new Date().toISOString(), source: 'Sleeper public API', league_id: league.league_id, league_name: league.name, season: Number(season), through_week: through, current_week: Math.min(liveWeek, 18), week_in_progress: liveWeek <= 18 && (matchups[liveWeek] || []).some((m) => (m.points || 0) > 0),
   playoff_teams: playoffTeams, playoff_rule: 'Seeds 1–5 go to the best records, with points for as the tiebreaker. Seed 6 goes to the highest-scoring team among the other seven.', playoff_week_start: league.settings.playoff_week_start, roster_positions: league.roster_positions.filter((p) => p !== 'BN'), scoring: { rec: league.scoring_settings.rec, pass_td: league.scoring_settings.pass_td, idp: true },
+  notices,
   standings: seedOrder.map((r) => r.roster_id), franchises, history: history.map(({ teams, ...h }) => h), trades: trades.sort((a, b) => (a.at && b.at ? a.at - b.at : a.week - b.week)).map((t) => ({ season: Number(season), ...t })), past_trades: pastTrades, player_ranks: RANK, rank_basis: { ...RANKS.basis, through_week: RANKS.through_week }, punishments, trade_seasons: tradeSeasons };
 // keep the previous timestamp when nothing but the clock changed, so scheduled runs do not create empty commits
 // ---- pick provenance: for every future pick, the trades that moved it, in order, checked against who holds it now ----
