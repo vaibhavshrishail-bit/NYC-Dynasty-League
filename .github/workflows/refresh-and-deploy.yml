@@ -12,6 +12,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
   pages: write
   id-token: write
 concurrency:
@@ -36,6 +37,16 @@ jobs:
       - name: Lay the weekly films over the site (from the films branch, if it exists)
         run: |
           if git fetch --depth=1 origin films 2>/dev/null; then git archive FETCH_HEAD | tar -x; ls site/cinematics | grep -c -- '-v2.mp4' || true; else echo "no films branch yet"; fi
+      - name: Re-render the films if a new week has finished
+        # The Wednesday schedule in render-films.yml can be delayed or skipped by GitHub. This is the backstop: whenever the site
+        # data is ahead of the published films, and no render is already queued or running, start one. It publishes itself when done.
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          SITE=$(node -e "console.log(require('./site/data/canonical.json').through_week)")
+          FILM=$(node -e "try{console.log(require('./site/cinematics/editions.json').documentary.through_week)}catch(e){console.log(0)}")
+          BUSY=$(gh run list --workflow render-films.yml --json status -q '[.[]|select(.status!="completed")]|length' 2>/dev/null || echo 1)
+          echo "site through week $SITE, films through week $FILM, renders in progress $BUSY"
+          if [ "$SITE" -gt "$FILM" ] && [ "$BUSY" = "0" ]; then gh workflow run render-films.yml --ref main && echo "::notice::film render started for week $SITE" || echo "::warning::could not start the film render"; fi
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - name: Install the test browser

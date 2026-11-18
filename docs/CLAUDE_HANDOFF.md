@@ -392,3 +392,7 @@ In the Timeline tab, a kickoff window that has started (in progress or final) no
 8. Race page gauntlet colours darkened (white text now passes 4.5:1).
 9. Safari/iPhone: still untested by the builder.
 Re-measured: small tap targets Draft 178 → 1, Archives 48 → 2, franchise 18 → 0; contrast failures Race 30 → 0, Pulse 3 → 0.
+
+## Nov 18, 2026
+- Pulse: the rivalry spotlight no longer repeats the matchup of the week; it picks a different rivalry game from the slate or is omitted.
+- Films: the Wednesday 11:40 UTC schedule had not fired by 13:27 UTC on Nov 18 (GitHub delays scheduled runs; the 6-hourly refresh was also running over an hour late). Added a backstop step in `refresh-and-deploy.yml` ("Re-render the films if a new week has finished"): when `canonical.through_week` is ahead of `editions.json` and no render is queued or running, it dispatches `render-films.yml`.
