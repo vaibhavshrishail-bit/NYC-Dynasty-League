@@ -117,6 +117,13 @@ async def run(p, eng):
     pname = json.load(open(ROOT + '/site/data/player_log.json'))['players'][pid]['n']
     ok(f'{eng}: a trade completed since the last build shows on Pulse straight from Sleeper, marked as such, with no page error', pname in ft and '2029 1st' in ft and not et, ft[:160] + str(et))
     await cxt.close()
+    # ---- "today / yesterday" on a trade card counts calendar days in Eastern Time, not 24-hour blocks ----
+    tr = [t for t in c.get('trades', []) if t.get('at')]
+    if tr:
+        t = max(tr, key=lambda x: x['at']); cxd = await b.new_context(viewport={'width': 390, 'height': 844}); await cxd.add_init_script('Date.now=()=>%d' % (t['at'] + 15 * 3600 * 1000)); await cxd.route('**/api.sleeper.app/**', lambda r: r.fulfill(status=200, content_type='application/json', body='[]'))
+        pd = await cxd.new_page(); await pd.goto(U + 'index.html', wait_until='load'); await pd.wait_for_selector('#bulletin .bl.tr', timeout=20000); k = (await pd.inner_text('#bulletin .bl.tr .bl-k')).lower()
+        from zoneinfo import ZoneInfo as _Z; d0 = _dt.datetime.fromtimestamp(t['at'] / 1000, _Z('America/New_York')).date(); d1 = _dt.datetime.fromtimestamp(t['at'] / 1000 + 15 * 3600, _Z('America/New_York')).date(); want = ['today', 'yesterday'][(d1 - d0).days]
+        ok(f'{eng}: a trade card says today or yesterday by the calendar date in Eastern Time', want in k, f'{k} want {want}'); await cxd.close()
     # ---- team tags and patches (approved original set) ----
     BD = json.load(open(ROOT + '/src/nfl-badges/badges.json')); appjs = open(ROOT + '/site/assets/app.js').read()
     ok(f'{eng}: all 32 teams have a badge and the site copy matches the approved set', len(BD) == 32 and all(json.dumps(v['emblem'])[1:-1] in appjs for v in BD.values()))

@@ -408,3 +408,6 @@ Re-measured: small tap targets Draft 178 → 1, Archives 48 → 2, franchise 18 
 - `.github/workflows/refresh-and-deploy.yml`: base schedule is hourly (was every 6 hours). Game-window schedules unchanged.
 - `tests/regression_test.py`: simulated fresh trade must appear on Pulse.
 - Not tested: Safari/iPhone; a real fresh trade on the live site.
+
+## Trade card day label (2026-11-19)
+- Bug: "today/yesterday" counted 24-hour blocks, so a trade from the previous afternoon still read "today" the next morning. Now counts calendar days in Eastern Time (`site/index.html`, `bulletin`). Regression check added with a frozen clock.
