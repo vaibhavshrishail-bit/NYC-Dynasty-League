@@ -401,3 +401,10 @@ Re-measured: small tap targets Draft 178 → 1, Archives 48 → 2, franchise 18 
 - **Notices:** `src/config/announcements.json` (instructions inside the file). `build-canonical.mjs` copies valid entries to `canonical.notices`; `bulletin()` in `index.html` shows them above the franchise picker with a countdown. A dated notice disappears the day after its date; `show_from`/`show_until` override. Current entry: league event, Dec 6 2026, location to be announced.
 - **Trades (automatic):** any trade completed in the last 7 days (newest three) appears there with what each side received, linking to the trade ledger. Marked "Major trade" by rule: a first-round pick moves, or a player ranked top 12 at his position this season.
 - Hidden in time-machine views. To edit without Claude: open the file on github.com, pencil icon, change, commit.
+
+## New trades on Pulse within minutes (2026-11-18)
+- Cause of the gap: a trade completed between data builds was invisible until the next build, and GitHub skipped a scheduled run.
+- `site/index.html`: on each Pulse load the browser reads `/v1/league/{id}/transactions/{current_week}` and the following week from Sleeper (read-only, once per load, 6s timeout, silent on failure). Completed trades not already in `canonical.trades` are added to the bulletin, marked "just in from Sleeper". Player names come from `player_log.json`.
+- `.github/workflows/refresh-and-deploy.yml`: base schedule is hourly (was every 6 hours). Game-window schedules unchanged.
+- `tests/regression_test.py`: simulated fresh trade must appear on Pulse.
+- Not tested: Safari/iPhone; a real fresh trade on the live site.

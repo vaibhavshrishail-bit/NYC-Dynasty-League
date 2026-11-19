@@ -57,14 +57,23 @@ loadLive().then(([c,L,WK,H])=>{
     loadEditions().then((ed)=>{const t=ed&&ed.rendered_at&&Date.parse(ed.rendered_at);if(t&&t>p.at&&!items.some((i)=>i.includes('documentary/'))){items.push(`<a href="documentary/"><b>New films.</b> The season documentary and franchise films were re-rendered${ed.documentary&&ed.documentary.through_week?` through Week ${ed.documentary.through_week}`:''}.</a>`);paint()}}).catch(()=>{})}
   // ---- League bulletin: the commissioner's notices (src/config/announcements.json) and trades completed in the last 7 days. Shown only in the live view.
   // A trade is marked MAJOR by rule: it moves a first-round pick, or a player ranked in the top 12 at his position this season. ----
-  function bulletin(now){const el=$('bulletin');if(!now){el.innerHTML='';return}const t0=Date.now(),day=864e5,iso=(d)=>new Date(d).toLocaleDateString('en-CA',{timeZone:'America/New_York'}),today=iso(t0),items=[];
+  // Trades completed since the last data build: read once per page load from Sleeper's public API in this browser (read-only), so a new
+  // trade shows here within minutes. The trade ledger and timeline pick it up at the next scheduled build.
+  let FRESH=[],BNOW=false;
+  (async()=>{try{const known=new Set((c.trades||[]).map((t)=>t.at)),ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),6000);
+    const wk=[c.current_week,c.current_week+1].filter((w)=>w>=1&&w<=18),res=await Promise.all(wk.map((w)=>fetch(`https://api.sleeper.app/v1/league/${c.league_id}/transactions/${w}`,{signal:ctl.signal,cache:'no-store'}).then((r)=>r.ok?r.json():[]).catch(()=>[])));clearTimeout(to);
+    const tx=res.flat().filter((t)=>t&&t.type==='trade'&&t.status==='complete'&&Array.isArray(t.roster_ids)&&t.roster_ids.every((r)=>c.byRoster[r])&&!known.has(t.status_updated||t.created));if(!tx.length)return;
+    const [PL]=await loadPlayers();
+    FRESH=tx.map((t)=>({fresh:true,at:t.status_updated||t.created,rosters:t.roster_ids,players:Object.entries(t.adds||{}).map(([pid,to])=>({player_id:pid,name:(PL.players[pid]||{}).n||'a player not yet in the site data',to_roster:to})),picks:(t.draft_picks||[]).map((p)=>({season:p.season,round:p.round,original_roster:p.roster_id,to_roster:p.owner_id}))}));
+    if(BNOW)bulletin(true)}catch(e){}})();
+  function bulletin(now){BNOW=!!now;const el=$('bulletin');if(!now){el.innerHTML='';return}const t0=Date.now(),day=864e5,iso=(d)=>new Date(d).toLocaleDateString('en-CA',{timeZone:'America/New_York'}),today=iso(t0),items=[];
     for(const n of c.notices||[]){if(n.show_from&&today<n.show_from)continue;const until=n.show_until||n.date;if(until&&today>until)continue;
       let when='',cd='';if(n.date){const d=new Date(n.date+'T12:00:00');when=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});const k=Math.round((Date.parse(n.date+'T12:00:00Z')-Date.parse(today+'T12:00:00Z'))/day);cd=k===0?'Today':k===1?'Tomorrow':`In ${k} days`}
       items.push(`<${n.link?`a href="${esc(n.link)}" target="_blank" rel="noopener"`:'div'} class="bl ev"><span class="bl-k">${esc(n.kind==='event'?'League event':'League notice')}${cd?` · ${cd}`:''}</span><b>${esc(n.title)}${when?` · ${when}`:''}</b><small>${[n.time&&esc(n.time),n.location&&`Location: ${esc(n.location)}`,n.details&&esc(n.details)].filter(Boolean).join(' · ')}</small></${n.link?'a':'div'}>`)}
     const top12=(p)=>{const r=(c.player_ranks||{})[p.player_id],m=r&&/(\d+)$/.exec(r);return m&&+m[1]<=12};
-    for(const t of [...(c.trades||[])].filter((x)=>x.at&&t0-x.at<7*day).sort((x,y)=>y.at-x.at).slice(0,3)){const major=t.picks.some((p)=>p.round===1)||t.players.some(top12),ago=Math.floor((t0-t.at)/day);
+    for(const t of [...(c.trades||[]),...FRESH].filter((x)=>x.at&&t0-x.at<7*day).sort((x,y)=>y.at-x.at).slice(0,3)){const major=t.picks.some((p)=>p.round===1)||t.players.some(top12),ago=Math.floor((t0-t.at)/day);
       const got=(r)=>[...t.players.filter((p)=>p.to_roster===r).map((p)=>`${esc(p.name)}${(c.player_ranks||{})[p.player_id]?` (${esc(c.player_ranks[p.player_id])})`:''}`),...t.picks.filter((p)=>p.to_roster===r).map((p)=>`${p.season} ${ord(p.round)}${p.original_roster!==r?` (${M(p.original_roster)}'s)`:''}`)].join(', ')||'nothing listed';
-      items.push(`<a class="bl tr ${major?'maj':''}" href="rivalry.html?layer=trades"><span class="bl-k">${major?'Major trade':'Trade'} · ${ago===0?'today':ago===1?'yesterday':ago+' days ago'}</span><b>${t.rosters.map(M).join(' and ')}</b><small>${t.rosters.map((r)=>`${M(r)} gets ${got(r)}`).join(' · ')}</small></a>`)}
+      items.push(`<a class="bl tr ${major?'maj':''}" href="rivalry.html?layer=trades"><span class="bl-k">${major?'Major trade':'Trade'} · ${ago===0?'today':ago===1?'yesterday':ago+' days ago'}${t.fresh?' · just in from Sleeper':''}</span><b>${t.rosters.map(M).join(' and ')}</b><small>${t.rosters.map((r)=>`${M(r)} gets ${got(r)}`).join(' · ')}</small></a>`)}
     el.innerHTML=items.length?`<div class="bls">${items.join('')}</div>`:''}
   function mine(now){setTimeout(jumpIndex,0);since(now);bulletin(now);const el=$('mine'),slug=qf||myTeam.get(),f=slug&&c.franchises.find((x)=>x.slug===slug);
     if(!now){el.innerHTML='';return}

@@ -107,6 +107,16 @@ async def run(p, eng):
     await pg.goto(U + 'index.html', wait_until='load'); await pg.wait_for_selector('#thisweek', timeout=20000); await pg.wait_for_timeout(1200)
     btxt = await pg.inner_text('#bulletin')
     ok(f'{eng}: Pulse shows every current league notice from the commissioner\'s file, above everything else', await pg.locator('#bulletin .bl.ev').count() == len(live_n) and all(n['title'] in btxt for n in live_n))
+    # ---- a trade completed after the last build appears on Pulse, read from Sleeper in the browser ----
+    import time as _tm; rs = [f['roster_id'] for f in c['franchises'][:2]]; pid = next(k for k, v in json.load(open(ROOT + '/site/data/player_log.json'))['players'].items() if v.get('own') and v['own']['roster_id'] == rs[0])
+    fake = json.dumps([{'type': 'trade', 'status': 'complete', 'status_updated': int(_tm.time() * 1000) - 60000, 'roster_ids': rs, 'adds': {pid: rs[1]}, 'drops': {pid: rs[0]}, 'draft_picks': [{'season': '2029', 'round': 1, 'roster_id': rs[1], 'owner_id': rs[0], 'previous_owner_id': rs[1]}]}])
+    cxt = await b.new_context(viewport={'width': 390, 'height': 844}); await cxt.route('**/api.sleeper.app/**', lambda r: r.fulfill(status=200, content_type='application/json', body=fake if '/transactions/%d' % c['current_week'] in r.request.url else '[]'))
+    pt = await cxt.new_page(); et = []; pt.on('pageerror', lambda e: et.append(str(e))); await pt.goto(U + 'index.html', wait_until='load'); await pt.wait_for_selector('#thisweek', timeout=20000)
+    try: await pt.wait_for_selector('#bulletin .bl.tr.maj:has-text("just in from Sleeper")', timeout=8000); ft = await pt.inner_text('#bulletin .bl.tr.maj:has-text("just in from Sleeper")')
+    except Exception: ft = ''
+    pname = json.load(open(ROOT + '/site/data/player_log.json'))['players'][pid]['n']
+    ok(f'{eng}: a trade completed since the last build shows on Pulse straight from Sleeper, marked as such, with no page error', pname in ft and '2029 1st' in ft and not et, ft[:160] + str(et))
+    await cxt.close()
     # ---- team tags and patches (approved original set) ----
     BD = json.load(open(ROOT + '/src/nfl-badges/badges.json')); appjs = open(ROOT + '/site/assets/app.js').read()
     ok(f'{eng}: all 32 teams have a badge and the site copy matches the approved set', len(BD) == 32 and all(json.dumps(v['emblem'])[1:-1] in appjs for v in BD.values()))
