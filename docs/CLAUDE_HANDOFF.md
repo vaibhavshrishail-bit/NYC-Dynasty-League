@@ -411,3 +411,9 @@ Re-measured: small tap targets Draft 178 → 1, Archives 48 → 2, franchise 18 
 
 ## Trade card day label (2026-11-19)
 - Bug: "today/yesterday" counted 24-hour blocks, so a trade from the previous afternoon still read "today" the next morning. Now counts calendar days in Eastern Time (`site/index.html`, `bulletin`). Regression check added with a frozen clock.
+
+## Live week by the clock; Dev v Taylor tag removed (2026-11-19)
+- Bug: pages only read live scores when the build had set `week_in_progress`. On Thursday night every scheduled build after kickoff was skipped by GitHub, so the site stayed on projections. `overlayLive` in `site/assets/app.js` now also goes by the clock: once the first kickoff in `weekly.json` has passed it asks Sleeper and, if Sleeper answers, treats the week as live. A page left open before kickoff reloads itself 90s after kickoff.
+- Still build-dependent during a skipped build: standings-derived items, awards, timeline window states confirmed by the build.
+- `src/config/rivalries.json`: removed Dev (4) v Taylor (11) at the commissioner request.
+- Regression checks added. Not tested on Safari/iPhone.

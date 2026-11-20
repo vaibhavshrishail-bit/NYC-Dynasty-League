@@ -124,6 +124,23 @@ async def run(p, eng):
         pd = await cxd.new_page(); await pd.goto(U + 'index.html', wait_until='load'); await pd.wait_for_selector('#bulletin .bl.tr', timeout=20000); k = (await pd.inner_text('#bulletin .bl.tr .bl-k')).lower()
         from zoneinfo import ZoneInfo as _Z; d0 = _dt.datetime.fromtimestamp(t['at'] / 1000, _Z('America/New_York')).date(); d1 = _dt.datetime.fromtimestamp(t['at'] / 1000 + 15 * 3600, _Z('America/New_York')).date(); want = ['today', 'yesterday'][(d1 - d0).days]
         ok(f'{eng}: a trade card says today or yesterday by the calendar date in Eastern Time', want in k, f'{k} want {want}'); await cxd.close()
+    # ---- a week whose first kickoff has passed goes live in the browser even if the build has not yet marked it in progress ----
+    Wk = json.load(open(ROOT + '/site/data/weekly.json')); pvk = Wk.get('preview') or {}; starts = [x['start'] for gm in pvk.get('games', []) for x in (gm.get('timeline') or {}).get('windows', [])]
+    if pvk.get('week') == c['current_week'] and starts:
+        import calendar as _cal; t1 = min(_cal.timegm(_tm.strptime(x[:19], '%Y-%m-%dT%H:%M:%S')) for x in starts) * 1000 + 3600 * 1000
+        cstale = dict(c); cstale['week_in_progress'] = False; sc = []
+        for gm in pvk['games']:
+            for k, l, pts in (('a', 'lineup_a', 11.11), ('b', 'lineup_b', 22.22)):
+                ps = [x for x in gm[l] if not x.get('empty')]; sc.append({'roster_id': gm[k], 'points': pts, 'starters': [x['player_id'] for x in ps], 'players_points': {ps[0]['player_id']: pts} if ps else {}})
+        cxk = await b.new_context(viewport={'width': 390, 'height': 844}); await cxk.add_init_script('Date.now=()=>%d' % t1)
+        await cxk.route('**/data/canonical.json*', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(cstale)))
+        await cxk.route('**/api.sleeper.app/**', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(sc) if '/matchups/' in r.request.url else '[]'))
+        pk = await cxk.new_page(); ek = []; pk.on('pageerror', lambda e: ek.append(str(e))); await pk.goto(U + 'week.html', wait_until='load')
+        try: await pk.wait_for_selector('#livebar', timeout=15000); lb = await pk.inner_text('#livebar'); bt = await pk.inner_text('body')
+        except Exception: lb = bt = ''
+        ok(f'{eng}: after the first kickoff the page reads live scores from Sleeper even when the build still says the week has not started', 'Sleeper' in lb and '11.11' in bt and '22.22' in bt and not ek, lb + str(ek))
+        await pk.goto(U + 'index.html', wait_until='load'); await pk.wait_for_selector('#thisweek', timeout=20000); await pk.wait_for_timeout(800); bt = await pk.inner_text('body')
+        ok(f'{eng}: Pulse shows those live scores too', '11.11' in bt and '22.22' in bt and not ek, str(ek)); await cxk.close()
     # ---- team tags and patches (approved original set) ----
     BD = json.load(open(ROOT + '/src/nfl-badges/badges.json')); appjs = open(ROOT + '/site/assets/app.js').read()
     ok(f'{eng}: all 32 teams have a badge and the site copy matches the approved set', len(BD) == 32 and all(json.dumps(v['emblem'])[1:-1] in appjs for v in BD.values()))
