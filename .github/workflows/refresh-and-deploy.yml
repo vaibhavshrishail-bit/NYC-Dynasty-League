@@ -84,5 +84,23 @@ jobs:
           grep -c "?v=${V}" site/index.html
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }
+      # On Nov 24 four deploys in a row failed with "Found 0 artifact(s)" a fraction of a second after a successful upload: GitHub had not
+      # registered the upload yet. The data was built and committed but the site stayed a day old. So: wait briefly, and try twice more.
+      - name: Give GitHub a moment to register the uploaded site
+        run: sleep 20
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Wait before a second attempt
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 60
+      - id: deployment2
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Wait before a third attempt
+        if: steps.deployment.outcome == 'failure' && steps.deployment2.outcome == 'failure'
+        run: sleep 180
+      - id: deployment3
+        if: steps.deployment.outcome == 'failure' && steps.deployment2.outcome == 'failure'
         uses: actions/deploy-pages@v4

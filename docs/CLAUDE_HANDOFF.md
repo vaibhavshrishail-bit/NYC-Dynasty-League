@@ -417,3 +417,8 @@ Re-measured: small tap targets Draft 178 → 1, Archives 48 → 2, franchise 18 
 - Still build-dependent during a skipped build: standings-derived items, awards, timeline window states confirmed by the build.
 - `src/config/rivalries.json`: removed Dev (4) v Taylor (11) at the commissioner request.
 - Regression checks added. Not tested on Safari/iPhone.
+
+## Deploy retries (2026-11-24)
+- From Nov 24 00:57 to 11:00 UTC four deploys failed at `actions/deploy-pages` with "Found 0 artifact(s)" right after a successful upload (GitHub-side lag). Data was built and committed but not published, so the site showed pre-Monday-night data. A manual run at 18:18 UTC succeeded.
+- `refresh-and-deploy.yml` deploy job now waits 20s after upload and retries the deploy twice (after 60s and 180s).
+- Separate, unsolved: GitHub skips many scheduled runs (none between 11:00 and 18:18 UTC on Nov 24).
